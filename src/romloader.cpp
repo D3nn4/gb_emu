@@ -13,6 +13,8 @@ bool RomLoader::load(std::string const & romName)
             _data.insert(_data.end(), buff, buff + readBit);
         }
         fileIO.closeFile(fd);
+    }
+    if (!_data.empty()) {
         return true;
     }
     return false;

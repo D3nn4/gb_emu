@@ -21,7 +21,7 @@ class RomLoaderTest : public ::testing::Test
 {
 public:
     MockFileIo fileIO;
-    std::string fileName = "../roms/Pokemon_Bleue.gb";
+    std::string fileName = "rom name";
     int fd = 42;
 private:
 };
@@ -82,5 +82,5 @@ TEST_F (RomLoaderTest, loadEmptyFile)
     bool isLoaded = romLoader.load(fileName);
 
     EXPECT_TRUE(romLoader.getData().empty());
-    EXPECT_TRUE(isLoaded);
+    EXPECT_FALSE(isLoaded);
 }
