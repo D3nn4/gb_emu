@@ -4,15 +4,13 @@
 RomLoader::RomLoader(IFileIO& fio)
     :fileIO(fio){}
 
-bool RomLoader::load(std::string romName)
+bool RomLoader::load(std::string const & romName)
 {
     int fd = fileIO.openFile(romName);
     if (fd > 0) {
         uint8_t buff[512];
         while (int readBit = fileIO.readFile(buff, fd)) {
-            for (int i = 0; i < readBit; i++) {
-                _data.push_back(buff[i]);
-            }
+            _data.insert(_data.end(), buff, buff + readBit);
         }
         fileIO.closeFile(fd);
         return true;

@@ -6,7 +6,7 @@ class FileIO : public IFileIO
 {
 public:
 
-    int openFile(std::string fileName);
+    int openFile(std::string const & fileName);
     int readFile(uint8_t *buff, int fd);
     void closeFile(int fd);
 };

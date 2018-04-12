@@ -8,7 +8,7 @@ class RomLoader
 {
 public:
     RomLoader(IFileIO& fio);
-    bool load(std::string romName);
+    bool load(std::string const & romName);
     std::vector<uint8_t> getData();
 private:
     IFileIO& fileIO;

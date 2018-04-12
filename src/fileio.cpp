@@ -7,11 +7,12 @@
 #include <unistd.h>
 #include "fileio.hpp"
 
-int FileIO::openFile(std::string fileName)
+int FileIO::openFile(std::string const & fileName)
 {
-    int fd = open("./roms/Pokemon_Bleue.gb", O_RDONLY);
+    int fd = open(fileName.c_str(), O_RDONLY);
     if (fd < 0) {
         std::string error = strerror(errno);
+        //TODO error handler
         std::cout << "error open : " << error << std::endl;
     }
     return fd;
@@ -20,8 +21,7 @@ int FileIO::openFile(std::string fileName)
 
 int FileIO::readFile(uint8_t *buff, int fd)
 {
-    int ret = read(fd, buff, 512);
-    return ret;
+    return read(fd, buff, 512);
 }
 
 void FileIO::closeFile(int fd)

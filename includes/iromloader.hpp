@@ -7,7 +7,7 @@
 class IRomLoader
 {
 public:
-    virtual bool load(std::string romName) = 0;
+    virtual bool load(std::string const & romName) = 0;
 
 };
 #endif /*IROMLOADER*/
