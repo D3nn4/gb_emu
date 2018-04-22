@@ -8,6 +8,7 @@ class IRomLoader
 {
 public:
     virtual bool load(std::string const & romName) = 0;
+    virtual std::vector<uint8_t> getData() = 0;
 
 };
 #endif /*IROMLOADER*/
