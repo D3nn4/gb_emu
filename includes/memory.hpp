@@ -2,19 +2,21 @@
 #define _MEMORY_
 
 #include "imemory.hpp"
+#include "registers.hpp"
 
 class Memory : public IMemory
 {
 public:
-    std::vector<uint8_t> const & getCartridge();
-    std::vector<uint8_t> const & getReadOnlyMemory();
-    bool setCartridge(std::vector<uint8_t> cartridge);
+    std::array<uint8_t, 0x200000> const & getCartridge();
+    std::array<uint8_t, 0xffff> const & getReadOnlyMemory();
+    bool setCartridge(std::array<uint8_t, 0x200000> const & cartridge);
 private:
 
     bool reset();
     bool fillROM();
-    std::vector<uint8_t> _cartridge;
-    std::vector<uint8_t> _readOnlyMemory;
+    std::array<uint8_t, 0x200000> _cartridge;
+    std::array<uint8_t, 0xffff> _readOnlyMemory;
+    Registers _registers;
     //TODO MemoryBankController
 };
 #endif /*MEMORY*/

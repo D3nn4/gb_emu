@@ -3,46 +3,57 @@
 #include "memory.hpp"
 
 
-std::vector<uint8_t> const & Memory::getCartridge()
+std::array<uint8_t, 0x200000> const & Memory::getCartridge()
 {
     return _cartridge;
 }
 
-std::vector<uint8_t> const & Memory::getReadOnlyMemory()
+std::array<uint8_t, 0xffff> const & Memory::getReadOnlyMemory()
 {
     return _readOnlyMemory;
 }
 
-bool Memory::setCartridge(std::vector<uint8_t> cartridge)
+bool isEmpty(std::array<uint8_t, 0x200000> const & cartridge)
 {
-    if (!cartridge.empty() && cartridge.size() >= 0x4000) {
-        if (reset()) {
-            _cartridge = cartridge;
-            return fillROM();
+    for (size_t index = 0; index < cartridge.size(); index++) {
+        if (cartridge[index] != 0x0) {
+            return false;
         }
+    }
+    return true;
+}
+bool isEmpty(std::array<uint8_t, 0xffff> const & rom)
+{
+    for (size_t index = 0; index < rom.size(); index++) {
+        if (rom[index] != 0x0) {
+            return false;
+        }
+    }
+    return true;
+}
+
+bool Memory::setCartridge(std::array<uint8_t, 0x200000> const & cartridge)
+{
+    if (!isEmpty(cartridge) && reset()) {
+        _cartridge = cartridge;
+         fillROM();
+         return true;
     }
     return false;
 }
 
 bool Memory::fillROM()
 {
-    _readOnlyMemory.clear();
-    if (!_cartridge.empty()) {
-        std::copy(_cartridge.begin(),
-                  _cartridge.begin() + 0x3fff,
-                  std::back_inserter(_readOnlyMemory));
-        if (_readOnlyMemory.empty()) {
-            return false;
-        }
-        return true;
-    }
-    return false;
+    std::copy(_cartridge.begin(),
+              _cartridge.begin() + 0x3fff,
+              _readOnlyMemory.begin());
+    return !isEmpty(_readOnlyMemory);
 }
 
 bool Memory::reset()
 {
     //TODO check if everything is over
-    _readOnlyMemory.clear();
-    _cartridge.clear();
+    _readOnlyMemory.fill(0x0);
+    _cartridge.fill(0x0);
     return true;
 }

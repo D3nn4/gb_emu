@@ -7,8 +7,8 @@
 class IMemory
 {
 public:
-    virtual std::vector<uint8_t> const & getCartridge() = 0;
-    virtual std::vector<uint8_t> const & getReadOnlyMemory() = 0;
-    virtual bool setCartridge(std::vector<uint8_t> cartridge) = 0;
+    virtual std::array<uint8_t, 0x200000> const & getCartridge() = 0;
+    virtual std::array<uint8_t, 0xffff> const & getReadOnlyMemory() = 0;
+    virtual bool setCartridge(std::array<uint8_t, 0x200000> const & cartridge) = 0;
 };
 #endif /*IMEMORY*/
