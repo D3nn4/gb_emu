@@ -2,6 +2,7 @@
 #define _ROMLOADER_
 
 #include <string>
+#include <vector>
 #include "fileio.hpp"
 
 class RomLoader
