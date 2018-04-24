@@ -3,36 +3,26 @@
 #include "memory.hpp"
 
 
-std::array<uint8_t, 0x200000> const & Memory::getCartridge()
+IMemory::CartridgeData const & Memory::getCartridge()
 {
     return _cartridge;
 }
 
-std::array<uint8_t, 0xffff> const & Memory::getReadOnlyMemory()
+IMemory::RomData const & Memory::getReadOnlyMemory()
 {
     return _readOnlyMemory;
 }
 
-bool isEmpty(std::array<uint8_t, 0x200000> const & cartridge)
+template<class ARRAY>
+bool Memory::isEmpty(ARRAY const & memory)
 {
-    for (size_t index = 0; index < cartridge.size(); index++) {
-        if (cartridge[index] != 0x0) {
-            return false;
-        }
-    }
-    return true;
-}
-bool isEmpty(std::array<uint8_t, 0xffff> const & rom)
-{
-    for (size_t index = 0; index < rom.size(); index++) {
-        if (rom[index] != 0x0) {
-            return false;
-        }
-    }
-    return true;
+    return std::all_of(std::begin(memory), std::end(memory),
+                       []( typename ARRAY::value_type const & elem)
+                       { return elem == 0; }
+                       );
 }
 
-bool Memory::setCartridge(std::array<uint8_t, 0x200000> const & cartridge)
+bool Memory::setCartridge(IMemory::CartridgeData const & cartridge)
 {
     if (!isEmpty(cartridge) && reset()) {
         _cartridge = cartridge;
@@ -45,7 +35,7 @@ bool Memory::setCartridge(std::array<uint8_t, 0x200000> const & cartridge)
 bool Memory::fillROM()
 {
     std::copy(_cartridge.begin(),
-              _cartridge.begin() + 0x3fff,
+              _cartridge.begin() + IMemory::bank0Size,
               _readOnlyMemory.begin());
     return !isEmpty(_readOnlyMemory);
 }
