@@ -69,9 +69,6 @@ TEST_F (MemoryTest, addNewValidCartridge)
 
     IMemory::RomData rom = mem.getReadOnlyMemory();
     for (size_t i = 0; i < _bank0.size(); i++) {
-        if (_bank0[i] != rom[i]) {
-            std::cout << "i = " << i << std::endl;
-        }
         EXPECT_EQ(_bank0[i], rom[i]);
     }
 }
