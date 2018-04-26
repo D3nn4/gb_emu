@@ -2,7 +2,7 @@
 #define _IMEMORY_
 
 #include <vector>
-#include "romloader.hpp"
+#include <array>
 
 class IMemory
 {

@@ -46,7 +46,7 @@ TEST_F (RomLoaderTest, loadValidFile)
     RomLoader romLoader(fileIO);
     bool isLoaded = romLoader.load(fileName);
 
-    std::vector<uint8_t> data = romLoader.getData();
+    IMemory::CartridgeData data = romLoader.getData();
     for (int i = 0; i < 512; i++) {
         EXPECT_EQ(data[i], 7);
     }
@@ -81,6 +81,5 @@ TEST_F (RomLoaderTest, loadEmptyFile)
     RomLoader romLoader(fileIO);
     bool isLoaded = romLoader.load(fileName);
 
-    EXPECT_TRUE(romLoader.getData().empty());
     EXPECT_FALSE(isLoaded);
 }

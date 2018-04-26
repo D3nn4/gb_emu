@@ -4,16 +4,17 @@
 #include <string>
 #include <vector>
 #include "fileio.hpp"
+#include "iromloader.hpp"
 
-class RomLoader
+class RomLoader : public IRomLoader
 {
 public:
     RomLoader(IFileIO& fio);
     bool load(std::string const & romName);
-    std::vector<uint8_t> getData();
+    IMemory::CartridgeData getData();
 private:
     IFileIO& fileIO;
-    std::vector<uint8_t> _data;
+    IMemory::CartridgeData _data;
 
 };
 #endif /*ROMLOADER*/
