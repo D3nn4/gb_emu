@@ -25,7 +25,7 @@ class MockRomLoader : public IRomLoader
 public:
 
     MOCK_METHOD1(load, bool(std::string const&));
-    MOCK_METHOD0(getData, std::vector<uint8_t>());
+    MOCK_METHOD0(getData, IMemory::CartridgeData());
 };
 
 class MemoryTest : public ::testing::Test
