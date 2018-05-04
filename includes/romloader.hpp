@@ -3,7 +3,7 @@
 
 #include <string>
 #include <vector>
-#include "fileio.hpp"
+#include "ifileio.hpp"
 #include "iromloader.hpp"
 
 class RomLoader : public IRomLoader
@@ -13,7 +13,7 @@ public:
     bool load(std::string const & romName);
     IMemory::CartridgeData getData();
 private:
-    IFileIO& fileIO;
+    IFileIO& _fileIO;
     IMemory::CartridgeData _data;
 
 };

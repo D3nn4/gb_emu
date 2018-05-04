@@ -3,12 +3,12 @@
 #include "memory.hpp"
 
 
-IMemory::CartridgeData const & Memory::getCartridge()
+IMemory::CartridgeData const Memory::getCartridge()
 {
     return _cartridge;
 }
 
-IMemory::RomData const & Memory::getReadOnlyMemory()
+IMemory::RomData const Memory::getReadOnlyMemory()
 {
     return _readOnlyMemory;
 }
@@ -46,4 +46,24 @@ bool Memory::reset()
     _readOnlyMemory.fill(0x0);
     _cartridge.fill(0x0);
     return true;
+}
+
+void Memory::set8BitRegister(REG8BIT reg,uint8_t value)
+{
+    *_8BitRegisters[reg] = value;
+}
+
+void Memory::set16BitRegister(REG16BIT reg,uint16_t value)
+{
+    *_16BitRegisters[reg] = value;
+}
+
+uint8_t Memory::get8BitRegister(REG8BIT reg)
+{
+    return *_8BitRegisters[reg];
+}
+
+uint16_t Memory::get16BitRegister(REG16BIT reg)
+{
+    return *_16BitRegisters[reg];
 }
