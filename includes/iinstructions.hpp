@@ -6,7 +6,6 @@
 class IInstructions
 {
 public:
-    virtual void load16BitToSP(IMemory& memory) = 0;
 
 private:
 
