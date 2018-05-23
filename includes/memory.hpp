@@ -2,23 +2,50 @@
 #define _MEMORY_
 
 #include <map>
+#include <bitset>
+#include <exception>
 #include "imemory.hpp"
+
 
 class Memory : public IMemory
 {
 public:
 
+    class MemoryException : public std::exception
+    {
+    public:
+        MemoryException(std::string const & error)
+            :_error(error){}
+
+        const char * what () const throw ()
+        {
+            return _error.c_str();
+        }
+
+    private:
+        std::string _error;
+    };
+
+    Memory();
     CartridgeData const  getCartridge() override;
     RomData const  getReadOnlyMemory() override;
     bool setCartridge(CartridgeData const & cartridge) override;
+    bool writeInROM(uint8_t data, uint16_t adress) override;
     void set8BitRegister(REG8BIT reg,uint8_t value) override;
     void set16BitRegister(REG16BIT reg,uint16_t value) override;
     uint8_t get8BitRegister(REG8BIT reg) override;
     uint16_t get16BitRegister(REG16BIT reg) override;
+    void setBitInRegister(int bit, REG8BIT reg) override;
+    void unsetBitInRegister(int bit, REG8BIT reg) override;
+    void setBitInRegister(int bit, REG16BIT reg) override;
+    void unsetBitInRegister(int bit, REG16BIT reg) override;
+    bool isSet(int bit, REG8BIT reg) override;
+    bool isSet(int bit, REG16BIT reg) override;
 
 private:
 
     bool reset();
+    void resetRegisters();
     bool fillROM();
     template <class ARRAY>
     bool isEmpty(ARRAY const & memory);
@@ -38,14 +65,14 @@ private:
             {IMemory::REG8BIT::H, &_registers.h},
             {IMemory::REG8BIT::L, &_registers.l}
         };
-    std::map<IMemory::REG16BIT, uint16_t*> _16BitRegisters = 
+    std::map<IMemory::REG16BIT, uint16_t*> _16BitRegisters =
         {
-            {IMemory::REG16BIT::AF, &_registers.pc},
-            {IMemory::REG16BIT::BC, &_registers.pc},
-            {IMemory::REG16BIT::DE, &_registers.pc},
-            {IMemory::REG16BIT::HL, &_registers.pc},
+            {IMemory::REG16BIT::AF, &_registers.af},
+            {IMemory::REG16BIT::BC, &_registers.bc},
+            {IMemory::REG16BIT::DE, &_registers.de},
+            {IMemory::REG16BIT::HL, &_registers.hl},
             {IMemory::REG16BIT::PC, &_registers.pc},
-            {IMemory::REG16BIT::SP, &_registers.pc}
+            {IMemory::REG16BIT::SP, &_registers.sp}
         };
     //TODO MemoryBankController
 };
