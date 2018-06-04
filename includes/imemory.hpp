@@ -1,8 +1,8 @@
 #ifndef _IMEMORY_
 #define _IMEMORY_
 
-#include <vector>
-#include "romloader.hpp"
+#include <array>
+#include "registers.hpp"
 
 class IMemory
 {
@@ -14,8 +14,46 @@ public:
     using CartridgeData = std::array<uint8_t, cartridgeSize>;
     using RomData = std::array<uint8_t, romSize>;
 
-    virtual CartridgeData const & getCartridge() = 0;
-    virtual RomData const & getReadOnlyMemory() = 0;
+    enum class REG8BIT
+        {
+            A, F,
+            B, C,
+            D, E,
+            H, L
+        };
+
+    enum class REG16BIT
+        {
+            AF,
+            BC,
+            DE,
+            HL,
+            SP,
+            PC
+        };
+
+    enum class FLAG
+        {
+            Z = 7,
+            N = 6,
+            H = 5,
+            C = 4
+        };
+
+    virtual CartridgeData const getCartridge() = 0;
+    virtual RomData const getReadOnlyMemory() = 0;
     virtual bool setCartridge(CartridgeData const & cartridge) = 0;
+    virtual bool writeInROM(uint8_t data, uint16_t adress) = 0;
+    virtual void set8BitRegister(REG8BIT reg,uint8_t value) = 0;
+    virtual void set16BitRegister(REG16BIT reg,uint16_t value) = 0;
+    virtual uint8_t get8BitRegister(REG8BIT reg) = 0;
+    virtual uint16_t get16BitRegister(REG16BIT reg) = 0;
+    virtual void setBitInRegister(int bit, REG8BIT reg) = 0;
+    virtual void unsetBitInRegister(int bit, REG8BIT reg) = 0;
+    virtual void setBitInRegister(int bit, REG16BIT reg) = 0;
+    virtual void unsetBitInRegister(int bit, REG16BIT reg) = 0;
+    virtual bool isSet(int bit, REG8BIT reg) = 0;
+    virtual bool isSet(int bit, REG16BIT reg) = 0;
+
 };
 #endif /*IMEMORY*/

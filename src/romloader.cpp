@@ -1,26 +1,34 @@
 #include <iostream>
+#include <algorithm>
 #include "romloader.hpp"
+#include <cstdio>
 
 RomLoader::RomLoader(IFileIO& fio)
-    :fileIO(fio){}
+    :_fileIO(fio)
+{
+    _data.fill(0);
+}
 
 bool RomLoader::load(std::string const & romName)
 {
-    int fd = fileIO.openFile(romName);
+    int fd = _fileIO.openFile(romName);
     if (fd > 0) {
+        _data.fill(0);
         uint8_t buff[512];
-        while (int readBit = fileIO.readFile(buff, fd)) {
-            _data.insert(_data.end(), buff, buff + readBit);
+        int readCount = 0;
+        while (int readBit = _fileIO.readFile(buff, fd)) {
+            std::copy(std::begin(buff), std::end(buff), _data.begin() + readCount);
+            readCount += readBit;
         }
-        fileIO.closeFile(fd);
+        _fileIO.closeFile(fd);
     }
-    if (!_data.empty()) {
-        return true;
-    }
-    return false;
+    return !std::all_of(std::begin(_data), std::end(_data),
+                        []( uint8_t const & elem)
+                        { return elem == 0; }
+                        );
 }
 
-std::vector<uint8_t> RomLoader::getData()
+IMemory::CartridgeData RomLoader::getData()
 {
     return _data;
 }

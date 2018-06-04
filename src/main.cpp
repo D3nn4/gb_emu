@@ -8,6 +8,7 @@
 
 #include "fileio.hpp"
 #include "romloader.hpp"
+#include "cpu.hpp"
 
 int main()
 {
@@ -15,5 +16,7 @@ int main()
     std::string fileName = "./roms/Pokemon_Bleue.gb";
     FileIO fileIO;
     RomLoader romLoader(fileIO);
+    Cpu cpu(romLoader);
+    cpu.launchGame(fileName);
     return 0;
 }
