@@ -70,7 +70,7 @@ TEST_F (InstructionTest, Load16BitInSP)
     EXPECT_CALL(_memory, set16BitRegister(IMemory::REG16BIT::PC ,0x0003));
 
     // instructions.load16BitToSP(_memory);
-    instructions._instructions[opCode[0]](_memory);
+    instructions._instructions[opCode[0]].handler(_memory);
 }
 
 TEST_F (InstructionTest, xorRegisterA)
@@ -83,7 +83,7 @@ TEST_F (InstructionTest, xorRegisterA)
     EXPECT_CALL(_memory, set8BitRegister(IMemory::REG8BIT::A ,0x00));
     EXPECT_CALL(_memory, set16BitRegister(IMemory::REG16BIT::PC ,0x0001));
 
-    instructions._instructions[opCode[0]](_memory);
+    instructions._instructions[opCode[0]].handler(_memory);
 }
 
 TEST_F (InstructionTest, Load16BitInHL)
@@ -98,7 +98,7 @@ TEST_F (InstructionTest, Load16BitInHL)
     EXPECT_CALL(_memory, set16BitRegister(IMemory::REG16BIT::HL ,0x9fff));
     EXPECT_CALL(_memory, set16BitRegister(IMemory::REG16BIT::PC ,0x0003));
 
-    instructions._instructions[opCode[0]](_memory);
+    instructions._instructions[opCode[0]].handler(_memory);
 }
 
 TEST_F (InstructionTest, load8BitInRegisterAtAdress)
@@ -116,7 +116,7 @@ TEST_F (InstructionTest, load8BitInRegisterAtAdress)
     EXPECT_CALL(_memory, set16BitRegister(IMemory::REG16BIT::HL, 0x9ffe));
     EXPECT_CALL(_memory, set16BitRegister(IMemory::REG16BIT::PC ,0x0001));
     EXPECT_CALL(_memory, writeInROM(0x00, 0x9fff));
-    instructions._instructions[opCode[0]](_memory);
+    instructions._instructions[opCode[0]].handler(_memory);
 }
 
 TEST_F(InstructionTest, BinaryInstruction)
@@ -124,8 +124,13 @@ TEST_F(InstructionTest, BinaryInstruction)
     std::array<uint8_t, 3> opCode = {0xCB, 0x7c, 0xff};
     Instructions instructions;
 
+    EXPECT_CALL(_memory, getReadOnlyMemory())
+      .WillOnce(Return(getDataForTest(opCode)));
+    EXPECT_CALL(_memory, isSet(7, IMemory::REG8BIT::H))
+      .WillOnce(Return(false));
+    EXPECT_CALL(_memory, setBitInRegister((int)IMemory::FLAG::Z, IMemory::REG8BIT::F));
     EXPECT_CALL(_memory, get16BitRegister(IMemory::REG16BIT::PC))
         .WillOnce(Return(0x0000));
     EXPECT_CALL(_memory, set16BitRegister(IMemory::REG16BIT::PC ,0x0002));
-    instructions._instructions[opCode[0]](_memory);
-}
+    instructions._instructions[opCode[0]].handler(_memory);
+} 

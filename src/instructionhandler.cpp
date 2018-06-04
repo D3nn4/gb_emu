@@ -1,7 +1,8 @@
 #include "instructionhandler.hpp"
 
 InstructionHandler::InstructionHandler(IMemory& memory)
-    :_memory(memory){};
+    :_memory(memory),
+     _bootRom(BootRom()){};
 
 bool InstructionHandler::boot()
 {

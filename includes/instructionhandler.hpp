@@ -17,6 +17,6 @@ public:
 private:
 
     IMemory& _memory;
-    BootRom _bootRom;
+    BootRom const _bootRom;
 };
 #endif /*INSTRUCTIONHANDLER*/

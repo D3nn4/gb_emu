@@ -1,9 +1,7 @@
 #ifndef _IMEMORY_
 #define _IMEMORY_
 
-#include <vector>
 #include <array>
-
 #include "registers.hpp"
 
 class IMemory

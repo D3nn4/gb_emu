@@ -48,7 +48,7 @@ TEST_F(BinaryInstructionTest, checkBit7InHWhenIsSetThenUnsetZFlag)
         .WillOnce(Return(true));
     EXPECT_CALL(_memory, unsetBitInRegister((int)IMemory::FLAG::Z, IMemory::REG8BIT::F));
 
-    bInstructions._binaryInstructions[0x7c](_memory);
+    bInstructions._instructions[0x7c].handler(_memory);
 
 }
 
@@ -60,6 +60,6 @@ TEST_F(BinaryInstructionTest, checkBit7InHWhenIsNotSetThenSetZFlag)
         .WillOnce(Return(false));
     EXPECT_CALL(_memory, setBitInRegister((int)IMemory::FLAG::Z, IMemory::REG8BIT::F));
 
-    bInstructions._binaryInstructions[0x7c](_memory);
+    bInstructions._instructions[0x7c].handler(_memory);
 
 }

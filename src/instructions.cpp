@@ -60,8 +60,9 @@ int Instructions::xorRegisterA(IMemory& memory)
 int Instructions::doBinaryInstructions(IMemory& memory)
 {
     uint16_t cursor = memory.get16BitRegister(IMemory::REG16BIT::PC);
-    cursor++;
-    //TODO : call binary instruction bootrom[cursor]
+    IMemory::RomData const & rom = memory.getReadOnlyMemory();
+    uint8_t binaryOpCode = rom[++cursor];
+    _binaryInstructions._instructions[binaryOpCode].handler(memory);
     memory.set16BitRegister(IMemory::REG16BIT::PC, ++cursor);
     return 0;//TODO find cycle to return
 }

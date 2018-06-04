@@ -4,20 +4,20 @@
 #include <functional>
 #include <map>
 #include "imemory.hpp"
+#include "instructiondata.hpp"
 
-typedef std::function<int(IMemory&)> funcInstruct;
 
 using namespace std::placeholders;
 
-class BinaryInstructions 
+class BinaryInstructions
 {
 public:
 
     int checkBit7InH(IMemory& memory);
 
-    std::map<uint8_t, funcInstruct> _binaryInstructions =
+    std::map<uint8_t, InstructionData> _instructions =
         {
-            {0x7c, std::bind(&BinaryInstructions::checkBit7InH, this, _1)},
+            {0x7c, {4, std::bind(&BinaryInstructions::checkBit7InH, this, _1)} }
         };
 
 private:

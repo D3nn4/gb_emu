@@ -5,6 +5,7 @@ class BootRom
 {
 public:
 
+    BootRom() = default;
     //Boot opcode for DMG
     static std::array<uint8_t, 256> constexpr _bootDMG = {{
                 0x31, 0xFE, 0xFF, 0xAF, 0x21, 0xFF, 0x9F, 0x32,
