@@ -136,7 +136,7 @@ TEST_F(InstructionHandlerTest, load16NextBitToRegisterInstructions)
     EXPECT_EQ(12, load16NextBitToRegister(getDataForTest(opCodeAnd16NextBit), IMemory::REG16BIT::SP));
 }
 
-//OpCode 0x02 0x12 0x22 0x32 0x70 0x71 0x72 0x73 0x74 0x75 0x77
+//OpCode 0x02 0x12 0x22 0x32 0x70 to 0x75 0x77
 TEST_F (InstructionHandlerTest, load8BitRegValueToAdressAt16BitRegInstructions)
 {
     auto testLD = [this](uint8_t opCode, IMemory::REG8BIT reg8Bit, IMemory::REG16BIT reg16Bit, int toAdd)
@@ -157,22 +157,60 @@ TEST_F (InstructionHandlerTest, load8BitRegValueToAdressAt16BitRegInstructions)
     testLD(0x77, IMemory::REG8BIT::A, IMemory::REG16BIT::HL, 0);
 }
 
-//OpCode 0x40
+//OpCode 0x40 to 0x45 0x47 to 0x4D 0x4F 0x50 to 0x55 0x57 to 0x5D 0x5F 0x60 to 0x65 0x67 to 0x6D 0x6F 0x78 to 0x7D 0x7F
 TEST_F (InstructionHandlerTest, load8BitValueTo8BitRegInstructions)
 {
 auto testLD = [this](uint8_t opCode, IMemory::REG8BIT toCopyTo, IMemory::REG8BIT toCopyFrom)
               {
                   EXPECT_EQ(4, load8BitRegValueTo8BitReg(opCode,toCopyTo, toCopyFrom));
               };
-testLD(0x40, IMemory::REG8BIT::B, IMemory::REG8BIT::B);
-// testLD(0x12, IMemory::REG8BIT::A, IMemory::REG8BIT::DE);
-// testLD(0x22, IMemory::REG8BIT::A, IMemory::REG8BIT::HL);
-// testLD(0x32, IMemory::REG8BIT::A, IMemory::REG8BIT::HL);
-// testLD(0x70, IMemory::REG8BIT::B, IMemory::REG8BIT::HL);
-// testLD(0x71, IMemory::REG8BIT::C, IMemory::REG8BIT::HL);
-// testLD(0x72, IMemory::REG8BIT::D, IMemory::REG8BIT::HL);
-// testLD(0x73, IMemory::REG8BIT::E, IMemory::REG8BIT::HL);
-// testLD(0x74, IMemory::REG8BIT::H, IMemory::REG8BIT::HL);
-// testLD(0x75, IMemory::REG8BIT::L, IMemory::REG8BIT::HL);
-// testLD(0x77, IMemory::REG8BIT::A, IMemory::REG8BIT::HL);
+ testLD(0x40, IMemory::REG8BIT::B, IMemory::REG8BIT::B);
+ testLD(0x41, IMemory::REG8BIT::B, IMemory::REG8BIT::C);
+ testLD(0x42, IMemory::REG8BIT::B, IMemory::REG8BIT::D);
+ testLD(0x43, IMemory::REG8BIT::B, IMemory::REG8BIT::E);
+ testLD(0x44, IMemory::REG8BIT::B, IMemory::REG8BIT::H);
+ testLD(0x45, IMemory::REG8BIT::B, IMemory::REG8BIT::L);
+ testLD(0x47, IMemory::REG8BIT::B, IMemory::REG8BIT::A);
+ testLD(0x48, IMemory::REG8BIT::C, IMemory::REG8BIT::B);
+ testLD(0x49, IMemory::REG8BIT::C, IMemory::REG8BIT::C);
+ testLD(0x4A, IMemory::REG8BIT::C, IMemory::REG8BIT::D);
+ testLD(0x4B, IMemory::REG8BIT::C, IMemory::REG8BIT::E);
+ testLD(0x4C, IMemory::REG8BIT::C, IMemory::REG8BIT::H);
+ testLD(0x4D, IMemory::REG8BIT::C, IMemory::REG8BIT::L);
+ testLD(0x4F, IMemory::REG8BIT::C, IMemory::REG8BIT::A);
+ testLD(0x50, IMemory::REG8BIT::D, IMemory::REG8BIT::B);
+ testLD(0x51, IMemory::REG8BIT::D, IMemory::REG8BIT::C);
+ testLD(0x52, IMemory::REG8BIT::D, IMemory::REG8BIT::D);
+ testLD(0x53, IMemory::REG8BIT::D, IMemory::REG8BIT::E);
+ testLD(0x54, IMemory::REG8BIT::D, IMemory::REG8BIT::H);
+ testLD(0x55, IMemory::REG8BIT::D, IMemory::REG8BIT::L);
+ testLD(0x57, IMemory::REG8BIT::D, IMemory::REG8BIT::A);
+ testLD(0x58, IMemory::REG8BIT::E, IMemory::REG8BIT::B);
+ testLD(0x59, IMemory::REG8BIT::E, IMemory::REG8BIT::C);
+ testLD(0x5A, IMemory::REG8BIT::E, IMemory::REG8BIT::D);
+ testLD(0x5B, IMemory::REG8BIT::E, IMemory::REG8BIT::E);
+ testLD(0x5C, IMemory::REG8BIT::E, IMemory::REG8BIT::H);
+ testLD(0x5D, IMemory::REG8BIT::E, IMemory::REG8BIT::L);
+ testLD(0x5F, IMemory::REG8BIT::E, IMemory::REG8BIT::A);
+ testLD(0x60, IMemory::REG8BIT::H, IMemory::REG8BIT::B);
+ testLD(0x61, IMemory::REG8BIT::H, IMemory::REG8BIT::C);
+ testLD(0x62, IMemory::REG8BIT::H, IMemory::REG8BIT::D);
+ testLD(0x63, IMemory::REG8BIT::H, IMemory::REG8BIT::E);
+ testLD(0x64, IMemory::REG8BIT::H, IMemory::REG8BIT::H);
+ testLD(0x65, IMemory::REG8BIT::H, IMemory::REG8BIT::L);
+ testLD(0x67, IMemory::REG8BIT::H, IMemory::REG8BIT::A);
+ testLD(0x68, IMemory::REG8BIT::L, IMemory::REG8BIT::B);
+ testLD(0x69, IMemory::REG8BIT::L, IMemory::REG8BIT::C);
+ testLD(0x6A, IMemory::REG8BIT::L, IMemory::REG8BIT::D);
+ testLD(0x6B, IMemory::REG8BIT::L, IMemory::REG8BIT::E);
+ testLD(0x6C, IMemory::REG8BIT::L, IMemory::REG8BIT::H);
+ testLD(0x6D, IMemory::REG8BIT::L, IMemory::REG8BIT::L);
+ testLD(0x6F, IMemory::REG8BIT::L, IMemory::REG8BIT::A);
+ testLD(0x78, IMemory::REG8BIT::A, IMemory::REG8BIT::B);
+ testLD(0x79, IMemory::REG8BIT::A, IMemory::REG8BIT::C);
+ testLD(0x7A, IMemory::REG8BIT::A, IMemory::REG8BIT::D);
+ testLD(0x7B, IMemory::REG8BIT::A, IMemory::REG8BIT::E);
+ testLD(0x7C, IMemory::REG8BIT::A, IMemory::REG8BIT::H);
+ testLD(0x7D, IMemory::REG8BIT::A, IMemory::REG8BIT::L);
+ testLD(0x7F, IMemory::REG8BIT::A, IMemory::REG8BIT::A);
 }
