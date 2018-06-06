@@ -35,42 +35,67 @@ public:
     IMemory::REG16BIT _register;
 };
 
-//OpCode 0x04 0x0C 0x14 0x1C 0x24 0x2C 0x3C
-class Increment8BitRegister : public IInstructions
+//OpCode increment 0x04 0x0C 0x14 0x1C 0x24 0x2C 0x3C
+class addValueTo8BitRegister : public IInstructions
 {
 public:
-    Increment8BitRegister(int cycles, IMemory::REG8BIT reg8Bit)
+    addValueTo8BitRegister(int cycles, IMemory::REG8BIT reg8Bit, int value)
         :IInstructions(cycles),
-         _reg8Bit(reg8Bit){};
+         _reg8Bit(reg8Bit),
+         _value(value){};
 
     void doInstruction(IMemory& memory) override {
         uint8_t regValue = memory.get8BitRegister(_reg8Bit);
-        memory.set8BitRegister(_reg8Bit, regValue + 1);
+        memory.set8BitRegister(_reg8Bit, regValue + _value);
         uint16_t cursor = memory.get16BitRegister(IMemory::REG16BIT::PC);
         memory.set16BitRegister(IMemory::REG16BIT::PC, cursor + 1);
     }
 
     IMemory::REG8BIT _reg8Bit;
+    int _value;
 };
 
-//OpCode 0x03 0x13 0x23C 0x33
-class Increment16NitRegister : public IInstructions
+//OpCode increment 0x03 0x13 0x23C 0x33
+class addValueTo16BitRegister : public IInstructions
 {
 public:
-    Increment16NitRegister(int cycles, IMemory::REG16BIT reg16Bit)
+    addValueTo16BitRegister(int cycles, IMemory::REG16BIT reg16Bit, int value)
         :IInstructions(cycles),
-         _reg16Bit(reg16Bit){};
+         _reg16Bit(reg16Bit),
+         _value(value){};
 
     void doInstruction(IMemory& memory) override {
         uint16_t regValue = memory.get16BitRegister(_reg16Bit);
-        memory.set16BitRegister(_reg16Bit, regValue + 1);
+        memory.set16BitRegister(_reg16Bit, regValue + _value);
         uint16_t cursor = memory.get16BitRegister(IMemory::REG16BIT::PC);
         memory.set16BitRegister(IMemory::REG16BIT::PC, cursor + 1);
     }
 
     IMemory::REG16BIT _reg16Bit;
+    int _value;
 };
 
+//OpCode increment 0x34
+class addValueAtAdressInReg : public IInstructions
+{
+public:
+    addValueAtAdressInReg(int cycles, IMemory::REG16BIT reg16Bit, int value)
+        :IInstructions(cycles),
+         _reg16Bit(reg16Bit),
+         _value(value){};
+
+    void doInstruction(IMemory& memory) override {
+        uint16_t adress = memory.get16BitRegister(_reg16Bit);
+        IMemory::RomData const rom = memory.getReadOnlyMemory();
+        uint8_t valueToIncrement = rom[adress] + _value;
+        memory.writeInROM(valueToIncrement, adress);
+        uint16_t cursor = memory.get16BitRegister(IMemory::REG16BIT::PC);
+        memory.set16BitRegister(IMemory::REG16BIT::PC, cursor + 1);
+    }
+
+    IMemory::REG16BIT _reg16Bit;
+    int _value;
+};
 //OpCode 0x02 0x12 0x22 0x32 0x70 0x71 0x72 0x73 0x74 0x75 0x77
 class Load8BitRegValueToAdressInReg : public IInstructions
 {
