@@ -45,6 +45,8 @@ public:
     int load16NextBitToRegister(IMemory::RomData rom, IMemory::REG16BIT reg);
     int load8BitRegValueToAdressAt16BitReg(IMemory::RomData rom, IMemory::REG8BIT reg8Bit, IMemory::REG16BIT reg16Bit, int toAdd);
     int load8BitRegValueTo8BitReg(uint8_t opcode, IMemory::REG8BIT toCopyTo, IMemory::REG8BIT toCopyFrom);
+    int increment8BitRegister(uint8_t opCode, IMemory::REG8BIT reg);
+    int increment16BitRegister(uint16_t opCode, IMemory::REG16BIT reg);
 
 };
 
@@ -109,6 +111,32 @@ int InstructionHandlerTest::load8BitRegValueTo8BitReg(uint8_t opCode, IMemory::R
     return instructionHandler.doInstruction(opCode);
 }
 
+int InstructionHandlerTest::increment8BitRegister(uint8_t opCode, IMemory::REG8BIT reg)
+{
+    InstructionHandler instructionHandler(_memory);
+
+    EXPECT_CALL(_memory, get8BitRegister(reg))
+        .WillOnce(Return(0x00));
+    EXPECT_CALL(_memory, set8BitRegister(reg, 0x01));
+    EXPECT_CALL(_memory, get16BitRegister(IMemory::REG16BIT::PC))
+        .WillOnce(Return(0x0000));
+    EXPECT_CALL(_memory, set16BitRegister(IMemory::REG16BIT::PC, 0x0001));
+    return instructionHandler.doInstruction(opCode);
+}
+
+int InstructionHandlerTest::increment16BitRegister(uint16_t opCode, IMemory::REG16BIT reg)
+{
+    InstructionHandler instructionHandler(_memory);
+
+    EXPECT_CALL(_memory, get16BitRegister(reg))
+        .WillOnce(Return(0x0000));
+    EXPECT_CALL(_memory, set16BitRegister(reg, 0x0001));
+    EXPECT_CALL(_memory, get16BitRegister(IMemory::REG16BIT::PC))
+        .WillOnce(Return(0x0000));
+    EXPECT_CALL(_memory, set16BitRegister(IMemory::REG16BIT::PC, 0x0001));
+    return instructionHandler.doInstruction(opCode);
+}
+
 //OpCode 0x00
 TEST_F (InstructionHandlerTest, instructionNop)
 {
@@ -156,6 +184,32 @@ TEST_F (InstructionHandlerTest, load8BitRegValueToAdressAt16BitRegInstructions)
     testLD(0x75, IMemory::REG8BIT::L, IMemory::REG16BIT::HL, 0);
     testLD(0x77, IMemory::REG8BIT::A, IMemory::REG16BIT::HL, 0);
 }
+
+//OpCode 0x03 0x04 0x0C 0x13 0x14 0x1C 0x23 0x24 0x2C 0x33 0x3C
+TEST_F (InstructionHandlerTest, incrementRegisterInstructions)
+{
+    auto testIncr8Bit = [this](uint8_t opCode, IMemory::REG8BIT reg8Bit)
+                  {
+                      EXPECT_EQ(4, increment8BitRegister(opCode, reg8Bit));
+                  };
+    testIncr8Bit(0x04, IMemory::REG8BIT::B);
+    testIncr8Bit(0x0C, IMemory::REG8BIT::C);
+    testIncr8Bit(0x14, IMemory::REG8BIT::D);
+    testIncr8Bit(0x1C, IMemory::REG8BIT::E);
+    testIncr8Bit(0x24, IMemory::REG8BIT::H);
+    testIncr8Bit(0x2C, IMemory::REG8BIT::L);
+    testIncr8Bit(0x3C, IMemory::REG8BIT::A);
+
+    auto testIncr16Bit = [this](uint8_t opCode, IMemory::REG16BIT reg16Bit)
+                        {
+                            EXPECT_EQ(8, increment16BitRegister(opCode, reg16Bit));
+                        };
+    testIncr16Bit(0x03, IMemory::REG16BIT::BC);
+    testIncr16Bit(0x13, IMemory::REG16BIT::DE);
+    testIncr16Bit(0x23, IMemory::REG16BIT::HL);
+    testIncr16Bit(0x33, IMemory::REG16BIT::SP);
+}
+
 
 //OpCode 0x40 to 0x45 0x47 to 0x4D 0x4F 0x50 to 0x55 0x57 to 0x5D 0x5F 0x60 to 0x65 0x67 to 0x6D 0x6F 0x78 to 0x7D 0x7F
 TEST_F (InstructionHandlerTest, load8BitValueTo8BitRegInstructions)
