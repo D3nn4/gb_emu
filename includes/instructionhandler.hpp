@@ -38,6 +38,8 @@ private:
             {0x03, std::make_shared<addValueTo16BitRegister>(8, IMemory::REG16BIT::BC, 1)},
             {0x04, std::make_shared<addValueTo8BitRegister>(4, IMemory::REG8BIT::B, 1)},//TODO FLAGS
             {0x05, std::make_shared<addValueTo8BitRegister>(4, IMemory::REG8BIT::B, -1)},//TODO FLAGS
+            {0x06, std::make_shared<Load8NextBitToRegister>(8, IMemory::REG8BIT::B)},
+            {0x0A, std::make_shared<LoadValueFromAdressIn16BitRegto8BitReg>(8, IMemory::REG8BIT::A, IMemory::REG16BIT::BC, 0)},
             {0x0B, std::make_shared<addValueTo16BitRegister>(8, IMemory::REG16BIT::BC, -1)},
             {0x0C, std::make_shared<addValueTo8BitRegister>(4, IMemory::REG8BIT::C, 1)},//TODO FLAGS
             {0x0D, std::make_shared<addValueTo8BitRegister>(4, IMemory::REG8BIT::C, -1)},//TODO FLAGS
@@ -46,6 +48,8 @@ private:
             {0x13, std::make_shared<addValueTo16BitRegister>(8, IMemory::REG16BIT::DE, 1)},
             {0x14, std::make_shared<addValueTo8BitRegister>(4, IMemory::REG8BIT::D, 1)},//TODO FLAGS
             {0x15, std::make_shared<addValueTo8BitRegister>(4, IMemory::REG8BIT::D, -1)},//TODO FLAGS
+            {0x16, std::make_shared<Load8NextBitToRegister>(8, IMemory::REG8BIT::D)},
+            {0x1A, std::make_shared<LoadValueFromAdressIn16BitRegto8BitReg>(8, IMemory::REG8BIT::A, IMemory::REG16BIT::DE, 0)},
             {0x1B, std::make_shared<addValueTo16BitRegister>(8, IMemory::REG16BIT::DE, -1)},
             {0x1C, std::make_shared<addValueTo8BitRegister>(4, IMemory::REG8BIT::E, 1)},//TODO FLAGS
             {0x1D, std::make_shared<addValueTo8BitRegister>(4, IMemory::REG8BIT::E, -1)},//TODO FLAGS
@@ -54,6 +58,8 @@ private:
             {0x23, std::make_shared<addValueTo16BitRegister>(8, IMemory::REG16BIT::HL, 1)},
             {0x24, std::make_shared<addValueTo8BitRegister>(4, IMemory::REG8BIT::H, 1)},//TODO FLAGS
             {0x25, std::make_shared<addValueTo8BitRegister>(4, IMemory::REG8BIT::H, -1)},//TODO FLAGS
+            {0x26, std::make_shared<Load8NextBitToRegister>(8, IMemory::REG8BIT::H)},
+            {0x2A, std::make_shared<LoadValueFromAdressIn16BitRegto8BitReg>(8, IMemory::REG8BIT::A, IMemory::REG16BIT::HL, 1)},
             {0x2B, std::make_shared<addValueTo16BitRegister>(8, IMemory::REG16BIT::HL, -1)},
             {0x2C, std::make_shared<addValueTo8BitRegister>(4, IMemory::REG8BIT::L, 1)},//TODO FLAGS
             {0x2D, std::make_shared<addValueTo8BitRegister>(4, IMemory::REG8BIT::L, -1)},//TODO FLAGS
@@ -62,6 +68,7 @@ private:
             {0x33, std::make_shared<addValueTo16BitRegister>(8, IMemory::REG16BIT::SP, 1)},
             {0x34, std::make_shared<addValueAtAdressInReg>(12, IMemory::REG16BIT::HL, 1)},
             {0x35, std::make_shared<addValueAtAdressInReg>(12, IMemory::REG16BIT::HL, -1)},
+            {0x3A, std::make_shared<LoadValueFromAdressIn16BitRegto8BitReg>(8, IMemory::REG8BIT::A, IMemory::REG16BIT::HL, -1)},
             {0x3B, std::make_shared<addValueTo16BitRegister>(8, IMemory::REG16BIT::SP, -1)},
             {0x3C, std::make_shared<addValueTo8BitRegister>(4, IMemory::REG8BIT::A, 1)},//TODO FLAGS
             {0x3D, std::make_shared<addValueTo8BitRegister>(4, IMemory::REG8BIT::A, -1)},//TODO FLAGS
@@ -71,6 +78,7 @@ private:
             {0x43, std::make_shared<Load8BitRegValueTo8BitRegister>(4, IMemory::REG8BIT::B, IMemory::REG8BIT::E)},
             {0x44, std::make_shared<Load8BitRegValueTo8BitRegister>(4, IMemory::REG8BIT::B, IMemory::REG8BIT::H)},
             {0x45, std::make_shared<Load8BitRegValueTo8BitRegister>(4, IMemory::REG8BIT::B, IMemory::REG8BIT::L)},
+            {0x46, std::make_shared<LoadValueFromAdressIn16BitRegto8BitReg>(8, IMemory::REG8BIT::B, IMemory::REG16BIT::HL, 0)},
             {0x47, std::make_shared<Load8BitRegValueTo8BitRegister>(4, IMemory::REG8BIT::B, IMemory::REG8BIT::A)},
             {0x48, std::make_shared<Load8BitRegValueTo8BitRegister>(4, IMemory::REG8BIT::C, IMemory::REG8BIT::B)},
             {0x49, std::make_shared<Load8BitRegValueTo8BitRegister>(4, IMemory::REG8BIT::C, IMemory::REG8BIT::C)},
@@ -78,6 +86,7 @@ private:
             {0x4B, std::make_shared<Load8BitRegValueTo8BitRegister>(4, IMemory::REG8BIT::C, IMemory::REG8BIT::E)},
             {0x4C, std::make_shared<Load8BitRegValueTo8BitRegister>(4, IMemory::REG8BIT::C, IMemory::REG8BIT::H)},
             {0x4D, std::make_shared<Load8BitRegValueTo8BitRegister>(4, IMemory::REG8BIT::C, IMemory::REG8BIT::L)},
+            {0x4E, std::make_shared<LoadValueFromAdressIn16BitRegto8BitReg>(8, IMemory::REG8BIT::C, IMemory::REG16BIT::HL, 0)},
             {0x4F, std::make_shared<Load8BitRegValueTo8BitRegister>(4, IMemory::REG8BIT::C, IMemory::REG8BIT::A)},
             {0x50, std::make_shared<Load8BitRegValueTo8BitRegister>(4, IMemory::REG8BIT::D, IMemory::REG8BIT::B)},
             {0x51, std::make_shared<Load8BitRegValueTo8BitRegister>(4, IMemory::REG8BIT::D, IMemory::REG8BIT::C)},
@@ -85,6 +94,7 @@ private:
             {0x53, std::make_shared<Load8BitRegValueTo8BitRegister>(4, IMemory::REG8BIT::D, IMemory::REG8BIT::E)},
             {0x54, std::make_shared<Load8BitRegValueTo8BitRegister>(4, IMemory::REG8BIT::D, IMemory::REG8BIT::H)},
             {0x55, std::make_shared<Load8BitRegValueTo8BitRegister>(4, IMemory::REG8BIT::D, IMemory::REG8BIT::L)},
+            {0x56, std::make_shared<LoadValueFromAdressIn16BitRegto8BitReg>(8, IMemory::REG8BIT::D, IMemory::REG16BIT::HL, 0)},
             {0x57, std::make_shared<Load8BitRegValueTo8BitRegister>(4, IMemory::REG8BIT::D, IMemory::REG8BIT::A)},
             {0x58, std::make_shared<Load8BitRegValueTo8BitRegister>(4, IMemory::REG8BIT::E, IMemory::REG8BIT::B)},
             {0x59, std::make_shared<Load8BitRegValueTo8BitRegister>(4, IMemory::REG8BIT::E, IMemory::REG8BIT::C)},
@@ -92,6 +102,7 @@ private:
             {0x5B, std::make_shared<Load8BitRegValueTo8BitRegister>(4, IMemory::REG8BIT::E, IMemory::REG8BIT::E)},
             {0x5C, std::make_shared<Load8BitRegValueTo8BitRegister>(4, IMemory::REG8BIT::E, IMemory::REG8BIT::H)},
             {0x5D, std::make_shared<Load8BitRegValueTo8BitRegister>(4, IMemory::REG8BIT::E, IMemory::REG8BIT::L)},
+            {0x5E, std::make_shared<LoadValueFromAdressIn16BitRegto8BitReg>(8, IMemory::REG8BIT::E, IMemory::REG16BIT::HL, 0)},
             {0x5F, std::make_shared<Load8BitRegValueTo8BitRegister>(4, IMemory::REG8BIT::E, IMemory::REG8BIT::A)},
             {0x60, std::make_shared<Load8BitRegValueTo8BitRegister>(4, IMemory::REG8BIT::H, IMemory::REG8BIT::B)},
             {0x61, std::make_shared<Load8BitRegValueTo8BitRegister>(4, IMemory::REG8BIT::H, IMemory::REG8BIT::C)},
@@ -99,6 +110,7 @@ private:
             {0x63, std::make_shared<Load8BitRegValueTo8BitRegister>(4, IMemory::REG8BIT::H, IMemory::REG8BIT::E)},
             {0x64, std::make_shared<Load8BitRegValueTo8BitRegister>(4, IMemory::REG8BIT::H, IMemory::REG8BIT::H)},
             {0x65, std::make_shared<Load8BitRegValueTo8BitRegister>(4, IMemory::REG8BIT::H, IMemory::REG8BIT::L)},
+            {0x66, std::make_shared<LoadValueFromAdressIn16BitRegto8BitReg>(8, IMemory::REG8BIT::H, IMemory::REG16BIT::HL, 0)},
             {0x67, std::make_shared<Load8BitRegValueTo8BitRegister>(4, IMemory::REG8BIT::H, IMemory::REG8BIT::A)},
             {0x68, std::make_shared<Load8BitRegValueTo8BitRegister>(4, IMemory::REG8BIT::L, IMemory::REG8BIT::B)},
             {0x69, std::make_shared<Load8BitRegValueTo8BitRegister>(4, IMemory::REG8BIT::L, IMemory::REG8BIT::C)},
@@ -106,6 +118,7 @@ private:
             {0x6B, std::make_shared<Load8BitRegValueTo8BitRegister>(4, IMemory::REG8BIT::L, IMemory::REG8BIT::E)},
             {0x6C, std::make_shared<Load8BitRegValueTo8BitRegister>(4, IMemory::REG8BIT::L, IMemory::REG8BIT::H)},
             {0x6D, std::make_shared<Load8BitRegValueTo8BitRegister>(4, IMemory::REG8BIT::L, IMemory::REG8BIT::L)},
+            {0x6E, std::make_shared<LoadValueFromAdressIn16BitRegto8BitReg>(8, IMemory::REG8BIT::L, IMemory::REG16BIT::HL, 0)},
             {0x6F, std::make_shared<Load8BitRegValueTo8BitRegister>(4, IMemory::REG8BIT::L, IMemory::REG8BIT::A)},
             {0x78, std::make_shared<Load8BitRegValueTo8BitRegister>(4, IMemory::REG8BIT::A, IMemory::REG8BIT::B)},
             {0x79, std::make_shared<Load8BitRegValueTo8BitRegister>(4, IMemory::REG8BIT::A, IMemory::REG8BIT::C)},
@@ -113,6 +126,7 @@ private:
             {0x7B, std::make_shared<Load8BitRegValueTo8BitRegister>(4, IMemory::REG8BIT::A, IMemory::REG8BIT::E)},
             {0x7C, std::make_shared<Load8BitRegValueTo8BitRegister>(4, IMemory::REG8BIT::A, IMemory::REG8BIT::H)},
             {0x7D, std::make_shared<Load8BitRegValueTo8BitRegister>(4, IMemory::REG8BIT::A, IMemory::REG8BIT::L)},
+            {0x7E, std::make_shared<LoadValueFromAdressIn16BitRegto8BitReg>(8, IMemory::REG8BIT::A, IMemory::REG16BIT::HL, 0)},
             {0x7F, std::make_shared<Load8BitRegValueTo8BitRegister>(4, IMemory::REG8BIT::A, IMemory::REG8BIT::A)},
             {0x70, std::make_shared<Load8BitRegValueToAdressInReg>(8, IMemory::REG16BIT::HL, IMemory::REG8BIT::B, 0)},
             {0x71, std::make_shared<Load8BitRegValueToAdressInReg>(8, IMemory::REG16BIT::HL, IMemory::REG8BIT::C, 0)},

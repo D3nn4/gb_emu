@@ -35,7 +35,26 @@ public:
     IMemory::REG16BIT _register;
 };
 
-//OpCode increment 0x04 0x0C 0x14 0x1C 0x24 0x2C 0x3C
+//OpCode 0x06 0x16 0x26
+class Load8NextBitToRegister : public IInstructions
+{
+public:
+    Load8NextBitToRegister(int cycles, IMemory::REG8BIT reg)
+        :IInstructions(cycles),
+         _register(reg){};
+
+    void doInstruction(IMemory& memory) override {
+        uint16_t cursor = memory.get16BitRegister(IMemory::REG16BIT::PC);
+        IMemory::RomData const & rom = memory.getReadOnlyMemory();
+        uint16_t value = rom[cursor + 1];
+        memory.set8BitRegister(_register, value);
+        memory.set16BitRegister(IMemory::REG16BIT::PC, cursor + 2);
+    }
+
+    IMemory::REG8BIT _register;
+};
+
+//OpCode increment 0x04 0x05 0x0C 0x14 0x15 0x1C 0x1D 0x24 0x25 0x2C 0x2D 0x3C 0x3D
 class addValueTo8BitRegister : public IInstructions
 {
 public:
@@ -55,7 +74,7 @@ public:
     int _value;
 };
 
-//OpCode increment 0x03 0x13 0x23C 0x33
+//OpCode increment 0x03 0x0B 0x13 0x1B 0x23 0x2B 0x33 0x3B
 class addValueTo16BitRegister : public IInstructions
 {
 public:
@@ -75,7 +94,7 @@ public:
     int _value;
 };
 
-//OpCode increment 0x34
+//OpCode increment 0x34 0x35
 class addValueAtAdressInReg : public IInstructions
 {
 public:
@@ -96,6 +115,34 @@ public:
     IMemory::REG16BIT _reg16Bit;
     int _value;
 };
+
+//opCode 0x0A 0x1A 0x2A 0x3A 0x46 0x4E 0x56 ox5E 0x66 0x6E 0x7E
+class LoadValueFromAdressIn16BitRegto8BitReg : public IInstructions
+{
+public:
+    LoadValueFromAdressIn16BitRegto8BitReg(int cycles, IMemory::REG8BIT reg8Bit, IMemory::REG16BIT reg16Bit, int addTo16BitReg)
+        :IInstructions(cycles),
+         _16BitReg(reg16Bit),
+         _8BitReg(reg8Bit),
+         _addTo16BitReg(addTo16BitReg){};
+
+    void doInstruction(IMemory& memory) override {
+        uint16_t adress = memory.get16BitRegister(_16BitReg);
+        IMemory::RomData rom = memory.getReadOnlyMemory();
+        memory.set8BitRegister(_8BitReg, rom[adress]);
+        uint16_t cursor = memory.get16BitRegister(IMemory::REG16BIT::PC);
+        memory.set16BitRegister(IMemory::REG16BIT::PC, cursor + 1);
+        if (_addTo16BitReg != 0) {
+            adress += _addTo16BitReg;
+            memory.set16BitRegister(_16BitReg, adress);
+        }
+    }
+
+    IMemory::REG16BIT _16BitReg;
+    IMemory::REG8BIT _8BitReg;
+    int _addTo16BitReg;
+};
+
 //OpCode 0x02 0x12 0x22 0x32 0x70 0x71 0x72 0x73 0x74 0x75 0x77
 class Load8BitRegValueToAdressInReg : public IInstructions
 {
