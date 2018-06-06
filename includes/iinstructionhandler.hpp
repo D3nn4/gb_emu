@@ -7,6 +7,7 @@ class IInstructionHandler
 {
 public:
 
-    virtual bool boot() = 0;
+
+    virtual int doInstruction(uint8_t opCode) = 0;
 };
 #endif /*IINSTRUCTIONHANDLER*/

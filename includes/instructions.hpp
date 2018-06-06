@@ -1,41 +1,84 @@
 #ifndef _INSTRUCTIONS_
 #define _INSTRUCTIONS_
 
-#include <functional>
-#include <map>
-#include "imemory.hpp"
-#include "binaryinstructions.hpp"
-#include "instructiondata.hpp"
+#include "iinstructions.hpp"
 
+//OpCode 0x00
+class NOP : public IInstructions
+{
+public :
+    NOP(int cycles)
+        :IInstructions(cycles){};
 
-using namespace std::placeholders;
+    void doInstruction(IMemory& memory) override {
+        uint16_t cursor = memory.get16BitRegister(IMemory::REG16BIT::PC);
+        memory.set16BitRegister(IMemory::REG16BIT::PC, cursor + 1);
+    }
+};
 
-class Instructions
+//OpCode 0x01 0x11 0x21 0x31
+class Load16NextBitToRegister : public IInstructions
 {
 public:
+    Load16NextBitToRegister(int cycles, IMemory::REG16BIT reg)
+        :IInstructions(cycles),
+         _register(reg){};
 
-    int load16BitToHL(IMemory& memory);
-    int load16BitToSP(IMemory& memory);
-    int xorRegisterA(IMemory& memory);
-    int loadAToAdressInHLAndDecrement(IMemory& memory);
-    int doBinaryInstructions(IMemory& memory);
+    void doInstruction(IMemory& memory) override {
+        uint16_t cursor = memory.get16BitRegister(IMemory::REG16BIT::PC);
+        IMemory::RomData const & rom = memory.getReadOnlyMemory();
+        uint16_t value = ((uint16_t)rom[cursor + 2] << 8) | rom[cursor + 1];
+        memory.set16BitRegister(_register, value);
+        memory.set16BitRegister(IMemory::REG16BIT::PC, cursor + 3);
+    }
 
-    std::map<uint8_t, InstructionData> _instructions =
-        {
-            {0x21, {4, std::bind(&Instructions::load16BitToHL, this, _1)}},
-            {0x31, {4, std::bind(&Instructions::load16BitToSP, this, _1)}},
-            {0x32, {4, std::bind(&Instructions::loadAToAdressInHLAndDecrement, this, _1)}},
-            {0xAF, {4, std::bind(&Instructions::xorRegisterA, this, _1)}},
-            {0xCB, {4, std::bind(&Instructions::doBinaryInstructions, this, _1)}},
-        };
-
-private:
-
-    uint16_t combine8BitTo16Bit(uint8_t lhs, uint8_t rhs);
-    void load16NextBitToRegister(IMemory::REG16BIT reg, IMemory& memory);
-    void xor8BitRegister(IMemory::REG8BIT reg, IMemory& memory);
-    void load8BitInRegisterAtAdress(IMemory::REG8BIT reg, IMemory::REG16BIT adress, IMemory& memory);
-
-    BinaryInstructions _binaryInstructions;
+    IMemory::REG16BIT _register;
 };
-#endif /*IINSTRUCTIONS*/
+
+//OpCode 0x02 0x12 0x22 0x32 0x70 0x71 0x72 0x73 0x74 0x75 0x77
+class Load8BitRegValueToAdressInReg : public IInstructions
+{
+public:
+    Load8BitRegValueToAdressInReg(int cycles, IMemory::REG16BIT reg16Bit, IMemory::REG8BIT reg8Bit, int addTo16BitReg)
+        :IInstructions(cycles),
+         _16BitReg(reg16Bit),
+         _8BitReg(reg8Bit),
+         _addTo16BitReg(addTo16BitReg){};
+
+    void doInstruction(IMemory& memory) override {
+        uint8_t reg8BitValue = memory.get8BitRegister(_8BitReg);
+        uint16_t reg16BitValue = memory.get16BitRegister(_16BitReg);
+        memory.writeInROM(reg8BitValue, reg16BitValue);
+        uint16_t cursor = memory.get16BitRegister(IMemory::REG16BIT::PC);
+        memory.set16BitRegister(IMemory::REG16BIT::PC, cursor + 1);
+        if (_addTo16BitReg != 0) {
+            reg16BitValue += _addTo16BitReg;
+            memory.set16BitRegister(_16BitReg, reg16BitValue);
+        }
+    }
+
+    IMemory::REG16BIT _16BitReg;
+    IMemory::REG8BIT _8BitReg;
+    int _addTo16BitReg;
+};
+
+//opCode 0x40
+class Load8BitRegValueTo8BitRegister : public IInstructions
+{
+public:
+    Load8BitRegValueTo8BitRegister(int cycles, IMemory::REG8BIT toCopyTo, IMemory::REG8BIT toCopyFrom)
+        :IInstructions(cycles),
+         _toCopyTo(toCopyTo),
+         _toCopyFrom(toCopyFrom){};
+
+    void doInstruction(IMemory& memory) override {
+        uint8_t valueToCopy = memory.get8BitRegister(_toCopyFrom);
+        memory.set8BitRegister(_toCopyTo, valueToCopy);
+        uint8_t cursor = memory.get16BitRegister(IMemory::REG16BIT::PC);
+        memory.set16BitRegister(IMemory::REG16BIT::PC, cursor + 1);
+    }
+
+    IMemory::REG8BIT _toCopyTo;
+    IMemory::REG8BIT _toCopyFrom;
+};
+#endif /*INSTRUCTIONS*/
