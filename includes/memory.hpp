@@ -35,12 +35,14 @@ public:
     void set16BitRegister(REG16BIT reg,uint16_t value) override;
     uint8_t get8BitRegister(REG8BIT reg) override;
     uint16_t get16BitRegister(REG16BIT reg) override;
-    void setBitInRegister(int bit, REG8BIT reg) override;
-    void unsetBitInRegister(int bit, REG8BIT reg) override;
-    void setBitInRegister(int bit, REG16BIT reg) override;
-    void unsetBitInRegister(int bit, REG16BIT reg) override;
-    bool isSet(int bit, REG8BIT reg) override;
-    bool isSet(int bit, REG16BIT reg) override;
+    void setFlag(IMemory::FLAG flag) override;
+    void unsetFlag(IMemory::FLAG flag) override;
+    // void setBitInRegister(int bit, REG8BIT reg) override;
+    // void unsetBitInRegister(int bit, REG8BIT reg) override;
+    // void setBitInRegister(int bit, REG16BIT reg) override;
+    // void unsetBitInRegister(int bit, REG16BIT reg) override;
+    // bool isSet(int bit, REG8BIT reg) override;
+    // bool isSet(int bit, REG16BIT reg) override;
 
 private:
 

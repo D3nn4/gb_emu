@@ -399,6 +399,8 @@ public:
         memory.set8BitRegister(IMemory::REG8BIT::A,result);
         uint16_t cursor = memory.get16BitRegister(IMemory::REG16BIT::PC);
         memory.set16BitRegister(IMemory::REG16BIT::PC, cursor + 1);
+
+        // memory.unsetBitInRegister()
     }
     IMemory::REG8BIT _8BitReg;
 };

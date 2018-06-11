@@ -93,63 +93,76 @@ uint16_t Memory::get16BitRegister(REG16BIT reg)
     return *_16BitRegisters[reg];
 }
 
-void Memory::setBitInRegister(int bit, REG8BIT reg)
+void Memory::setFlag(IMemory::FLAG flag)
 {
-    if (bit > 7) {
-        throw MemoryException(__PRETTY_FUNCTION__);
-    }
-    uint8_t regValue = *_8BitRegisters[reg];
-    regValue = 1 << bit;
-    set8BitRegister(reg, regValue);
+    uint8_t regValue = *_8BitRegisters[IMemory::REG8BIT::F];
+    regValue = 1 << (int)flag;
+    set8BitRegister(IMemory::REG8BIT::F, regValue);
 }
 
-void Memory::unsetBitInRegister(int bit, REG8BIT reg)
+void Memory::unsetFlag(IMemory::FLAG flag)
 {
-    if (bit > 7) {
-        throw MemoryException(__PRETTY_FUNCTION__);
-    }
-    uint8_t regValue = *_8BitRegisters[reg];
-    regValue = 0 << bit;
-    set8BitRegister(reg, regValue);
+    uint8_t regValue = *_8BitRegisters[IMemory::REG8BIT::F];
+    regValue = 0 << (int)flag;
+    set8BitRegister(IMemory::REG8BIT::F, regValue);
 }
+// void Memory::setBitInRegister(int bit, REG8BIT reg)
+// {
+//     if (bit > 7) {
+//         throw MemoryException(__PRETTY_FUNCTION__);
+//     }
+//     uint8_t regValue = *_8BitRegisters[reg];
+//     regValue = 1 << bit;
+//     set8BitRegister(reg, regValue);
+// }
 
-void Memory::setBitInRegister(int bit, REG16BIT reg)
-{
-    if (bit > 15) {
-        throw MemoryException(__PRETTY_FUNCTION__);
-    }
-    uint16_t regValue = *_16BitRegisters[reg];
-    regValue = 1 << bit;
-    set16BitRegister(reg, regValue);
-}
+// void Memory::unsetBitInRegister(int bit, REG8BIT reg)
+// {
+//     if (bit > 7) {
+//         throw MemoryException(__PRETTY_FUNCTION__);
+//     }
+//     uint8_t regValue = *_8BitRegisters[reg];
+//     regValue = 0 << bit;
+//     set8BitRegister(reg, regValue);
+// }
 
-void Memory::unsetBitInRegister(int bit, REG16BIT reg)
-{
-    if (bit > 15) {
-        throw MemoryException(__PRETTY_FUNCTION__);
-    }
-    uint16_t regValue = *_16BitRegisters[reg];
-    regValue = 0 << bit;
-    set16BitRegister(reg, regValue);
-}
+// void Memory::setBitInRegister(int bit, REG16BIT reg)
+// {
+//     if (bit > 15) {
+//         throw MemoryException(__PRETTY_FUNCTION__);
+//     }
+//     uint16_t regValue = *_16BitRegisters[reg];
+//     regValue = 1 << bit;
+//     set16BitRegister(reg, regValue);
+// }
 
-bool Memory::isSet(int bit, REG8BIT reg)
-{
-    if (bit > 7) {
-        throw MemoryException(__PRETTY_FUNCTION__);
-    }
-    uint8_t regValue = *_8BitRegisters[reg];
-    std::bitset<8> bitset(regValue);
-    return bitset.test(bit);
-}
+// void Memory::unsetBitInRegister(int bit, REG16BIT reg)
+// {
+//     if (bit > 15) {
+//         throw MemoryException(__PRETTY_FUNCTION__);
+//     }
+//     uint16_t regValue = *_16BitRegisters[reg];
+//     regValue = 0 << bit;
+//     set16BitRegister(reg, regValue);
+// }
 
-bool Memory::isSet(int bit, REG16BIT reg)
-{
-    if (bit > 15) {
-        throw MemoryException(__PRETTY_FUNCTION__);
-    }
-    uint16_t regValue = *_16BitRegisters[reg];
-    std::bitset<16> bitset(regValue);
-    return bitset.test(bit);
+// bool Memory::isSet(int bit, REG8BIT reg)
+// {
+//     if (bit > 7) {
+//         throw MemoryException(__PRETTY_FUNCTION__);
+//     }
+//     uint8_t regValue = *_8BitRegisters[reg];
+//     std::bitset<8> bitset(regValue);
+//     return bitset.test(bit);
+// }
 
-}
+// bool Memory::isSet(int bit, REG16BIT reg)
+// {
+//     if (bit > 15) {
+//         throw MemoryException(__PRETTY_FUNCTION__);
+//     }
+//     uint16_t regValue = *_16BitRegisters[reg];
+//     std::bitset<16> bitset(regValue);
+//     return bitset.test(bit);
+
+// }
