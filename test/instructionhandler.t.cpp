@@ -9,6 +9,7 @@ using ::testing::_;
 using ::testing::Return;
 using ::testing::SetArgPointee;
 using ::testing::SetArrayArgument;
+using ::testing::InSequence;
 
 class MockMemory : public IMemory
 {
@@ -50,6 +51,9 @@ public:
     int addValueTo16BitRegister(uint16_t opCode, IMemory::REG16BIT reg, int value);
     int addValueAtAdressInReg(uint16_t opCode, IMemory::REG16BIT reg, int value);
     int loadValueFromAdressIn16BitRegto8BitReg(IMemory::RomData rom, IMemory::REG8BIT reg8Bit, IMemory::REG16BIT reg16Bit, int toAdd);
+    int xorAWith8BitReg(int opCode, IMemory::REG8BIT reg8Bit);
+    int orAWith8BitReg(int opCode, IMemory::REG8BIT reg8Bit);
+    int andAWith8BitReg(int opCode, IMemory::REG8BIT reg8Bit);
 
 };
 
@@ -190,6 +194,60 @@ int InstructionHandlerTest::loadValueFromAdressIn16BitRegto8BitReg(IMemory::RomD
     }
 
     return instructionHandler.doInstruction(rom[0]);
+}
+
+int InstructionHandlerTest::xorAWith8BitReg(int opCode, IMemory::REG8BIT reg8Bit)
+{
+    InstructionHandler instructionHandler(_memory);
+    {
+        InSequence s;
+        EXPECT_CALL(_memory, get8BitRegister(IMemory::REG8BIT::A))
+            .WillOnce(Return(0x10));
+        EXPECT_CALL(_memory, get8BitRegister(reg8Bit))
+            .WillOnce(Return(0x01));
+    }
+    EXPECT_CALL(_memory, set8BitRegister(IMemory::REG8BIT::A, 0x11));
+    EXPECT_CALL(_memory, get16BitRegister(IMemory::REG16BIT::PC))
+        .WillOnce(Return(0x0000));
+    EXPECT_CALL(_memory, set16BitRegister(IMemory::REG16BIT::PC, 0x0001));
+
+    return instructionHandler.doInstruction(opCode);
+}
+
+int InstructionHandlerTest::orAWith8BitReg(int opCode, IMemory::REG8BIT reg8Bit)
+{
+    InstructionHandler instructionHandler(_memory);
+    {
+        InSequence s;
+        EXPECT_CALL(_memory, get8BitRegister(IMemory::REG8BIT::A))
+            .WillOnce(Return(0x10));
+        EXPECT_CALL(_memory, get8BitRegister(reg8Bit))
+            .WillOnce(Return(0x11));
+    }
+    EXPECT_CALL(_memory, set8BitRegister(IMemory::REG8BIT::A, 0x11));
+    EXPECT_CALL(_memory, get16BitRegister(IMemory::REG16BIT::PC))
+        .WillOnce(Return(0x0000));
+    EXPECT_CALL(_memory, set16BitRegister(IMemory::REG16BIT::PC, 0x0001));
+
+    return instructionHandler.doInstruction(opCode);
+}
+
+int InstructionHandlerTest::andAWith8BitReg(int opCode, IMemory::REG8BIT reg8Bit)
+{
+    InstructionHandler instructionHandler(_memory);
+    {
+        InSequence s;
+        EXPECT_CALL(_memory, get8BitRegister(IMemory::REG8BIT::A))
+            .WillOnce(Return(0x10));
+        EXPECT_CALL(_memory, get8BitRegister(reg8Bit))
+            .WillOnce(Return(0x11));
+    }
+    EXPECT_CALL(_memory, set8BitRegister(IMemory::REG8BIT::A, 0x10));
+    EXPECT_CALL(_memory, get16BitRegister(IMemory::REG16BIT::PC))
+        .WillOnce(Return(0x0000));
+    EXPECT_CALL(_memory, set16BitRegister(IMemory::REG16BIT::PC, 0x0001));
+
+    return instructionHandler.doInstruction(opCode);
 }
 
 TEST_F (InstructionHandlerTest, instructionNop)
@@ -334,7 +392,6 @@ TEST_F (InstructionHandlerTest, loadValueFromAdressIn16BitRegto8BitRegInstructio
 
 TEST_F (InstructionHandlerTest, load8BitValueTo8BitRegInstructions)
 {
-    
 auto testLD = [this](uint8_t opCode, IMemory::REG8BIT toCopyTo, IMemory::REG8BIT toCopyFrom)
               {
                   EXPECT_EQ(4, load8BitRegValueTo8BitReg(opCode,toCopyTo, toCopyFrom));
@@ -500,4 +557,220 @@ TEST_F(InstructionHandlerTest, loadValueAtAdressIn8BitRegTo8BitReg)
     EXPECT_CALL(_memory, set16BitRegister(IMemory::REG16BIT::PC, 0x0001));
 
     EXPECT_EQ(8, instructionHandler.doInstruction(0xF2));
+}
+
+TEST_F(InstructionHandlerTest, loadHLToSP)
+{
+    InstructionHandler instructionHandler(_memory);
+
+    EXPECT_CALL(_memory, get16BitRegister(IMemory::REG16BIT::HL))
+        .WillOnce(Return(0x00ff));
+    EXPECT_CALL(_memory, set16BitRegister(IMemory::REG16BIT::SP, 0x00ff));
+    EXPECT_CALL(_memory, get16BitRegister(IMemory::REG16BIT::PC))
+        .WillOnce(Return(0x0000));
+    EXPECT_CALL(_memory, set16BitRegister(IMemory::REG16BIT::PC, 0x0001));
+
+    EXPECT_EQ(8, instructionHandler.doInstruction(0xF9));
+}
+
+TEST_F(InstructionHandlerTest, loadAToAdressAtNext16Bit)
+{
+    InstructionHandler instructionHandler(_memory);
+
+    IMemory::RomData rom;
+    rom.fill(0xfe);
+
+    EXPECT_CALL(_memory, get8BitRegister(IMemory::REG8BIT::A))
+        .WillOnce(Return(0xff));
+    EXPECT_CALL(_memory, getReadOnlyMemory())
+        .WillOnce(Return(rom));
+    EXPECT_CALL(_memory, get16BitRegister(IMemory::REG16BIT::PC))
+        .WillOnce(Return(0x0000));
+    EXPECT_CALL(_memory, writeInROM(0xff, 0xfefe))
+        .WillOnce(Return(true));
+    EXPECT_CALL(_memory, set16BitRegister(IMemory::REG16BIT::PC, 0x0003));
+
+    EXPECT_EQ(16, instructionHandler.doInstruction(0xEA));
+}
+
+TEST_F(InstructionHandlerTest, loadFromAdressAtNext16BitToA)
+{
+    InstructionHandler instructionHandler(_memory);
+
+    IMemory::RomData rom;
+    rom.fill(0xfe);
+
+    EXPECT_CALL(_memory, get16BitRegister(IMemory::REG16BIT::PC))
+        .WillOnce(Return(0x0000));
+    EXPECT_CALL(_memory, getReadOnlyMemory())
+        .WillOnce(Return(rom));
+    EXPECT_CALL(_memory, set8BitRegister(IMemory::REG8BIT::A, 0xfe));
+    EXPECT_CALL(_memory, set16BitRegister(IMemory::REG16BIT::PC, 0x0003));
+
+    EXPECT_EQ(16, instructionHandler.doInstruction(0xFA));
+}
+
+TEST_F(InstructionHandlerTest, xorAWith8BitRegInstructions)
+{
+    auto testXOR = [this](uint8_t opCode, IMemory::REG8BIT reg8Bit)
+                  {
+                      EXPECT_EQ(4, xorAWith8BitReg(opCode,reg8Bit));
+                  };
+    testXOR(0xA8, IMemory::REG8BIT::B);
+    testXOR(0xA9, IMemory::REG8BIT::C);
+    testXOR(0xAA, IMemory::REG8BIT::D);
+    testXOR(0xAB, IMemory::REG8BIT::E);
+    testXOR(0xAC, IMemory::REG8BIT::H);
+    testXOR(0xAD, IMemory::REG8BIT::L);
+    testXOR(0xAF, IMemory::REG8BIT::A);
+}
+
+TEST_F(InstructionHandlerTest, orAWith8BitRegInstructions)
+{
+    auto testOR = [this](uint8_t opCode, IMemory::REG8BIT reg8Bit)
+                   {
+                       EXPECT_EQ(4, orAWith8BitReg(opCode,reg8Bit));
+                   };
+    testOR(0xB0, IMemory::REG8BIT::B);
+    testOR(0xB1, IMemory::REG8BIT::C);
+    testOR(0xB2, IMemory::REG8BIT::D);
+    testOR(0xB3, IMemory::REG8BIT::E);
+    testOR(0xB4, IMemory::REG8BIT::H);
+    testOR(0xB5, IMemory::REG8BIT::L);
+    testOR(0xB7, IMemory::REG8BIT::A);
+}
+
+TEST_F(InstructionHandlerTest, andAWith8BitRegInstructions)
+{
+    auto testAND = [this](uint8_t opCode, IMemory::REG8BIT reg8Bit)
+                  {
+                      EXPECT_EQ(4, andAWith8BitReg(opCode,reg8Bit));
+                  };
+    testAND(0xA0, IMemory::REG8BIT::B);
+    testAND(0xA1, IMemory::REG8BIT::C);
+    testAND(0xA2, IMemory::REG8BIT::D);
+    testAND(0xA3, IMemory::REG8BIT::E);
+    testAND(0xA4, IMemory::REG8BIT::H);
+    testAND(0xA5, IMemory::REG8BIT::L);
+    testAND(0xA7, IMemory::REG8BIT::A);
+}
+
+TEST_F(InstructionHandlerTest, xorAWith8BitAtAdressInHL)
+{
+    InstructionHandler instructionHandler(_memory);
+
+    IMemory::RomData rom;
+    rom.fill(0x01);
+
+    EXPECT_CALL(_memory, get8BitRegister(IMemory::REG8BIT::A))
+        .WillOnce(Return(0x10));
+    EXPECT_CALL(_memory, get16BitRegister(IMemory::REG16BIT::HL))
+        .WillOnce(Return(0x00ff));
+    EXPECT_CALL(_memory, getReadOnlyMemory())
+        .WillOnce(Return(rom));
+    EXPECT_CALL(_memory, set8BitRegister(IMemory::REG8BIT::A, 0x11));
+    EXPECT_CALL(_memory, get16BitRegister(IMemory::REG16BIT::PC))
+        .WillOnce(Return(0x0000));
+    EXPECT_CALL(_memory, set16BitRegister(IMemory::REG16BIT::PC, 0x0001));
+
+    EXPECT_EQ(8, instructionHandler.doInstruction(0xAE));
+}
+
+TEST_F(InstructionHandlerTest, orAWith8BitAtAdressInHL)
+{
+    InstructionHandler instructionHandler(_memory);
+
+    IMemory::RomData rom;
+    rom.fill(0x10);
+
+    EXPECT_CALL(_memory, get8BitRegister(IMemory::REG8BIT::A))
+        .WillOnce(Return(0x11));
+    EXPECT_CALL(_memory, get16BitRegister(IMemory::REG16BIT::HL))
+        .WillOnce(Return(0x00ff));
+    EXPECT_CALL(_memory, getReadOnlyMemory())
+        .WillOnce(Return(rom));
+    EXPECT_CALL(_memory, set8BitRegister(IMemory::REG8BIT::A, 0x11));
+    EXPECT_CALL(_memory, get16BitRegister(IMemory::REG16BIT::PC))
+        .WillOnce(Return(0x0000));
+    EXPECT_CALL(_memory, set16BitRegister(IMemory::REG16BIT::PC, 0x0001));
+
+    EXPECT_EQ(8, instructionHandler.doInstruction(0xB6));
+}
+
+TEST_F(InstructionHandlerTest, andAWith8BitAtAdressInHL)
+{
+    InstructionHandler instructionHandler(_memory);
+
+    IMemory::RomData rom;
+    rom.fill(0x10);
+
+    EXPECT_CALL(_memory, get8BitRegister(IMemory::REG8BIT::A))
+        .WillOnce(Return(0x11));
+    EXPECT_CALL(_memory, get16BitRegister(IMemory::REG16BIT::HL))
+        .WillOnce(Return(0x00ff));
+    EXPECT_CALL(_memory, getReadOnlyMemory())
+        .WillOnce(Return(rom));
+    EXPECT_CALL(_memory, set8BitRegister(IMemory::REG8BIT::A, 0x10));
+    EXPECT_CALL(_memory, get16BitRegister(IMemory::REG16BIT::PC))
+        .WillOnce(Return(0x0000));
+    EXPECT_CALL(_memory, set16BitRegister(IMemory::REG16BIT::PC, 0x0001));
+
+    EXPECT_EQ(8, instructionHandler.doInstruction(0xA6));
+}
+
+TEST_F(InstructionHandlerTest, xorAWithNext8Bit)
+{
+    InstructionHandler instructionHandler(_memory);
+
+    IMemory::RomData rom;
+    rom.fill(0x01);
+
+    EXPECT_CALL(_memory, get8BitRegister(IMemory::REG8BIT::A))
+        .WillOnce(Return(0x10));
+    EXPECT_CALL(_memory, get16BitRegister(IMemory::REG16BIT::PC))
+        .WillOnce(Return(0x0000));
+    EXPECT_CALL(_memory, getReadOnlyMemory())
+        .WillOnce(Return(rom));
+    EXPECT_CALL(_memory, set8BitRegister(IMemory::REG8BIT::A, 0x11));
+    EXPECT_CALL(_memory, set16BitRegister(IMemory::REG16BIT::PC, 0x0002));
+
+    EXPECT_EQ(8, instructionHandler.doInstruction(0xEE));
+}
+
+TEST_F(InstructionHandlerTest, orAWithNext8Bit)
+{
+    InstructionHandler instructionHandler(_memory);
+
+    IMemory::RomData rom;
+    rom.fill(0x01);
+
+    EXPECT_CALL(_memory, get8BitRegister(IMemory::REG8BIT::A))
+        .WillOnce(Return(0x10));
+    EXPECT_CALL(_memory, get16BitRegister(IMemory::REG16BIT::PC))
+        .WillOnce(Return(0x0000));
+    EXPECT_CALL(_memory, getReadOnlyMemory())
+        .WillOnce(Return(rom));
+    EXPECT_CALL(_memory, set8BitRegister(IMemory::REG8BIT::A, 0x11));
+    EXPECT_CALL(_memory, set16BitRegister(IMemory::REG16BIT::PC, 0x0002));
+
+    EXPECT_EQ(8, instructionHandler.doInstruction(0xF6));
+}
+
+TEST_F(InstructionHandlerTest, andAWithNext8Bit)
+{
+    InstructionHandler instructionHandler(_memory);
+
+    IMemory::RomData rom;
+    rom.fill(0x01);
+
+    EXPECT_CALL(_memory, get8BitRegister(IMemory::REG8BIT::A))
+        .WillOnce(Return(0x10));
+    EXPECT_CALL(_memory, get16BitRegister(IMemory::REG16BIT::PC))
+        .WillOnce(Return(0x0000));
+    EXPECT_CALL(_memory, getReadOnlyMemory())
+        .WillOnce(Return(rom));
+    EXPECT_CALL(_memory, set8BitRegister(IMemory::REG8BIT::A, 0x00));
+    EXPECT_CALL(_memory, set16BitRegister(IMemory::REG16BIT::PC, 0x0002));
+
+    EXPECT_EQ(8, instructionHandler.doInstruction(0xE6));
 }
