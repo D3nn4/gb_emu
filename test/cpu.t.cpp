@@ -28,6 +28,7 @@ public:
     MOCK_METHOD0(getReadOnlyMemory, RomData const());
     MOCK_METHOD1(setCartridge, bool(CartridgeData const &));
     MOCK_METHOD2(writeInROM, bool(uint8_t, uint16_t));
+    MOCK_METHOD1(readInMemory, uint8_t(uint16_t));
     MOCK_METHOD2(set8BitRegister, void(IMemory::REG8BIT, uint8_t));
     MOCK_METHOD2(set16BitRegister, void(IMemory::REG16BIT, uint16_t));
     MOCK_METHOD1(get8BitRegister, uint8_t(IMemory::REG8BIT));

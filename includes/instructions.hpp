@@ -9,38 +9,6 @@
 //ARR == Adress in 16BitReg    ANN == Adress in next16Bit
 //AR  == Adress in 0xff00 + R       AN == Adress in 0xff00 + N
 
-//OpCode 0x00
-class NOP : public IInstructions
-{
-public :
-    NOP(int cycles)
-        :IInstructions(cycles){};
-
-    void doInstruction(IMemory& memory) override {
-        uint16_t cursor = memory.get16BitRegister(IMemory::REG16BIT::PC);
-        memory.set16BitRegister(IMemory::REG16BIT::PC, cursor + 1);
-    }
-};
-
-//OpCode 0x01 0x11 0x21 0x31
-class LD_RR_NN : public IInstructions
-{
-public:
-    LD_RR_NN(int cycles, IMemory::REG16BIT reg)
-        :IInstructions(cycles),
-         _register(reg){};
-
-    void doInstruction(IMemory& memory) override {
-        uint16_t cursor = memory.get16BitRegister(IMemory::REG16BIT::PC);
-        IMemory::RomData const & rom = memory.getReadOnlyMemory();
-        uint16_t value = ((uint16_t)rom[cursor + 2] << 8) | rom[cursor + 1];
-        memory.set16BitRegister(_register, value);
-        memory.set16BitRegister(IMemory::REG16BIT::PC, cursor + 3);
-    }
-
-    IMemory::REG16BIT _register;
-};
-
 //OpCode 0x06 0x0E 0x16 0x1E 0x26 0x2E 0x3E
 class LD_R_N : public IInstructions
 {
@@ -51,75 +19,12 @@ public:
 
     void doInstruction(IMemory& memory) override {
         uint16_t cursor = memory.get16BitRegister(IMemory::REG16BIT::PC);
-        IMemory::RomData const & rom = memory.getReadOnlyMemory();
-        uint16_t value = rom[cursor + 1];
-        memory.set8BitRegister(_register, value);
+        uint16_t valueToLoad = memory.readInMemory(cursor + 1);
+        memory.set8BitRegister(_register, valueToLoad);
         memory.set16BitRegister(IMemory::REG16BIT::PC, cursor + 2);
     }
 
     IMemory::REG8BIT _register;
-};
-
-//OpCode increment 0x04 0x05 0x0C 0x14 0x15 0x1C 0x1D 0x24 0x25 0x2C 0x2D 0x3C 0x3D
-class INC_DEC_R : public IInstructions
-{
-public:
-    INC_DEC_R(int cycles, IMemory::REG8BIT reg8Bit, int value)
-        :IInstructions(cycles),
-         _reg8Bit(reg8Bit),
-         _value(value){};
-
-    void doInstruction(IMemory& memory) override {
-        uint8_t regValue = memory.get8BitRegister(_reg8Bit);
-        memory.set8BitRegister(_reg8Bit, regValue + _value);
-        uint16_t cursor = memory.get16BitRegister(IMemory::REG16BIT::PC);
-        memory.set16BitRegister(IMemory::REG16BIT::PC, cursor + 1);
-    }
-
-    IMemory::REG8BIT _reg8Bit;
-    int _value;
-};
-
-//OpCode inc/dec 0x03 0x0B 0x13 0x1B 0x23 0x2B 0x33 0x3B
-class INC_DEC_RR : public IInstructions
-{
-public:
-    INC_DEC_RR(int cycles, IMemory::REG16BIT reg16Bit, int value)
-        :IInstructions(cycles),
-         _reg16Bit(reg16Bit),
-         _value(value){};
-
-    void doInstruction(IMemory& memory) override {
-        uint16_t regValue = memory.get16BitRegister(_reg16Bit);
-        memory.set16BitRegister(_reg16Bit, regValue + _value);
-        uint16_t cursor = memory.get16BitRegister(IMemory::REG16BIT::PC);
-        memory.set16BitRegister(IMemory::REG16BIT::PC, cursor + 1);
-    }
-
-    IMemory::REG16BIT _reg16Bit;
-    int _value;
-};
-
-//OpCode inc/dec 0x34 0x35
-class INC_DEC_ARR : public IInstructions
-{
-public:
-   INC_DEC_ARR(int cycles, IMemory::REG16BIT reg16Bit, int value)
-        :IInstructions(cycles),
-         _reg16Bit(reg16Bit),
-         _value(value){};
-
-    void doInstruction(IMemory& memory) override {
-        uint16_t adress = memory.get16BitRegister(_reg16Bit);
-        IMemory::RomData const rom = memory.getReadOnlyMemory();
-        uint8_t valueToIncrement = rom[adress] + _value;
-        memory.writeInROM(valueToIncrement, adress);
-        uint16_t cursor = memory.get16BitRegister(IMemory::REG16BIT::PC);
-        memory.set16BitRegister(IMemory::REG16BIT::PC, cursor + 1);
-    }
-
-    IMemory::REG16BIT _reg16Bit;
-    int _value;
 };
 
 //opCode 0x0A 0x1A 0x2A 0x3A 0x46 0x4E 0x56 ox5E 0x66 0x6E 0x7E
@@ -134,8 +39,8 @@ public:
 
     void doInstruction(IMemory& memory) override {
         uint16_t adress = memory.get16BitRegister(_16BitReg);
-        IMemory::RomData rom = memory.getReadOnlyMemory();
-        memory.set8BitRegister(_8BitReg, rom[adress]);
+        uint8_t valueToLoad = memory.readInMemory(adress);
+        memory.set8BitRegister(_8BitReg, valueToLoad);
         uint16_t cursor = memory.get16BitRegister(IMemory::REG16BIT::PC);
         memory.set16BitRegister(IMemory::REG16BIT::PC, cursor + 1);
         if (_addTo16BitReg != 0) {
@@ -207,8 +112,7 @@ public:
     void doInstruction(IMemory& memory) override {
         uint16_t cursor = memory.get16BitRegister(IMemory::REG16BIT::PC);
         uint16_t adress = memory.get16BitRegister(_16BitReg);
-        IMemory::RomData rom = memory.getReadOnlyMemory();
-        uint8_t valueToLoad = rom[cursor + 1];
+        uint8_t valueToLoad = memory.readInMemory(cursor + 1);
         memory.writeInROM(valueToLoad, adress);
         memory.set16BitRegister(IMemory::REG16BIT::PC, cursor + 2);
     }
@@ -217,17 +121,18 @@ public:
 };
 
 //OpCode 0x08
-class LD_NN_RR : public IInstructions
+class LD_ANN_RR : public IInstructions
 {
 public:
-    LD_NN_RR (int cycles, IMemory::REG16BIT reg16Bit)
+    LD_ANN_RR (int cycles, IMemory::REG16BIT reg16Bit)
         :IInstructions(cycles),
          _16BitReg(reg16Bit){};
 
     void doInstruction(IMemory& memory) override {
         uint16_t cursor = memory.get16BitRegister(IMemory::REG16BIT::PC);
-        IMemory::RomData rom = memory.getReadOnlyMemory();
-        uint16_t adress = ((uint16_t)rom[cursor + 2] << 8) | rom[cursor + 1];
+        uint8_t MS = memory.readInMemory(cursor + 2);
+        uint8_t LS = memory.readInMemory(cursor + 1);
+        uint16_t adress = ((uint16_t) MS << 8) | LS;
         uint16_t reg16BitValue = memory.get16BitRegister(_16BitReg);
 
         uint8_t mostSignificantBit = (uint8_t)(reg16BitValue >> 8) & 0xff;
@@ -238,6 +143,66 @@ public:
     }
 
     IMemory::REG16BIT _16BitReg;
+};
+
+//OpCode 0x
+class LD_RR_RR : public IInstructions
+{
+public:
+    LD_RR_RR (int cycles, IMemory::REG16BIT reg16Bit, IMemory::REG16BIT reg16BitToCopy)
+        :IInstructions(cycles),
+         _16BitReg(reg16Bit),
+         _16BitRegToCopy(reg16BitToCopy){};
+
+    void doInstruction(IMemory& memory) override {
+        uint16_t valueToLoad = memory.get16BitRegister(IMemory::REG16BIT::HL);
+        memory.set16BitRegister(_16BitReg, valueToLoad);
+        uint16_t cursor = memory.get16BitRegister(IMemory::REG16BIT::PC);
+        memory.set16BitRegister(IMemory::REG16BIT::PC, cursor + 1);
+    }
+
+    IMemory::REG16BIT _16BitReg;
+    IMemory::REG16BIT _16BitRegToCopy;
+};
+
+//OpCode 0xEA
+class LD_ANN_R : public IInstructions
+{
+public:
+    LD_ANN_R (int cycles, IMemory::REG8BIT reg8Bit)
+        :IInstructions(cycles),
+         _8BitReg(reg8Bit){};
+
+    void doInstruction(IMemory& memory) override {
+        uint8_t reg8BitValue = memory.get8BitRegister(_8BitReg);
+        uint16_t cursor = memory.get16BitRegister(IMemory::REG16BIT::PC);
+        uint8_t MS = memory.readInMemory(cursor + 2);
+        uint8_t LS = memory.readInMemory(cursor + 1);
+        uint16_t adress = ((uint16_t) MS << 8) | LS;
+        memory.writeInROM(reg8BitValue, adress);
+        memory.set16BitRegister(IMemory::REG16BIT::PC, cursor + 3);
+    }
+    IMemory::REG8BIT _8BitReg;
+};
+
+//OpCode 0xFA
+class LD_R_ANN : public IInstructions
+{
+public:
+    LD_R_ANN (int cycles, IMemory::REG8BIT reg8Bit)
+        :IInstructions(cycles),
+         _8BitReg(reg8Bit){};
+
+    void doInstruction(IMemory& memory) override {
+        uint16_t cursor = memory.get16BitRegister(IMemory::REG16BIT::PC);
+        uint8_t MS = memory.readInMemory(cursor + 2);
+        uint8_t LS = memory.readInMemory(cursor + 1);
+        uint16_t adress = ((uint16_t) MS << 8) | LS;
+        uint8_t value = memory.readInMemory(adress);
+        memory.set8BitRegister(_8BitReg, value);
+        memory.set16BitRegister(IMemory::REG16BIT::PC, cursor + 3);
+    }
+    IMemory::REG8BIT _8BitReg;
 };
 
 //OpCode 0xE0
@@ -251,8 +216,7 @@ public:
     void doInstruction(IMemory& memory) override {
         uint16_t cursor = memory.get16BitRegister(IMemory::REG16BIT::PC);
         uint8_t valueToLoad = memory.get8BitRegister(_8BitReg);
-        IMemory::RomData rom = memory.getReadOnlyMemory();
-        uint16_t adress = 0xff00 + rom[cursor + 1];
+        uint16_t adress = 0xff00 + memory.readInMemory(cursor + 1);
         memory.writeInROM(valueToLoad, adress);
         memory.set16BitRegister(IMemory::REG16BIT::PC, cursor + 2);
     }
@@ -270,9 +234,8 @@ public:
 
     void doInstruction(IMemory& memory) override {
         uint16_t cursor = memory.get16BitRegister(IMemory::REG16BIT::PC);
-        IMemory::RomData rom = memory.getReadOnlyMemory();
-        uint16_t adress = 0xff00 + rom[cursor + 1];
-        uint8_t valueToLoad = rom[adress];
+        uint16_t adress = 0xff00 + memory.readInMemory(cursor + 1);
+        uint8_t valueToLoad = memory.readInMemory(adress);
         memory.set8BitRegister(_8BitReg, valueToLoad);
         memory.set16BitRegister(IMemory::REG16BIT::PC, cursor + 2);
     }
@@ -313,9 +276,8 @@ public:
 
     void doInstruction(IMemory& memory) override {
         uint8_t valueForAdress = memory.get8BitRegister(_8BitReg);
-        IMemory::RomData rom = memory.getReadOnlyMemory();
-        uint16_t adress = 0xff00 + rom[valueForAdress];
-        uint8_t valueToLoad = rom[adress];
+        uint16_t adress = 0xff00 + valueForAdress;
+        uint8_t valueToLoad = memory.readInMemory(adress);
         memory.set8BitRegister(_8BitRegToLoad, valueToLoad);
         uint16_t cursor = memory.get16BitRegister(IMemory::REG16BIT::PC);
         memory.set16BitRegister(IMemory::REG16BIT::PC, cursor + 1);
@@ -325,63 +287,100 @@ public:
     IMemory::REG8BIT _8BitReg;
 };
 
-
-//OpCode 0xF2
-class LD_RR_RR : public IInstructions
+////////////////////////////////////
+//OpCode 0x00
+class NOP : public IInstructions
 {
-public:
-    LD_RR_RR (int cycles, IMemory::REG16BIT reg16Bit, IMemory::REG16BIT reg16BitToCopy)
-        :IInstructions(cycles),
-         _16BitReg(reg16Bit),
-         _16BitRegToCopy(reg16BitToCopy){};
+public :
+    NOP(int cycles)
+        :IInstructions(cycles){};
 
     void doInstruction(IMemory& memory) override {
-        uint16_t valueToLoad = memory.get16BitRegister(IMemory::REG16BIT::HL);
-        memory.set16BitRegister(_16BitReg, valueToLoad);
+        uint16_t cursor = memory.get16BitRegister(IMemory::REG16BIT::PC);
+        memory.set16BitRegister(IMemory::REG16BIT::PC, cursor + 1);
+    }
+};
+
+//OpCode 0x01 0x11 0x21 0x31
+class LD_RR_NN : public IInstructions
+{
+public:
+    LD_RR_NN(int cycles, IMemory::REG16BIT reg)
+        :IInstructions(cycles),
+         _register(reg){};
+
+    void doInstruction(IMemory& memory) override {
+        uint16_t cursor = memory.get16BitRegister(IMemory::REG16BIT::PC);
+        uint8_t MS = memory.readInMemory(cursor + 2);
+        uint8_t LS = memory.readInMemory(cursor + 1);
+        uint16_t valueToLoad = ((uint16_t) MS << 8) | LS;
+        memory.set16BitRegister(_register, valueToLoad);
+        memory.set16BitRegister(IMemory::REG16BIT::PC, cursor + 3);
+    }
+
+    IMemory::REG16BIT _register;
+};
+
+
+//OpCode increment 0x04 0x05 0x0C 0x14 0x15 0x1C 0x1D 0x24 0x25 0x2C 0x2D 0x3C 0x3D
+class INC_DEC_R : public IInstructions
+{
+public:
+    INC_DEC_R(int cycles, IMemory::REG8BIT reg8Bit, int value)
+        :IInstructions(cycles),
+         _reg8Bit(reg8Bit),
+         _value(value){};
+
+    void doInstruction(IMemory& memory) override {
+        uint8_t regValue = memory.get8BitRegister(_reg8Bit);
+        memory.set8BitRegister(_reg8Bit, regValue + _value);
         uint16_t cursor = memory.get16BitRegister(IMemory::REG16BIT::PC);
         memory.set16BitRegister(IMemory::REG16BIT::PC, cursor + 1);
     }
 
-    IMemory::REG16BIT _16BitReg;
-    IMemory::REG16BIT _16BitRegToCopy;
+    IMemory::REG8BIT _reg8Bit;
+    int _value;
 };
 
-//OpCode 0xEA
-class LD_ANN_R : public IInstructions
+//OpCode inc/dec 0x03 0x0B 0x13 0x1B 0x23 0x2B 0x33 0x3B
+class INC_DEC_RR : public IInstructions
 {
 public:
-    LD_ANN_R (int cycles, IMemory::REG8BIT reg8Bit)
+    INC_DEC_RR(int cycles, IMemory::REG16BIT reg16Bit, int value)
         :IInstructions(cycles),
-         _8BitReg(reg8Bit){};
+         _reg16Bit(reg16Bit),
+         _value(value){};
 
     void doInstruction(IMemory& memory) override {
-        uint8_t reg8BitValue = memory.get8BitRegister(_8BitReg);
+        uint16_t regValue = memory.get16BitRegister(_reg16Bit);
+        memory.set16BitRegister(_reg16Bit, regValue + _value);
         uint16_t cursor = memory.get16BitRegister(IMemory::REG16BIT::PC);
-        IMemory::RomData rom = memory.getReadOnlyMemory();
-        uint16_t adress = ((uint16_t)rom[cursor + 2] << 8) | rom[cursor + 1];
-        memory.writeInROM(reg8BitValue, adress);
-        memory.set16BitRegister(IMemory::REG16BIT::PC, cursor + 3);
+        memory.set16BitRegister(IMemory::REG16BIT::PC, cursor + 1);
     }
-    IMemory::REG8BIT _8BitReg;
+
+    IMemory::REG16BIT _reg16Bit;
+    int _value;
 };
 
-//OpCode 0xFA
-class LD_R_ANN : public IInstructions
+//OpCode inc/dec 0x34 0x35
+class INC_DEC_ARR : public IInstructions
 {
 public:
-    LD_R_ANN (int cycles, IMemory::REG8BIT reg8Bit)
+   INC_DEC_ARR(int cycles, IMemory::REG16BIT reg16Bit, int value)
         :IInstructions(cycles),
-         _8BitReg(reg8Bit){};
+         _reg16Bit(reg16Bit),
+         _value(value){};
 
     void doInstruction(IMemory& memory) override {
+        uint16_t adress = memory.get16BitRegister(_reg16Bit);
+        uint8_t valueToIncrement = memory.readInMemory(adress) + _value;
+        memory.writeInROM(valueToIncrement, adress);
         uint16_t cursor = memory.get16BitRegister(IMemory::REG16BIT::PC);
-        IMemory::RomData rom = memory.getReadOnlyMemory();
-        uint16_t adress = ((uint16_t)rom[cursor + 2] << 8) | rom[cursor + 1];
-        uint8_t value = rom[adress];
-        memory.set8BitRegister(_8BitReg, value);
-        memory.set16BitRegister(IMemory::REG16BIT::PC, cursor + 3);
+        memory.set16BitRegister(IMemory::REG16BIT::PC, cursor + 1);
     }
-    IMemory::REG8BIT _8BitReg;
+
+    IMemory::REG16BIT _reg16Bit;
+    int _value;
 };
 
 //OpCode 0xA8 0xA9 0xAA 0xAB 0xAC 0xAD 0xAF
@@ -400,7 +399,15 @@ public:
         uint16_t cursor = memory.get16BitRegister(IMemory::REG16BIT::PC);
         memory.set16BitRegister(IMemory::REG16BIT::PC, cursor + 1);
 
-        // memory.unsetBitInRegister()
+        if (result == 0x00) {
+            memory.setFlag(IMemory::FLAG::Z);
+        }
+        else {
+            memory.unsetFlag(IMemory::FLAG::Z);
+        }
+        memory.unsetFlag(IMemory::FLAG::N);
+        memory.unsetFlag(IMemory::FLAG::H);
+        memory.unsetFlag(IMemory::FLAG::C);
     }
     IMemory::REG8BIT _8BitReg;
 };
@@ -420,6 +427,16 @@ public:
         memory.set8BitRegister(IMemory::REG8BIT::A,result);
         uint16_t cursor = memory.get16BitRegister(IMemory::REG16BIT::PC);
         memory.set16BitRegister(IMemory::REG16BIT::PC, cursor + 1);
+
+        if (result == 0x00) {
+            memory.setFlag(IMemory::FLAG::Z);
+        }
+        else {
+            memory.unsetFlag(IMemory::FLAG::Z);
+        }
+        memory.unsetFlag(IMemory::FLAG::N);
+        memory.unsetFlag(IMemory::FLAG::H);
+        memory.unsetFlag(IMemory::FLAG::C);
     }
     IMemory::REG8BIT _8BitReg;
 };
@@ -439,6 +456,16 @@ public:
         memory.set8BitRegister(IMemory::REG8BIT::A,result);
         uint16_t cursor = memory.get16BitRegister(IMemory::REG16BIT::PC);
         memory.set16BitRegister(IMemory::REG16BIT::PC, cursor + 1);
+
+        if (result == 0x00) {
+            memory.setFlag(IMemory::FLAG::Z);
+        }
+        else {
+            memory.unsetFlag(IMemory::FLAG::Z);
+        }
+        memory.unsetFlag(IMemory::FLAG::N);
+        memory.setFlag(IMemory::FLAG::H);
+        memory.unsetFlag(IMemory::FLAG::C);
     }
     IMemory::REG8BIT _8BitReg;
 };
@@ -454,12 +481,21 @@ public:
     void doInstruction(IMemory& memory) override {
         uint8_t AValue = memory.get8BitRegister(IMemory::REG8BIT::A);
         uint16_t adress = memory.get16BitRegister(_16BitReg);
-        IMemory::RomData rom = memory.getReadOnlyMemory();
-        uint8_t reg8BitValue = rom[adress];
+        uint8_t reg8BitValue = memory.readInMemory(adress);
         uint8_t result = AValue ^ reg8BitValue;
         memory.set8BitRegister(IMemory::REG8BIT::A,result);
         uint16_t cursor = memory.get16BitRegister(IMemory::REG16BIT::PC);
         memory.set16BitRegister(IMemory::REG16BIT::PC, cursor + 1);
+
+        if (result == 0x00) {
+            memory.setFlag(IMemory::FLAG::Z);
+        }
+        else {
+            memory.unsetFlag(IMemory::FLAG::Z);
+        }
+        memory.unsetFlag(IMemory::FLAG::N);
+        memory.unsetFlag(IMemory::FLAG::H);
+        memory.unsetFlag(IMemory::FLAG::C);
     }
     IMemory::REG16BIT _16BitReg;
 };
@@ -475,12 +511,21 @@ public:
     void doInstruction(IMemory& memory) override {
         uint8_t AValue = memory.get8BitRegister(IMemory::REG8BIT::A);
         uint16_t adress = memory.get16BitRegister(_16BitReg);
-        IMemory::RomData rom = memory.getReadOnlyMemory();
-        uint8_t reg8BitValue = rom[adress];
+        uint8_t reg8BitValue = memory.readInMemory(adress);
         uint8_t result = AValue | reg8BitValue;
         memory.set8BitRegister(IMemory::REG8BIT::A,result);
         uint16_t cursor = memory.get16BitRegister(IMemory::REG16BIT::PC);
         memory.set16BitRegister(IMemory::REG16BIT::PC, cursor + 1);
+
+        if (result == 0x00) {
+            memory.setFlag(IMemory::FLAG::Z);
+        }
+        else {
+            memory.unsetFlag(IMemory::FLAG::Z);
+        }
+        memory.unsetFlag(IMemory::FLAG::N);
+        memory.unsetFlag(IMemory::FLAG::H);
+        memory.unsetFlag(IMemory::FLAG::C);
     }
     IMemory::REG16BIT _16BitReg;
 };
@@ -496,12 +541,21 @@ public:
     void doInstruction(IMemory& memory) override {
         uint8_t AValue = memory.get8BitRegister(IMemory::REG8BIT::A);
         uint16_t adress = memory.get16BitRegister(_16BitReg);
-        IMemory::RomData rom = memory.getReadOnlyMemory();
-        uint8_t reg8BitValue = rom[adress];
+        uint8_t reg8BitValue = memory.readInMemory(adress);
         uint8_t result = AValue & reg8BitValue;
         memory.set8BitRegister(IMemory::REG8BIT::A,result);
         uint16_t cursor = memory.get16BitRegister(IMemory::REG16BIT::PC);
         memory.set16BitRegister(IMemory::REG16BIT::PC, cursor + 1);
+
+        if (result == 0x00) {
+            memory.setFlag(IMemory::FLAG::Z);
+        }
+        else {
+            memory.unsetFlag(IMemory::FLAG::Z);
+        }
+        memory.unsetFlag(IMemory::FLAG::N);
+        memory.setFlag(IMemory::FLAG::H);
+        memory.unsetFlag(IMemory::FLAG::C);
     }
     IMemory::REG16BIT _16BitReg;
 };
@@ -516,11 +570,20 @@ public:
     void doInstruction(IMemory& memory) override {
         uint8_t AValue = memory.get8BitRegister(IMemory::REG8BIT::A);
         uint16_t cursor = memory.get16BitRegister(IMemory::REG16BIT::PC);
-        IMemory::RomData rom = memory.getReadOnlyMemory();
-        uint8_t reg8BitValue = rom[cursor + 1];
+        uint8_t reg8BitValue = memory.readInMemory(cursor + 1);
         uint8_t result = AValue ^ reg8BitValue;
         memory.set8BitRegister(IMemory::REG8BIT::A,result);
         memory.set16BitRegister(IMemory::REG16BIT::PC, cursor + 2);
+
+        if (result == 0x00) {
+            memory.setFlag(IMemory::FLAG::Z);
+        }
+        else {
+            memory.unsetFlag(IMemory::FLAG::Z);
+        }
+        memory.unsetFlag(IMemory::FLAG::N);
+        memory.unsetFlag(IMemory::FLAG::H);
+        memory.unsetFlag(IMemory::FLAG::C);
     }
     IMemory::REG8BIT _8BitReg;
 };
@@ -535,11 +598,20 @@ public:
     void doInstruction(IMemory& memory) override {
         uint8_t AValue = memory.get8BitRegister(IMemory::REG8BIT::A);
         uint16_t cursor = memory.get16BitRegister(IMemory::REG16BIT::PC);
-        IMemory::RomData rom = memory.getReadOnlyMemory();
-        uint8_t reg8BitValue = rom[cursor + 1];
+        uint8_t reg8BitValue = memory.readInMemory(cursor + 1);
         uint8_t result = AValue | reg8BitValue;
         memory.set8BitRegister(IMemory::REG8BIT::A,result);
         memory.set16BitRegister(IMemory::REG16BIT::PC, cursor + 2);
+
+        if (result == 0x00) {
+            memory.setFlag(IMemory::FLAG::Z);
+        }
+        else {
+            memory.unsetFlag(IMemory::FLAG::Z);
+        }
+        memory.unsetFlag(IMemory::FLAG::N);
+        memory.unsetFlag(IMemory::FLAG::H);
+        memory.unsetFlag(IMemory::FLAG::C);
     }
     IMemory::REG8BIT _8BitReg;
 };
@@ -554,11 +626,20 @@ public:
     void doInstruction(IMemory& memory) override {
         uint8_t AValue = memory.get8BitRegister(IMemory::REG8BIT::A);
         uint16_t cursor = memory.get16BitRegister(IMemory::REG16BIT::PC);
-        IMemory::RomData rom = memory.getReadOnlyMemory();
-        uint8_t reg8BitValue = rom[cursor + 1];
+        uint8_t reg8BitValue = memory.readInMemory(cursor + 1);
         uint8_t result = AValue & reg8BitValue;
         memory.set8BitRegister(IMemory::REG8BIT::A,result);
         memory.set16BitRegister(IMemory::REG16BIT::PC, cursor + 2);
+
+        if (result == 0x00) {
+            memory.setFlag(IMemory::FLAG::Z);
+        }
+        else {
+            memory.unsetFlag(IMemory::FLAG::Z);
+        }
+        memory.unsetFlag(IMemory::FLAG::N);
+        memory.setFlag(IMemory::FLAG::H);
+        memory.unsetFlag(IMemory::FLAG::C);
     }
     IMemory::REG8BIT _8BitReg;
 };

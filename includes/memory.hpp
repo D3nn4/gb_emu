@@ -31,6 +31,7 @@ public:
     RomData const  getReadOnlyMemory() override;
     bool setCartridge(CartridgeData const & cartridge) override;
     bool writeInROM(uint8_t data, uint16_t adress) override;
+    uint8_t readInMemory(uint16_t adress) override;
     void set8BitRegister(REG8BIT reg,uint8_t value) override;
     void set16BitRegister(REG16BIT reg,uint16_t value) override;
     uint8_t get8BitRegister(REG8BIT reg) override;

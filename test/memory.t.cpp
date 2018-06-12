@@ -204,6 +204,16 @@ TEST_F(MemoryTest, setAndUnsetFlags)
     EXPECT_EQ(0x00, mem.get8BitRegister(IMemory::REG8BIT::F));
 }
 
+TEST_F(MemoryTest, readInMemory)
+{
+    Memory mem;
+    mem.setCartridge(_cartridge);
+
+    EXPECT_EQ(0x00, mem.readInMemory(0x0000));
+    EXPECT_EQ(0x05, mem.readInMemory(0x0005));
+    EXPECT_EQ(0xff, mem.readInMemory(0x00ff));
+}
+
 // TEST_F(MemoryTest, setAndUnsetBitIn8BitRegister)
 // {
 //     Memory mem;

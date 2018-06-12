@@ -44,6 +44,7 @@ public:
     virtual RomData const getReadOnlyMemory() = 0;
     virtual bool setCartridge(CartridgeData const & cartridge) = 0;
     virtual bool writeInROM(uint8_t data, uint16_t adress) = 0;
+    virtual uint8_t readInMemory(uint16_t adress) = 0;
     virtual void set8BitRegister(REG8BIT reg,uint8_t value) = 0;
     virtual void set16BitRegister(REG16BIT reg,uint16_t value) = 0;
     virtual uint8_t get8BitRegister(REG8BIT reg) = 0;

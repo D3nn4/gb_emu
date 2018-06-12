@@ -46,6 +46,11 @@ bool Memory::writeInROM(uint8_t data, uint16_t adress)
     return true;
 }
 
+uint8_t Memory::readInMemory(uint16_t adress)
+{
+    return _readOnlyMemory[adress];
+}
+
 bool Memory::fillROM()
 {
     std::copy(_cartridge.begin(),

@@ -42,7 +42,7 @@ private:
             {0x04, std::make_shared<INC_DEC_R>(4, IMemory::REG8BIT::B, 1)},
             {0x05, std::make_shared<INC_DEC_R>(4, IMemory::REG8BIT::B, -1)},
             {0x06, std::make_shared<LD_R_N>(8, IMemory::REG8BIT::B)},
-            {0x08, std::make_shared<LD_NN_RR>(20, IMemory::REG16BIT::SP)},
+            {0x08, std::make_shared<LD_ANN_RR>(20, IMemory::REG16BIT::SP)},
             {0x0A, std::make_shared<LD_R_ARR>(8, IMemory::REG8BIT::A, IMemory::REG16BIT::BC, 0)},
             {0x0B, std::make_shared<INC_DEC_RR>(8, IMemory::REG16BIT::BC, -1)},
             {0x0C, std::make_shared<INC_DEC_R>(4, IMemory::REG8BIT::C, 1)},
