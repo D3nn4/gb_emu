@@ -145,7 +145,7 @@ public:
     IMemory::REG16BIT _16BitReg;
 };
 
-//OpCode 0x
+//OpCode 0xF9
 class LD_RR_RR : public IInstructions
 {
 public:
@@ -642,5 +642,203 @@ public:
         memory.unsetFlag(IMemory::FLAG::C);
     }
     IMemory::REG8BIT _8BitReg;
+};
+
+//opCode 0xC1 0xD1 0xE1 0xF1
+class POP_RR : public IInstructions
+{
+public:
+    POP_RR (int cycles, IMemory::REG16BIT reg16Bit)
+        :IInstructions(cycles),
+         _16BitReg(reg16Bit){};
+
+    void doInstruction(IMemory& memory) override {
+        uint16_t stackPointer = memory.get16BitRegister(IMemory::REG16BIT::SP);
+        uint8_t mostSignificantBit = memory.readInMemory(stackPointer + 1);
+        uint8_t lessSignificantBit = memory.readInMemory(stackPointer);
+        uint16_t valueToLoad = ((uint16_t) mostSignificantBit << 8) | lessSignificantBit;
+        memory.set16BitRegister(_16BitReg, valueToLoad);
+        memory.set16BitRegister(IMemory::REG16BIT::SP, stackPointer + 2);
+        uint16_t cursor = memory.get16BitRegister(IMemory::REG16BIT::PC);
+        memory.set16BitRegister(IMemory::REG16BIT::PC, cursor + 1);
+    }
+    IMemory::REG16BIT _16BitReg;
+};
+
+//opCode 0xC5 0xD5 0xE5 0xF5
+class PUSH_RR : public IInstructions
+{
+public:
+    PUSH_RR (int cycles, IMemory::REG16BIT reg16Bit)
+        :IInstructions(cycles),
+         _16BitReg(reg16Bit){};
+
+    void doInstruction(IMemory& memory) override {
+        uint16_t stackPointer = memory.get16BitRegister(IMemory::REG16BIT::SP);
+        uint16_t valueToLoad = memory.get16BitRegister(_16BitReg);
+
+        uint8_t mostSignificantBit = (uint8_t)(valueToLoad >> 8) & 0xff;
+        uint8_t lessSignificantBit = (uint8_t)(valueToLoad & 0xff);
+        memory.writeInROM(mostSignificantBit, stackPointer - 1);
+        memory.writeInROM(lessSignificantBit, stackPointer - 2);
+
+        memory.set16BitRegister(IMemory::REG16BIT::SP, stackPointer - 2);
+        uint16_t cursor = memory.get16BitRegister(IMemory::REG16BIT::PC);
+        memory.set16BitRegister(IMemory::REG16BIT::PC, cursor + 1);
+    }
+    IMemory::REG16BIT _16BitReg;
+};
+
+// 0x80 0x81 0x82 0x83 0x84 0x85 0x87
+class ADD_R : public IInstructions
+{
+public:
+    ADD_R (int cycles, IMemory::REG8BIT reg8Bit)
+        :IInstructions(cycles),
+         _8BitReg(reg8Bit){};
+
+    void doInstruction(IMemory& memory) override {
+        uint8_t regAValue = memory.get8BitRegister(IMemory::REG8BIT::A);
+        uint8_t valueToAdd = memory.get8BitRegister(_8BitReg);
+
+        uint8_t result = regAValue + valueToAdd;
+        if (result == 0x00) {
+            memory.setFlag(IMemory::FLAG::Z);
+        }
+        else {
+            memory.unsetFlag(IMemory::FLAG::Z);
+        }
+        if ((((regAValue & 0x0F) + (valueToAdd & 0x0F)) & 0x10) == 0x10) {
+            memory.setFlag(IMemory::FLAG::H);
+        }
+        else {
+            memory.unsetFlag(IMemory::FLAG::H);
+        }
+        if (((static_cast<uint16_t>(regAValue) + static_cast<uint16_t>(valueToAdd)) > 0x00ff)) {
+            memory.setFlag(IMemory::FLAG::C);
+        }
+        else {
+            memory.unsetFlag(IMemory::FLAG::C);
+        }
+        memory.unsetFlag(IMemory::FLAG::N);
+
+        memory.set8BitRegister(IMemory::REG8BIT::A, result);
+        uint16_t cursor = memory.get16BitRegister(IMemory::REG16BIT::PC);
+        memory.set16BitRegister(IMemory::REG16BIT::PC, cursor + 1);
+    }
+    IMemory::REG8BIT _8BitReg;
+};
+
+// 0x86
+class ADD_ARR : public IInstructions
+{
+public:
+    ADD_ARR (int cycles)
+        :IInstructions(cycles){};
+
+    void doInstruction(IMemory& memory) override {
+        uint8_t regAValue = memory.get8BitRegister(IMemory::REG8BIT::A);
+        uint16_t adress = memory.get16BitRegister(IMemory::REG16BIT::HL);
+        uint8_t valueToAdd = memory.readInMemory(adress);
+
+        uint8_t result = regAValue + valueToAdd;
+        if (result == 0x00) {
+            memory.setFlag(IMemory::FLAG::Z);
+        }
+        else {
+            memory.unsetFlag(IMemory::FLAG::Z);
+        }
+        if ((((regAValue & 0x0F) + (valueToAdd & 0x0F)) & 0x10) == 0x10) {
+            memory.setFlag(IMemory::FLAG::H);
+        }
+        else {
+            memory.unsetFlag(IMemory::FLAG::H);
+        }
+        if (((static_cast<uint16_t>(regAValue) + static_cast<uint16_t>(valueToAdd)) > 0x00ff)) {
+            memory.setFlag(IMemory::FLAG::C);
+        }
+        else {
+            memory.unsetFlag(IMemory::FLAG::C);
+        }
+        memory.unsetFlag(IMemory::FLAG::N);
+
+        memory.set8BitRegister(IMemory::REG8BIT::A, result);
+        uint16_t cursor = memory.get16BitRegister(IMemory::REG16BIT::PC);
+        memory.set16BitRegister(IMemory::REG16BIT::PC, cursor + 1);
+    }
+    IMemory::REG8BIT _8BitReg;
+};
+
+// 0x09 0x19 0x29 0x39
+class ADD_RR : public IInstructions
+{
+public:
+    ADD_RR (int cycles, IMemory::REG16BIT reg16Bit)
+        :IInstructions(cycles),
+         _16BitReg(reg16Bit){};
+
+    void doInstruction(IMemory& memory) override {
+        uint16_t regAValue = memory.get16BitRegister(IMemory::REG16BIT::HL);
+        uint16_t valueToAdd = memory.get16BitRegister(_16BitReg);
+
+        uint16_t result = regAValue + valueToAdd;
+        if ((((regAValue & 0x0F00) + (valueToAdd & 0x0F00)) & 0x1000) == 0x1000) {
+            memory.setFlag(IMemory::FLAG::H);
+        }
+        else {
+            memory.unsetFlag(IMemory::FLAG::H);
+        }
+        if (((static_cast<uint32_t>(regAValue) + static_cast<uint32_t>(valueToAdd)) > 0xffff)) {
+            memory.setFlag(IMemory::FLAG::C);
+        }
+        else {
+            memory.unsetFlag(IMemory::FLAG::C);
+        }
+        memory.unsetFlag(IMemory::FLAG::N);
+
+        memory.set16BitRegister(IMemory::REG16BIT::HL, result);
+        uint16_t cursor = memory.get16BitRegister(IMemory::REG16BIT::PC);
+        memory.set16BitRegister(IMemory::REG16BIT::PC, cursor + 1);
+    }
+    IMemory::REG16BIT _16BitReg;
+};
+
+
+// 0xC6
+class ADD_N : public IInstructions
+{
+public:
+    ADD_N (int cycles)
+        :IInstructions(cycles){};
+
+    void doInstruction(IMemory& memory) override {
+        uint8_t regAValue = memory.get8BitRegister(IMemory::REG8BIT::A);
+        uint16_t cursor = memory.get16BitRegister(IMemory::REG16BIT::PC);
+        uint8_t valueToAdd = memory.readInMemory(cursor + 1);
+
+        uint8_t result = regAValue + valueToAdd;
+        if (result == 0x00) {
+            memory.setFlag(IMemory::FLAG::Z);
+        }
+        else {
+            memory.unsetFlag(IMemory::FLAG::Z);
+        }
+        if ((((regAValue & 0x0F) + (valueToAdd & 0x0F)) & 0x10) == 0x10) {
+            memory.setFlag(IMemory::FLAG::H);
+        }
+        else {
+            memory.unsetFlag(IMemory::FLAG::H);
+        }
+        if (((static_cast<uint16_t>(regAValue) + static_cast<uint16_t>(valueToAdd)) > 0x00ff)) {
+            memory.setFlag(IMemory::FLAG::C);
+        }
+        else {
+            memory.unsetFlag(IMemory::FLAG::C);
+        }
+        memory.unsetFlag(IMemory::FLAG::N);
+
+        memory.set8BitRegister(IMemory::REG8BIT::A, result);
+        memory.set16BitRegister(IMemory::REG16BIT::PC, cursor + 2);
+    }
 };
 #endif /*INSTRUCTIONS*/
