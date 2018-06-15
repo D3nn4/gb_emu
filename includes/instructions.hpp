@@ -803,7 +803,6 @@ public:
     IMemory::REG16BIT _16BitReg;
 };
 
-
 // 0xC6
 class ADD_N : public IInstructions
 {
@@ -966,6 +965,256 @@ public:
         memory.unsetFlag(IMemory::FLAG::N);
 
         memory.set8BitRegister(IMemory::REG8BIT::A, result);
+        memory.set16BitRegister(IMemory::REG16BIT::PC, cursor + 2);
+    }
+};
+
+// 0x90 0x91 0x92 0x93 0x94 0x95 0x97
+class SUB_R : public IInstructions
+{
+public:
+    SUB_R (int cycles, IMemory::REG8BIT reg8Bit)
+        :IInstructions(cycles),
+         _8BitReg(reg8Bit){};
+
+    void doInstruction(IMemory& memory) override {
+        uint8_t regAValue = memory.get8BitRegister(IMemory::REG8BIT::A);
+        uint8_t valueToSub = memory.get8BitRegister(_8BitReg);
+
+        uint8_t result = regAValue - valueToSub;
+        if (result == 0x00) {
+            memory.setFlag(IMemory::FLAG::Z);
+        }
+        else {
+            memory.unsetFlag(IMemory::FLAG::Z);
+        }
+        if ((regAValue & 0x0F) < (valueToSub & 0x0F)) {
+            memory.setFlag(IMemory::FLAG::H);
+        }
+        else {
+            memory.unsetFlag(IMemory::FLAG::H);
+        }
+        if (regAValue < valueToSub) {
+            memory.setFlag(IMemory::FLAG::C);
+        }
+        else {
+            memory.unsetFlag(IMemory::FLAG::C);
+        }
+        memory.setFlag(IMemory::FLAG::N);
+
+        memory.set8BitRegister(IMemory::REG8BIT::A, result);
+        uint16_t cursor = memory.get16BitRegister(IMemory::REG16BIT::PC);
+        memory.set16BitRegister(IMemory::REG16BIT::PC, cursor + 1);
+    }
+    IMemory::REG8BIT _8BitReg;
+};
+
+// 0x96
+class SUB_ARR : public IInstructions
+{
+public:
+    SUB_ARR (int cycles)
+        :IInstructions(cycles){};
+
+    void doInstruction(IMemory& memory) override {
+        uint8_t regAValue = memory.get8BitRegister(IMemory::REG8BIT::A);
+        uint16_t adress = memory.get16BitRegister(IMemory::REG16BIT::HL);
+        uint8_t valueToSub = memory.readInMemory(adress);
+
+        uint8_t result = regAValue - valueToSub;
+        if (result == 0x00) {
+            memory.setFlag(IMemory::FLAG::Z);
+        }
+        else {
+            memory.unsetFlag(IMemory::FLAG::Z);
+        }
+        if ((regAValue & 0x0F) < (valueToSub & 0x0F)) {
+            memory.setFlag(IMemory::FLAG::H);
+        }
+        else {
+            memory.unsetFlag(IMemory::FLAG::H);
+        }
+        if (regAValue < valueToSub) {
+            memory.setFlag(IMemory::FLAG::C);
+        }
+        else {
+            memory.unsetFlag(IMemory::FLAG::C);
+        }
+        memory.setFlag(IMemory::FLAG::N);
+
+        memory.set8BitRegister(IMemory::REG8BIT::A, result);
+        uint16_t cursor = memory.get16BitRegister(IMemory::REG16BIT::PC);
+        memory.set16BitRegister(IMemory::REG16BIT::PC, cursor + 1);
+    }
+    IMemory::REG8BIT _8BitReg;
+};
+
+// 0xD6
+class SUB_N : public IInstructions
+{
+public:
+    SUB_N (int cycles)
+        :IInstructions(cycles){};
+
+    void doInstruction(IMemory& memory) override {
+        uint8_t regAValue = memory.get8BitRegister(IMemory::REG8BIT::A);
+        uint16_t cursor = memory.get16BitRegister(IMemory::REG16BIT::PC);
+        uint8_t valueToSub = memory.readInMemory(cursor + 1);
+
+        uint8_t result = regAValue - valueToSub;
+        if (result == 0x00) {
+            memory.setFlag(IMemory::FLAG::Z);
+        }
+        else {
+            memory.unsetFlag(IMemory::FLAG::Z);
+        }
+        if ((regAValue & 0x0F) < (valueToSub & 0x0F)) {
+            memory.setFlag(IMemory::FLAG::H);
+        }
+        else {
+            memory.unsetFlag(IMemory::FLAG::H);
+        }
+        if (regAValue < valueToSub) {
+            memory.setFlag(IMemory::FLAG::C);
+        }
+        else {
+            memory.unsetFlag(IMemory::FLAG::C);
+        }
+        memory.setFlag(IMemory::FLAG::N);
+
+        memory.set8BitRegister(IMemory::REG8BIT::A, result);
+        memory.set16BitRegister(IMemory::REG16BIT::PC, cursor + 2);
+    }
+};
+
+// 0x98 0x99 0x9A 0x9B 0x9C 0x9D 0x9F
+class SBC_R : public IInstructions
+{
+public:
+    SBC_R (int cycles, IMemory::REG8BIT reg8Bit)
+        :IInstructions(cycles),
+         _8BitReg(reg8Bit){};
+
+    void doInstruction(IMemory& memory) override {
+        uint8_t regAValue = memory.get8BitRegister(IMemory::REG8BIT::A);
+        uint8_t valueToSub = memory.get8BitRegister(_8BitReg);
+        uint8_t carryValue = 0x00;
+        if (memory.isSetFlag(IMemory::FLAG::C)) {
+            carryValue = 0x01;
+        }
+        uint8_t resultWithoutCarryOff = regAValue - valueToSub;
+        if ((resultWithoutCarryOff - carryValue) == 0x00) {
+            memory.setFlag(IMemory::FLAG::Z);
+        }
+        else {
+            memory.unsetFlag(IMemory::FLAG::Z);
+        }
+        if ((regAValue & 0x0F) < ((valueToSub) & 0x0F)
+            || (resultWithoutCarryOff & 0x0F) < ((carryValue) & 0x0F)) {
+            memory.setFlag(IMemory::FLAG::H);
+        }
+        else {
+            memory.unsetFlag(IMemory::FLAG::H);
+        }
+        if ((regAValue < valueToSub)
+            || (resultWithoutCarryOff < carryValue)) {
+            memory.setFlag(IMemory::FLAG::C);
+        }
+        else {
+            memory.unsetFlag(IMemory::FLAG::C);
+        }
+        memory.setFlag(IMemory::FLAG::N);
+
+        memory.set8BitRegister(IMemory::REG8BIT::A, resultWithoutCarryOff - carryValue);
+        uint16_t cursor = memory.get16BitRegister(IMemory::REG16BIT::PC);
+        memory.set16BitRegister(IMemory::REG16BIT::PC, cursor + 1);
+    }
+    IMemory::REG8BIT _8BitReg;
+};
+
+// 0x9E
+class SBC_ARR : public IInstructions
+{
+public:
+    SBC_ARR (int cycles)
+        :IInstructions(cycles){};
+
+    void doInstruction(IMemory& memory) override {
+        uint8_t regAValue = memory.get8BitRegister(IMemory::REG8BIT::A);
+        uint16_t adress = memory.get16BitRegister(IMemory::REG16BIT::HL);
+        uint8_t valueToSub = memory.readInMemory(adress);
+        uint8_t carryValue = 0x00;
+        if (memory.isSetFlag(IMemory::FLAG::C)) {
+            carryValue = 0x01;
+        }
+        uint8_t resultWithoutCarryOff = regAValue - valueToSub;
+        if ((resultWithoutCarryOff - carryValue) == 0x00) {
+            memory.setFlag(IMemory::FLAG::Z);
+        }
+        else {
+            memory.unsetFlag(IMemory::FLAG::Z);
+        }
+        if ((regAValue & 0x0F) < ((valueToSub) & 0x0F)
+            || (resultWithoutCarryOff & 0x0F) < ((carryValue) & 0x0F)) {
+            memory.setFlag(IMemory::FLAG::H);
+        }
+        else {
+            memory.unsetFlag(IMemory::FLAG::H);
+        }
+        if ((regAValue < valueToSub)
+            || (resultWithoutCarryOff < carryValue)) {
+            memory.setFlag(IMemory::FLAG::C);
+        }
+        else {
+            memory.unsetFlag(IMemory::FLAG::C);
+        }
+        memory.setFlag(IMemory::FLAG::N);
+
+        memory.set8BitRegister(IMemory::REG8BIT::A, resultWithoutCarryOff - carryValue);
+        uint16_t cursor = memory.get16BitRegister(IMemory::REG16BIT::PC);
+        memory.set16BitRegister(IMemory::REG16BIT::PC, cursor + 1);
+    }
+};
+
+// 0xDE
+class SBC_N : public IInstructions
+{
+public:
+    SBC_N (int cycles)
+        :IInstructions(cycles){};
+
+    void doInstruction(IMemory& memory) override {
+        uint8_t regAValue = memory.get8BitRegister(IMemory::REG8BIT::A);
+        uint16_t cursor = memory.get16BitRegister(IMemory::REG16BIT::PC);
+        uint8_t valueToSub = memory.readInMemory(cursor + 1);
+        uint8_t carryValue = 0x00;
+        if (memory.isSetFlag(IMemory::FLAG::C)) {
+            carryValue = 0x01;
+        }
+        uint8_t resultWithoutCarryOff = regAValue - valueToSub;
+        if ((resultWithoutCarryOff - carryValue) == 0x00) {
+            memory.setFlag(IMemory::FLAG::Z);
+        }
+        else {
+            memory.unsetFlag(IMemory::FLAG::Z);
+        }
+        if ((regAValue & 0x0F) < ((valueToSub) & 0x0F)
+            || (resultWithoutCarryOff & 0x0F) < ((carryValue) & 0x0F)) {
+            memory.setFlag(IMemory::FLAG::H);
+        }
+        else {
+            memory.unsetFlag(IMemory::FLAG::H);
+        }
+        if ((regAValue < valueToSub)
+            || (resultWithoutCarryOff < carryValue)) {
+            memory.setFlag(IMemory::FLAG::C);
+        }
+        else {
+            memory.unsetFlag(IMemory::FLAG::C);
+        }
+        memory.setFlag(IMemory::FLAG::N);
+
+        memory.set8BitRegister(IMemory::REG8BIT::A, resultWithoutCarryOff - carryValue);
         memory.set16BitRegister(IMemory::REG16BIT::PC, cursor + 2);
     }
 };
