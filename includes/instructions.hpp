@@ -841,4 +841,132 @@ public:
         memory.set16BitRegister(IMemory::REG16BIT::PC, cursor + 2);
     }
 };
+
+// 0x88 0x89 0x8A 0x8B 0x8C 0x8D 0x8F
+class ADC_R : public IInstructions
+{
+public:
+    ADC_R (int cycles, IMemory::REG8BIT reg8Bit)
+        :IInstructions(cycles),
+         _8BitReg(reg8Bit){};
+
+    void doInstruction(IMemory& memory) override {
+        uint8_t regAValue = memory.get8BitRegister(IMemory::REG8BIT::A);
+        uint8_t valueToAdd = memory.get8BitRegister(_8BitReg);
+        uint8_t carryValue = 0x00;
+        if (memory.isSetFlag(IMemory::FLAG::C)) {
+            carryValue = 0x01;
+        }
+        uint8_t result = regAValue + valueToAdd + carryValue;
+        if (result == 0x00) {
+            memory.setFlag(IMemory::FLAG::Z);
+        }
+        else {
+            memory.unsetFlag(IMemory::FLAG::Z);
+        }
+        if ((((regAValue & 0x0F) + (valueToAdd & 0x0F) + (carryValue & 0x0F)) & 0x10) == 0x10) {
+            memory.setFlag(IMemory::FLAG::H);
+        }
+        else {
+            memory.unsetFlag(IMemory::FLAG::H);
+        }
+        if (((static_cast<uint16_t>(regAValue) + static_cast<uint16_t>(valueToAdd) + carryValue) > 0x00ff)) {
+            memory.setFlag(IMemory::FLAG::C);
+        }
+        else {
+            memory.unsetFlag(IMemory::FLAG::C);
+        }
+        memory.unsetFlag(IMemory::FLAG::N);
+
+        memory.set8BitRegister(IMemory::REG8BIT::A, result);
+        uint16_t cursor = memory.get16BitRegister(IMemory::REG16BIT::PC);
+        memory.set16BitRegister(IMemory::REG16BIT::PC, cursor + 1);
+    }
+    IMemory::REG8BIT _8BitReg;
+};
+
+// 0x8E
+class ADC_ARR : public IInstructions
+{
+public:
+    ADC_ARR (int cycles)
+        :IInstructions(cycles){};
+
+    void doInstruction(IMemory& memory) override {
+        uint8_t regAValue = memory.get8BitRegister(IMemory::REG8BIT::A);
+        uint16_t adress = memory.get16BitRegister(IMemory::REG16BIT::HL);
+        uint8_t valueToAdd = memory.readInMemory(adress);
+
+        uint8_t carryValue = 0x00;
+        if (memory.isSetFlag(IMemory::FLAG::C)) {
+            carryValue = 0x01;
+        }
+        uint8_t result = regAValue + valueToAdd + carryValue;
+        if (result == 0x00) {
+            memory.setFlag(IMemory::FLAG::Z);
+        }
+        else {
+            memory.unsetFlag(IMemory::FLAG::Z);
+        }
+        if ((((regAValue & 0x0F) + (valueToAdd & 0x0F) + (carryValue & 0x0F)) & 0x10) == 0x10) {
+            memory.setFlag(IMemory::FLAG::H);
+        }
+        else {
+            memory.unsetFlag(IMemory::FLAG::H);
+        }
+        if (((static_cast<uint16_t>(regAValue) + static_cast<uint16_t>(valueToAdd) + carryValue) > 0x00ff)) {
+            memory.setFlag(IMemory::FLAG::C);
+        }
+        else {
+            memory.unsetFlag(IMemory::FLAG::C);
+        }
+        memory.unsetFlag(IMemory::FLAG::N);
+
+        memory.set8BitRegister(IMemory::REG8BIT::A, result);
+        uint16_t cursor = memory.get16BitRegister(IMemory::REG16BIT::PC);
+        memory.set16BitRegister(IMemory::REG16BIT::PC, cursor + 1);
+    }
+};
+
+// 0xCE
+class ADC_N : public IInstructions
+{
+public:
+    ADC_N (int cycles)
+        :IInstructions(cycles){};
+
+    void doInstruction(IMemory& memory) override {
+        uint8_t regAValue = memory.get8BitRegister(IMemory::REG8BIT::A);
+        uint16_t cursor = memory.get16BitRegister(IMemory::REG16BIT::PC);
+        uint8_t valueToAdd = memory.readInMemory(cursor + 1);
+
+        uint8_t carryValue = 0x00;
+        if (memory.isSetFlag(IMemory::FLAG::C)) {
+            carryValue = 0x01;
+        }
+        uint8_t result = regAValue + valueToAdd + carryValue;
+        if (result == 0x00) {
+            memory.setFlag(IMemory::FLAG::Z);
+        }
+        else {
+            memory.unsetFlag(IMemory::FLAG::Z);
+        }
+        if ((((regAValue & 0x0F) + (valueToAdd & 0x0F) + (carryValue & 0x0F)) & 0x10) == 0x10) {
+            memory.setFlag(IMemory::FLAG::H);
+        }
+        else {
+            memory.unsetFlag(IMemory::FLAG::H);
+        }
+        if (((static_cast<uint16_t>(regAValue) + static_cast<uint16_t>(valueToAdd) + carryValue) > 0x00ff)) {
+            memory.setFlag(IMemory::FLAG::C);
+        }
+        else {
+            memory.unsetFlag(IMemory::FLAG::C);
+        }
+        memory.unsetFlag(IMemory::FLAG::N);
+
+        memory.set8BitRegister(IMemory::REG8BIT::A, result);
+        memory.set16BitRegister(IMemory::REG16BIT::PC, cursor + 2);
+    }
+};
 #endif /*INSTRUCTIONS*/

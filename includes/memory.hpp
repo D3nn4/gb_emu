@@ -38,6 +38,7 @@ public:
     uint16_t get16BitRegister(REG16BIT reg) override;
     void setFlag(IMemory::FLAG flag) override;
     void unsetFlag(IMemory::FLAG flag) override;
+    bool isSetFlag(IMemory::FLAG flag) override;
     // void setBitInRegister(int bit, REG8BIT reg) override;
     // void unsetBitInRegister(int bit, REG8BIT reg) override;
     // void setBitInRegister(int bit, REG16BIT reg) override;

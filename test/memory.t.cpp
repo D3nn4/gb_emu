@@ -179,29 +179,30 @@ TEST_F(MemoryTest, setAndUnsetFlags)
 {
     Memory mem;
 
-    EXPECT_EQ(0x00, mem.get8BitRegister(IMemory::REG8BIT::F));
+    EXPECT_FALSE(mem.isSetFlag(IMemory::FLAG::Z));
     mem.setFlag(IMemory::FLAG::Z);
-    EXPECT_EQ(0x80, mem.get8BitRegister(IMemory::REG8BIT::F));
+    EXPECT_TRUE(mem.isSetFlag(IMemory::FLAG::Z));
     mem.unsetFlag(IMemory::FLAG::Z);
-    EXPECT_EQ(0x00, mem.get8BitRegister(IMemory::REG8BIT::F));
+    EXPECT_FALSE(mem.isSetFlag(IMemory::FLAG::Z));
 
-    EXPECT_EQ(0x00, mem.get8BitRegister(IMemory::REG8BIT::F));
+    EXPECT_FALSE(mem.isSetFlag(IMemory::FLAG::N));
     mem.setFlag(IMemory::FLAG::N);
-    EXPECT_EQ(0x40, mem.get8BitRegister(IMemory::REG8BIT::F));
+    EXPECT_TRUE(mem.isSetFlag(IMemory::FLAG::N));
     mem.unsetFlag(IMemory::FLAG::N);
-    EXPECT_EQ(0x00, mem.get8BitRegister(IMemory::REG8BIT::F));
+    EXPECT_FALSE(mem.isSetFlag(IMemory::FLAG::N));
 
-    EXPECT_EQ(0x00, mem.get8BitRegister(IMemory::REG8BIT::F));
+
+    EXPECT_FALSE(mem.isSetFlag(IMemory::FLAG::H));
     mem.setFlag(IMemory::FLAG::H);
-    EXPECT_EQ(0x20, mem.get8BitRegister(IMemory::REG8BIT::F));
+    EXPECT_TRUE(mem.isSetFlag(IMemory::FLAG::H));
     mem.unsetFlag(IMemory::FLAG::H);
-    EXPECT_EQ(0x00, mem.get8BitRegister(IMemory::REG8BIT::F));
+    EXPECT_FALSE(mem.isSetFlag(IMemory::FLAG::H));
 
-    EXPECT_EQ(0x00, mem.get8BitRegister(IMemory::REG8BIT::F));
+    EXPECT_FALSE(mem.isSetFlag(IMemory::FLAG::C));
     mem.setFlag(IMemory::FLAG::C);
-    EXPECT_EQ(0x10, mem.get8BitRegister(IMemory::REG8BIT::F));
+    EXPECT_TRUE(mem.isSetFlag(IMemory::FLAG::C));
     mem.unsetFlag(IMemory::FLAG::C);
-    EXPECT_EQ(0x00, mem.get8BitRegister(IMemory::REG8BIT::F));
+    EXPECT_FALSE(mem.isSetFlag(IMemory::FLAG::C));
 }
 
 TEST_F(MemoryTest, readInMemory)
@@ -213,6 +214,8 @@ TEST_F(MemoryTest, readInMemory)
     EXPECT_EQ(0x05, mem.readInMemory(0x0005));
     EXPECT_EQ(0xff, mem.readInMemory(0x00ff));
 }
+
+
 
 // TEST_F(MemoryTest, setAndUnsetBitIn8BitRegister)
 // {

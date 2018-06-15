@@ -35,6 +35,7 @@ public:
     MOCK_METHOD1(get16BitRegister, uint16_t(IMemory::REG16BIT));
     MOCK_METHOD1(setFlag, void(IMemory::FLAG));
     MOCK_METHOD1(unsetFlag, void(IMemory::FLAG));
+    MOCK_METHOD1(isSetFlag, bool(IMemory::FLAG));
     // MOCK_METHOD2(setBitInRegister, void(int, IMemory::REG8BIT));
     // MOCK_METHOD2(unsetBitInRegister, void(int, IMemory::REG8BIT));
     // MOCK_METHOD2(setBitInRegister, void(int, IMemory::REG16BIT));

@@ -151,15 +151,15 @@ void Memory::unsetFlag(IMemory::FLAG flag)
 //     set16BitRegister(reg, regValue);
 // }
 
-// bool Memory::isSet(int bit, REG8BIT reg)
-// {
-//     if (bit > 7) {
-//         throw MemoryException(__PRETTY_FUNCTION__);
-//     }
-//     uint8_t regValue = *_8BitRegisters[reg];
-//     std::bitset<8> bitset(regValue);
-//     return bitset.test(bit);
-// }
+bool Memory::isSetFlag(FLAG flag)
+{
+    if ((int)flag > 7) {
+        throw MemoryException(__PRETTY_FUNCTION__);
+    }
+    uint8_t regValue = *_8BitRegisters[REG8BIT::F];
+    std::bitset<8> bitset(regValue);
+    return bitset.test((int)flag);
+}
 
 // bool Memory::isSet(int bit, REG16BIT reg)
 // {
