@@ -52,12 +52,6 @@ public:
     virtual void setFlag(IMemory::FLAG flag) = 0;
     virtual void unsetFlag(IMemory::FLAG flag) = 0;
     virtual bool isSetFlag(IMemory::FLAG flag) = 0;
-    // virtual void setBitInRegister(int bit, REG8BIT reg) = 0;
-    // virtual void unsetBitInRegister(int bit, REG8BIT reg) = 0;
-    // virtual void setBitInRegister(int bit, REG16BIT reg) = 0;
-    // virtual void unsetBitInRegister(int bit, REG16BIT reg) = 0;
-    // virtual bool isSet(int bit, REG8BIT reg) = 0;
-    // virtual bool isSet(int bit, REG16BIT reg) = 0;
 
 };
 #endif /*IMEMORY*/

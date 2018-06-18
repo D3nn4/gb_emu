@@ -2,10 +2,13 @@
 #define _INSTRUCTIONS_
 
 #include <iostream>
+#include <bitset>
+
 #include "iinstructions.hpp"
 
 //RR  == 16bitReg   NN == next16Bit
 //R   == 8bitReg     N == next8Bit
+//CC == flag
 //ARR == Adress in 16BitReg    ANN == Adress in next16Bit
 //AR  == Adress in 0xff00 + R       AN == Adress in 0xff00 + N
 
@@ -1217,5 +1220,372 @@ public:
         memory.set8BitRegister(IMemory::REG8BIT::A, resultWithoutCarryOff - carryValue);
         memory.set16BitRegister(IMemory::REG16BIT::PC, cursor + 2);
     }
+};
+
+// 0xB8 0xB9 0xBA 0xBB 0xBC 0xBD 0xBF
+class CP_R : public IInstructions
+{
+public:
+    CP_R (int cycles, IMemory::REG8BIT reg8Bit)
+        :IInstructions(cycles),
+         _8BitReg(reg8Bit){};
+
+    void doInstruction(IMemory& memory) override {
+        uint8_t regAValue = memory.get8BitRegister(IMemory::REG8BIT::A);
+        uint8_t valueToCp = memory.get8BitRegister(_8BitReg);
+
+        uint8_t result = regAValue - valueToCp;
+        if (result == 0x00) {
+            memory.setFlag(IMemory::FLAG::Z);
+        }
+        else {
+            memory.unsetFlag(IMemory::FLAG::Z);
+        }
+        if ((regAValue & 0x0F) < (valueToCp & 0x0F)) {
+            memory.setFlag(IMemory::FLAG::H);
+        }
+        else {
+            memory.unsetFlag(IMemory::FLAG::H);
+        }
+        if (regAValue < valueToCp) {
+            memory.setFlag(IMemory::FLAG::C);
+        }
+        else {
+            memory.unsetFlag(IMemory::FLAG::C);
+        }
+        memory.setFlag(IMemory::FLAG::N);
+
+        uint16_t cursor = memory.get16BitRegister(IMemory::REG16BIT::PC);
+        memory.set16BitRegister(IMemory::REG16BIT::PC, cursor + 1);
+    }
+    IMemory::REG8BIT _8BitReg;
+};
+
+// 0xBE
+class CP_ARR : public IInstructions
+{
+public:
+    CP_ARR (int cycles)
+        :IInstructions(cycles){};
+
+    void doInstruction(IMemory& memory) override {
+        uint8_t regAValue = memory.get8BitRegister(IMemory::REG8BIT::A);
+        uint16_t adress = memory.get16BitRegister(IMemory::REG16BIT::HL);
+        uint8_t valueToCp = memory.readInMemory(adress);
+
+        uint8_t result = regAValue - valueToCp;
+        if (result == 0x00) {
+            memory.setFlag(IMemory::FLAG::Z);
+        }
+        else {
+            memory.unsetFlag(IMemory::FLAG::Z);
+        }
+        if ((regAValue & 0x0F) < (valueToCp & 0x0F)) {
+            memory.setFlag(IMemory::FLAG::H);
+        }
+        else {
+            memory.unsetFlag(IMemory::FLAG::H);
+        }
+        if (regAValue < valueToCp) {
+            memory.setFlag(IMemory::FLAG::C);
+        }
+        else {
+            memory.unsetFlag(IMemory::FLAG::C);
+        }
+        memory.setFlag(IMemory::FLAG::N);
+
+        uint16_t cursor = memory.get16BitRegister(IMemory::REG16BIT::PC);
+        memory.set16BitRegister(IMemory::REG16BIT::PC, cursor + 1);
+    }
+    IMemory::REG8BIT _8BitReg;
+};
+
+// 0xFE
+class CP_N : public IInstructions
+{
+public:
+    CP_N (int cycles)
+        :IInstructions(cycles){};
+
+    void doInstruction(IMemory& memory) override {
+        uint8_t regAValue = memory.get8BitRegister(IMemory::REG8BIT::A);
+        uint16_t cursor = memory.get16BitRegister(IMemory::REG16BIT::PC);
+        uint8_t valueToSub = memory.readInMemory(cursor + 1);
+
+        uint8_t result = regAValue - valueToSub;
+        if (result == 0x00) {
+            memory.setFlag(IMemory::FLAG::Z);
+        }
+        else {
+            memory.unsetFlag(IMemory::FLAG::Z);
+        }
+        if ((regAValue & 0x0F) < (valueToSub & 0x0F)) {
+            memory.setFlag(IMemory::FLAG::H);
+        }
+        else {
+            memory.unsetFlag(IMemory::FLAG::H);
+        }
+        if (regAValue < valueToSub) {
+            memory.setFlag(IMemory::FLAG::C);
+        }
+        else {
+            memory.unsetFlag(IMemory::FLAG::C);
+        }
+        memory.setFlag(IMemory::FLAG::N);
+
+        memory.set16BitRegister(IMemory::REG16BIT::PC, cursor + 2);
+    }
+};
+
+// 0x07
+class RLCA : public IInstructions
+{
+public:
+    RLCA (int cycles)
+        :IInstructions(cycles){};
+
+    void doInstruction(IMemory& memory) override {
+        uint8_t regAValue = memory.get8BitRegister(IMemory::REG8BIT::A);
+        std::bitset<8> bitsetA(regAValue);
+
+        if (bitsetA[7] == 1) {
+            memory.setFlag(IMemory::FLAG::C);
+        }
+        else {
+            memory.unsetFlag(IMemory::FLAG::C);
+        }
+
+        bitsetA = bitsetA << 1;
+        uint8_t rotatedValue = static_cast<uint8_t>(bitsetA.to_ulong());
+
+        if (rotatedValue == 0x00) {
+            memory.setFlag(IMemory::FLAG::Z);
+        }
+        else {
+            memory.unsetFlag(IMemory::FLAG::Z);
+        }
+        memory.unsetFlag(IMemory::FLAG::H);
+        memory.unsetFlag(IMemory::FLAG::N);
+
+        memory.set8BitRegister(IMemory::REG8BIT::A, rotatedValue);
+        uint16_t cursor = memory.get16BitRegister(IMemory::REG16BIT::PC);
+        memory.set16BitRegister(IMemory::REG16BIT::PC, cursor + 1);
+    }
+};
+
+// 0x17
+class RLA : public IInstructions
+{
+public:
+    RLA (int cycles)
+        :IInstructions(cycles){};
+
+    void doInstruction(IMemory& memory) override {
+        uint8_t regAValue = memory.get8BitRegister(IMemory::REG8BIT::A);
+        std::bitset<8> bitsetA(regAValue);
+        std::bitset<8> rotateBitset = bitsetA << 1;
+        if (memory.isSetFlag(IMemory::FLAG::C)) {
+            rotateBitset[0] = 1;
+        }
+        else {
+            rotateBitset[0] = 0;
+        }
+        uint8_t rotatedValue = static_cast<uint8_t>(rotateBitset.to_ulong());
+
+        if (rotatedValue == 0x00) {
+            memory.setFlag(IMemory::FLAG::Z);
+        }
+        else {
+            memory.unsetFlag(IMemory::FLAG::Z);
+        }
+        memory.unsetFlag(IMemory::FLAG::H);
+        memory.unsetFlag(IMemory::FLAG::N);
+        if (bitsetA[7] == 1) {
+            memory.setFlag(IMemory::FLAG::C);
+        }
+        else {
+            memory.unsetFlag(IMemory::FLAG::C);
+        }
+
+        memory.set8BitRegister(IMemory::REG8BIT::A, rotatedValue);
+        uint16_t cursor = memory.get16BitRegister(IMemory::REG16BIT::PC);
+        memory.set16BitRegister(IMemory::REG16BIT::PC, cursor + 1);
+    }
+};
+
+// 0x07
+class RRCA : public IInstructions
+{
+public:
+    RRCA (int cycles)
+        :IInstructions(cycles){};
+
+    void doInstruction(IMemory& memory) override {
+        uint8_t regAValue = memory.get8BitRegister(IMemory::REG8BIT::A);
+        std::bitset<8> bitsetA(regAValue);
+
+        bool isSet = bitsetA[0];
+        bitsetA = bitsetA >> 1;
+        if(isSet) {
+            bitsetA[7] = 1;
+            memory.setFlag(IMemory::FLAG::C);
+        }
+        else {
+            memory.unsetFlag(IMemory::FLAG::C);
+        }
+        uint8_t rotatedValue = static_cast<uint8_t>(bitsetA.to_ulong());
+
+        if (rotatedValue == 0x00) {
+            memory.setFlag(IMemory::FLAG::Z);
+        }
+        else {
+            memory.unsetFlag(IMemory::FLAG::Z);
+        }
+        memory.unsetFlag(IMemory::FLAG::H);
+        memory.unsetFlag(IMemory::FLAG::N);
+
+        memory.set8BitRegister(IMemory::REG8BIT::A, rotatedValue);
+        uint16_t cursor = memory.get16BitRegister(IMemory::REG16BIT::PC);
+        memory.set16BitRegister(IMemory::REG16BIT::PC, cursor + 1);
+    }
+};
+
+// 0x1F
+class RRA : public IInstructions
+{
+public:
+    RRA (int cycles)
+        :IInstructions(cycles){};
+
+    void doInstruction(IMemory& memory) override {
+        uint8_t regAValue = memory.get8BitRegister(IMemory::REG8BIT::A);
+        std::bitset<8> bitsetA(regAValue);
+        std::bitset<8> rotateBitset = bitsetA >> 1;
+        if (memory.isSetFlag(IMemory::FLAG::C)) {
+            rotateBitset[7] = 1;
+        }
+        else {
+            rotateBitset[7] = 0;
+        }
+        uint8_t rotatedValue = static_cast<uint8_t>(rotateBitset.to_ulong());
+
+        if (rotatedValue == 0x00) {
+            memory.setFlag(IMemory::FLAG::Z);
+        }
+        else {
+            memory.unsetFlag(IMemory::FLAG::Z);
+        }
+        memory.unsetFlag(IMemory::FLAG::H);
+        memory.unsetFlag(IMemory::FLAG::N);
+        if (bitsetA[0] == 1) {
+            memory.setFlag(IMemory::FLAG::C);
+        }
+        else {
+            memory.unsetFlag(IMemory::FLAG::C);
+        }
+
+        memory.set8BitRegister(IMemory::REG8BIT::A, rotatedValue);
+        uint16_t cursor = memory.get16BitRegister(IMemory::REG16BIT::PC);
+        memory.set16BitRegister(IMemory::REG16BIT::PC, cursor + 1);
+    }
+};
+
+//0xC3
+class JP_NN : public IInstructions
+{
+public:
+    JP_NN (int cycles)
+        :IInstructions(cycles){};
+
+    void doInstruction(IMemory& memory) override {
+        uint16_t cursor = memory.get16BitRegister(IMemory::REG16BIT::PC);
+        uint8_t lessSignificantBit = memory.readInMemory(cursor + 1);
+        uint8_t mostSignificantBit = memory.readInMemory(cursor + 2);
+
+        uint16_t adress = ((uint16_t) mostSignificantBit << 8) | lessSignificantBit;
+        memory.set16BitRegister(IMemory::REG16BIT::PC, adress);
+    }
+};
+
+//0xC2 0xCA 0xD2 0xDA
+class JP_CC_NN : public IInstructions
+{
+public:
+    JP_CC_NN (int cycles, IMemory::FLAG flag, bool isToBeSet)
+        :IInstructions(cycles),
+         _flag(flag),
+         _isToBeSet(isToBeSet){};
+
+    void doInstruction(IMemory& memory) override {
+        uint16_t cursor = memory.get16BitRegister(IMemory::REG16BIT::PC);
+        if (memory.isSetFlag(_flag) == _isToBeSet) {
+            uint8_t lessSignificantBit = memory.readInMemory(cursor + 1);
+            uint8_t mostSignificantBit = memory.readInMemory(cursor + 2);
+
+            uint16_t adress = ((uint16_t) mostSignificantBit << 8) | lessSignificantBit;
+            memory.set16BitRegister(IMemory::REG16BIT::PC, adress);
+            IInstructions::_cycles = 16;
+        }
+        else {
+            memory.set16BitRegister(IMemory::REG16BIT::PC, cursor + 3);
+            IInstructions::_cycles = 12;
+        }
+    }
+
+    IMemory::FLAG _flag;
+    bool _isToBeSet;
+};
+
+//0xE9
+class JP_ARR : public IInstructions
+{
+public:
+    JP_ARR (int cycles)
+        :IInstructions(cycles){};
+
+    void doInstruction(IMemory& memory) override {
+        uint16_t adress = memory.get16BitRegister(IMemory::REG16BIT::HL);
+        memory.set16BitRegister(IMemory::REG16BIT::PC, adress);
+    }
+};
+
+//0x18
+class JR_N : public IInstructions
+{
+public:
+    JR_N (int cycles)
+        :IInstructions(cycles){};
+
+    void doInstruction(IMemory& memory) override {
+        uint16_t cursor = memory.get16BitRegister(IMemory::REG16BIT::PC);
+        int8_t toAdd = static_cast<int8_t>(memory.readInMemory(cursor + 1));
+
+        memory.set16BitRegister(IMemory::REG16BIT::PC, cursor + toAdd);
+    }
+};
+
+//0x20 0x28 0x30 0x38
+class JR_CC_N : public IInstructions
+{
+public:
+    JR_CC_N (int cycles, IMemory::FLAG flag, bool isToBeSet)
+        :IInstructions(cycles),
+         _flag(flag),
+         _isToBeSet(isToBeSet){};
+
+    void doInstruction(IMemory& memory) override {
+        uint16_t cursor = memory.get16BitRegister(IMemory::REG16BIT::PC);
+        if (memory.isSetFlag(_flag) == _isToBeSet) {
+            int8_t toAdd = static_cast<int8_t>(memory.readInMemory(cursor + 1));
+            memory.set16BitRegister(IMemory::REG16BIT::PC, cursor + toAdd);
+            IInstructions::_cycles = 12;
+        }
+        else {
+            memory.set16BitRegister(IMemory::REG16BIT::PC, cursor + 2);
+            IInstructions::_cycles = 8;
+        }
+    }
+    IMemory::FLAG _flag;
+    bool _isToBeSet;
 };
 #endif /*INSTRUCTIONS*/

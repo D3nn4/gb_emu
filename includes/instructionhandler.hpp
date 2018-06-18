@@ -30,9 +30,11 @@ public:
 
 private:
 
-    //RR == 16bitReg   NN == next16Bit
-    //R == 8bitReg     N == next8Bit
-    //ARR == Adress in 16BitReg    ANN == Adress in next16Bit AN == Adress in 0xff00 + N
+  //RR  == 16bitReg   NN == next16Bit
+  //R   == 8bitReg     N == next8Bit
+  //CC == flag
+  //ARR == Adress in 16BitReg    ANN == Adress in next16Bit
+  //AR  == Adress in 0xff00 + R       AN == Adress in 0xff00 + N
     std::map<uint8_t, std::shared_ptr<IInstructions>> _instructions =
         {
             {0x00, std::make_shared<NOP>(4)},
@@ -42,6 +44,7 @@ private:
             {0x04, std::make_shared<INC_DEC_R>(4, IMemory::REG8BIT::B, 1)},
             {0x05, std::make_shared<INC_DEC_R>(4, IMemory::REG8BIT::B, -1)},
             {0x06, std::make_shared<LD_R_N>(8, IMemory::REG8BIT::B)},
+            {0x07, std::make_shared<RLCA>(4)},
             {0x08, std::make_shared<LD_ANN_RR>(20, IMemory::REG16BIT::SP)},
             {0x09, std::make_shared<ADD_RR>(8, IMemory::REG16BIT::BC)},
             {0x0A, std::make_shared<LD_R_ARR>(8, IMemory::REG8BIT::A, IMemory::REG16BIT::BC, 0)},
@@ -49,41 +52,49 @@ private:
             {0x0C, std::make_shared<INC_DEC_R>(4, IMemory::REG8BIT::C, 1)},
             {0x0D, std::make_shared<INC_DEC_R>(4, IMemory::REG8BIT::C, -1)},
             {0x0E, std::make_shared<LD_R_N>(8, IMemory::REG8BIT::C)},
+            {0x0F, std::make_shared<RRCA>(4)},
             {0x11, std::make_shared<LD_RR_NN>(12, IMemory::REG16BIT::DE)},
             {0x12, std::make_shared<LD_ARR_R>(8, IMemory::REG16BIT::DE, IMemory::REG8BIT::A, 0)},
             {0x13, std::make_shared<INC_DEC_RR>(8, IMemory::REG16BIT::DE, 1)},
             {0x14, std::make_shared<INC_DEC_R>(4, IMemory::REG8BIT::D, 1)},
             {0x15, std::make_shared<INC_DEC_R>(4, IMemory::REG8BIT::D, -1)},
             {0x16, std::make_shared<LD_R_N>(8, IMemory::REG8BIT::D)},
+            {0x17, std::make_shared<RLA>(4)},
+            {0x18, std::make_shared<JR_N>(12)},
             {0x19, std::make_shared<ADD_RR>(8, IMemory::REG16BIT::DE)},
             {0x1A, std::make_shared<LD_R_ARR>(8, IMemory::REG8BIT::A, IMemory::REG16BIT::DE, 0)},
             {0x1B, std::make_shared<INC_DEC_RR>(8, IMemory::REG16BIT::DE, -1)},
             {0x1C, std::make_shared<INC_DEC_R>(4, IMemory::REG8BIT::E, 1)},
             {0x1D, std::make_shared<INC_DEC_R>(4, IMemory::REG8BIT::E, -1)},
             {0x1E, std::make_shared<LD_R_N>(8, IMemory::REG8BIT::E)},
+            {0x1F, std::make_shared<RRA>(4)},
+            {0x20, std::make_shared<JR_CC_N>(8, IMemory::FLAG::Z, 0)},
             {0x21, std::make_shared<LD_RR_NN>(12, IMemory::REG16BIT::HL)},
             {0x22, std::make_shared<LD_ARR_R>(8, IMemory::REG16BIT::HL, IMemory::REG8BIT::A, 1)},
             {0x23, std::make_shared<INC_DEC_RR>(8, IMemory::REG16BIT::HL, 1)},
             {0x24, std::make_shared<INC_DEC_R>(4, IMemory::REG8BIT::H, 1)},
             {0x25, std::make_shared<INC_DEC_R>(4, IMemory::REG8BIT::H, -1)},
             {0x26, std::make_shared<LD_R_N>(8, IMemory::REG8BIT::H)},
+            {0x28, std::make_shared<JR_CC_N>(8, IMemory::FLAG::Z, 1)},
             {0x29, std::make_shared<ADD_RR>(8, IMemory::REG16BIT::HL)},
             {0x2A, std::make_shared<LD_R_ARR>(8, IMemory::REG8BIT::A, IMemory::REG16BIT::HL, 1)},
             {0x2B, std::make_shared<INC_DEC_RR>(8, IMemory::REG16BIT::HL, -1)},
             {0x2C, std::make_shared<INC_DEC_R>(4, IMemory::REG8BIT::L, 1)},
             {0x2D, std::make_shared<INC_DEC_R>(4, IMemory::REG8BIT::L, -1)},
             {0x2E, std::make_shared<LD_R_N>(8, IMemory::REG8BIT::L)},
+            {0x30, std::make_shared<JR_CC_N>(8, IMemory::FLAG::C, 0)},
             {0x31, std::make_shared<LD_RR_NN>(12, IMemory::REG16BIT::SP)},
             {0x32, std::make_shared<LD_ARR_R>(8, IMemory::REG16BIT::HL, IMemory::REG8BIT::A, -1)},
             {0x33, std::make_shared<INC_DEC_RR>(8, IMemory::REG16BIT::SP, 1)},
             {0x34, std::make_shared<INC_DEC_ARR>(12, IMemory::REG16BIT::HL, 1)},
             {0x35, std::make_shared<INC_DEC_ARR>(12, IMemory::REG16BIT::HL, -1)},
             {0x36, std::make_shared<LD_ARR_N>(12, IMemory::REG16BIT::HL)},
+            {0x38, std::make_shared<JR_CC_N>(8, IMemory::FLAG::C, 1)},
             {0x3A, std::make_shared<LD_R_ARR>(8, IMemory::REG8BIT::A, IMemory::REG16BIT::HL, -1)},
             {0x39, std::make_shared<ADD_RR>(8, IMemory::REG16BIT::SP)},
             {0x3B, std::make_shared<INC_DEC_RR>(8, IMemory::REG16BIT::SP, -1)},
-            {0x3C, std::make_shared<INC_DEC_R>(4, IMemory::REG8BIT::A, 1)},//TODO FLAGS
-            {0x3D, std::make_shared<INC_DEC_R>(4, IMemory::REG8BIT::A, -1)},//TODO FLAGS
+            {0x3C, std::make_shared<INC_DEC_R>(4, IMemory::REG8BIT::A, 1)},
+            {0x3D, std::make_shared<INC_DEC_R>(4, IMemory::REG8BIT::A, -1)},
             {0x3E, std::make_shared<LD_R_N>(8, IMemory::REG8BIT::A)},
             {0x40, std::make_shared<LD_R_R>(4, IMemory::REG8BIT::B, IMemory::REG8BIT::B)},
             {0x41, std::make_shared<LD_R_R>(4, IMemory::REG8BIT::B, IMemory::REG8BIT::C)},
@@ -204,19 +215,33 @@ private:
             {0xB5, std::make_shared<OR_R>(4, IMemory::REG8BIT::L)},
             {0xB6, std::make_shared<OR_ARR>(8, IMemory::REG16BIT::HL)},
             {0xB7, std::make_shared<OR_R>(4, IMemory::REG8BIT::A)},
+            {0xB8, std::make_shared<CP_R>(4, IMemory::REG8BIT::B)},
+            {0xB9, std::make_shared<CP_R>(4, IMemory::REG8BIT::C)},
+            {0xBE, std::make_shared<CP_ARR>(8)},
+            {0xBA, std::make_shared<CP_R>(4, IMemory::REG8BIT::D)},
+            {0xBB, std::make_shared<CP_R>(4, IMemory::REG8BIT::E)},
+            {0xBC, std::make_shared<CP_R>(4, IMemory::REG8BIT::H)},
+            {0xBD, std::make_shared<CP_R>(4, IMemory::REG8BIT::L)},
+            {0xBF, std::make_shared<CP_R>(4, IMemory::REG8BIT::A)},
             {0xC1, std::make_shared<POP_RR>(12, IMemory::REG16BIT::BC)},
+            {0xC2, std::make_shared<JP_CC_NN>(12, IMemory::FLAG::Z, 0)},
+            {0xC3, std::make_shared<JP_NN>(16)},
             {0xC5, std::make_shared<PUSH_RR>(16, IMemory::REG16BIT::BC)},
             {0xC6, std::make_shared<ADD_N>(8)},
+            {0xCA, std::make_shared<JP_CC_NN>(12, IMemory::FLAG::Z, 1)},
             {0xCE, std::make_shared<ADC_N>(8)},
             {0xD1, std::make_shared<POP_RR>(12, IMemory::REG16BIT::DE)},
+            {0xD2, std::make_shared<JP_CC_NN>(12, IMemory::FLAG::C, 0)},
             {0xD5, std::make_shared<PUSH_RR>(16, IMemory::REG16BIT::DE)},
             {0xD6, std::make_shared<SUB_N>(8)},
+            {0xDA, std::make_shared<JP_CC_NN>(12, IMemory::FLAG::C, 1)},
             {0xDE, std::make_shared<SBC_N>(8)},
             {0xE0, std::make_shared<LDH_AN_R>(12, IMemory::REG8BIT::A)},
             {0xE1, std::make_shared<POP_RR>(12, IMemory::REG16BIT::HL)},
             {0xE2, std::make_shared<LDH_AR_R>(8, IMemory::REG8BIT::C, IMemory::REG8BIT::A)},
             {0xE5, std::make_shared<PUSH_RR>(16, IMemory::REG16BIT::HL)},
             {0xE6, std::make_shared<AND_N>(8)},
+            {0xE9, std::make_shared<JP_ARR>(4)},
             {0xEA, std::make_shared<LD_ANN_R>(16, IMemory::REG8BIT::A)},
             {0xEE, std::make_shared<XOR_N>(8)},
             {0xF0, std::make_shared<LDH_R_AN>(12, IMemory::REG8BIT::A)},
@@ -226,6 +251,7 @@ private:
             {0xF6, std::make_shared<OR_N>(8)},
             {0xF9, std::make_shared<LD_RR_RR>(8, IMemory::REG16BIT::SP, IMemory::REG16BIT::HL)},
             {0xFA, std::make_shared<LD_R_ANN>(16, IMemory::REG8BIT::A)},
+            {0xFE, std::make_shared<CP_N>(8)},
         };
 
     std::map<uint8_t, IInstructions&> _binaryInstructions;

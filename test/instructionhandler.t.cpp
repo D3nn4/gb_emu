@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 #include <gmock/gmock.h>
 #include <iostream>
+#include <bitset>
 
 #include "memory.hpp"
 #include "instructionhandler.hpp"
@@ -59,6 +60,11 @@ public:
     int add8BitAndCarryToA(uint8_t opCode, IMemory::REG8BIT toAdd);
     int sub8BitToA(uint8_t opCode, IMemory::REG8BIT toSub);
     int sub8BitAndCarryToA(uint8_t opCode, IMemory::REG8BIT toSub);
+    int cp8BitToA(uint8_t opCode, IMemory::REG8BIT toCp);
+    void jumpToNext16BitWithFlagSet(uint8_t opCode, IMemory::FLAG flag, bool isToBeSet);
+    void jumpToNext16BitWithFlagNotSet(uint8_t opCode, IMemory::FLAG flag, bool isToBeSet);
+    void jumpToAdressAndNext8BitWithFlagNotSet(uint8_t opCode, IMemory::FLAG flag, bool isToBeSet);
+    void jumpToAdressAndNext8BitWithFlagSet(uint8_t opCode, IMemory::FLAG flag, bool isToBeSet);
 
 };
 
@@ -1441,4 +1447,456 @@ TEST_F (InstructionHandlerTest, sub8NextBitAndCarryToA)
     EXPECT_CALL(_memory, setFlag(IMemory::FLAG::N));
     EXPECT_CALL(_memory, set16BitRegister(IMemory::REG16BIT::PC, 0xff02));
     EXPECT_EQ(8, instructionHandler.doInstruction(0xDE)) ;
+}
+
+//// TEST CP
+int InstructionHandlerTest::cp8BitToA(uint8_t opCode, IMemory::REG8BIT toCp)
+{
+    InstructionHandler instructionHandler(_memory);
+
+    if(toCp == IMemory::REG8BIT::A) {
+        EXPECT_CALL(_memory, get8BitRegister(IMemory::REG8BIT::A))
+            .WillOnce(Return(0x3C))
+            .WillOnce(Return(0x3C));
+        EXPECT_CALL(_memory, setFlag(IMemory::FLAG::Z));
+        EXPECT_CALL(_memory, unsetFlag(IMemory::FLAG::C));
+        EXPECT_CALL(_memory, unsetFlag(IMemory::FLAG::H));
+    }
+    else {
+        EXPECT_CALL(_memory, get8BitRegister(IMemory::REG8BIT::A))
+            .WillOnce(Return(0x3C));
+        EXPECT_CALL(_memory, get8BitRegister(toCp))
+            .WillOnce(Return(0x40));
+        EXPECT_CALL(_memory, unsetFlag(IMemory::FLAG::Z));
+        EXPECT_CALL(_memory, setFlag(IMemory::FLAG::C));
+        EXPECT_CALL(_memory, unsetFlag(IMemory::FLAG::H));
+    }
+    EXPECT_CALL(_memory, setFlag(IMemory::FLAG::N));
+
+    EXPECT_CALL(_memory, get16BitRegister(IMemory::REG16BIT::PC))
+        .WillOnce(Return(0x0000));
+    EXPECT_CALL(_memory, set16BitRegister(IMemory::REG16BIT::PC, 0x0001));
+    return instructionHandler.doInstruction(opCode);
+}
+
+TEST_F (InstructionHandlerTest, cp8BitToAInstructions)
+{
+    auto testCP = [this](uint8_t opCode, IMemory::REG8BIT toCp)
+                    {
+                        EXPECT_EQ(4, cp8BitToA(opCode, toCp));
+                    };
+    testCP(0xB8, IMemory::REG8BIT::B);
+    testCP(0xB9, IMemory::REG8BIT::C);
+    testCP(0xBA, IMemory::REG8BIT::D);
+    testCP(0xBB, IMemory::REG8BIT::E);
+    testCP(0xBC, IMemory::REG8BIT::H);
+    testCP(0xBD, IMemory::REG8BIT::L);
+    testCP(0xBF, IMemory::REG8BIT::A);
+}
+
+TEST_F (InstructionHandlerTest, cp8BitInAdressToA)
+{
+    InstructionHandler instructionHandler(_memory);
+
+    {
+        EXPECT_CALL(_memory, get8BitRegister(IMemory::REG8BIT::A))
+            .WillOnce(Return(0x3C));
+        EXPECT_CALL(_memory, get16BitRegister(IMemory::REG16BIT::HL))
+            .WillOnce(Return(0xff00));
+        EXPECT_CALL(_memory, readInMemory(0xff00))
+            .WillOnce(Return(0x2F));
+        EXPECT_CALL(_memory, unsetFlag(IMemory::FLAG::Z));
+        EXPECT_CALL(_memory, unsetFlag(IMemory::FLAG::C));
+        EXPECT_CALL(_memory, setFlag(IMemory::FLAG::H));
+        EXPECT_CALL(_memory, setFlag(IMemory::FLAG::N));
+
+        EXPECT_CALL(_memory, get16BitRegister(IMemory::REG16BIT::PC))
+            .WillOnce(Return(0x0000));
+        EXPECT_CALL(_memory, set16BitRegister(IMemory::REG16BIT::PC, 0x0001));
+        EXPECT_EQ(8, instructionHandler.doInstruction(0xBE));
+    }
+    {
+        EXPECT_CALL(_memory, get8BitRegister(IMemory::REG8BIT::A))
+            .WillOnce(Return(0x3C));
+        EXPECT_CALL(_memory, get16BitRegister(IMemory::REG16BIT::HL))
+            .WillOnce(Return(0xff00));
+        EXPECT_CALL(_memory, readInMemory(0xff00))
+            .WillOnce(Return(0x40));
+        EXPECT_CALL(_memory, unsetFlag(IMemory::FLAG::Z));
+        EXPECT_CALL(_memory, setFlag(IMemory::FLAG::C));
+        EXPECT_CALL(_memory, unsetFlag(IMemory::FLAG::H));
+        EXPECT_CALL(_memory, setFlag(IMemory::FLAG::N));
+
+        EXPECT_CALL(_memory, get16BitRegister(IMemory::REG16BIT::PC))
+            .WillOnce(Return(0x0000));
+        EXPECT_CALL(_memory, set16BitRegister(IMemory::REG16BIT::PC, 0x0001));
+        EXPECT_EQ(8, instructionHandler.doInstruction(0xBE));
+    }
+}
+
+TEST_F (InstructionHandlerTest, cp8NextBitToA)
+{
+    InstructionHandler instructionHandler(_memory);
+
+    {
+        EXPECT_CALL(_memory, get8BitRegister(IMemory::REG8BIT::A))
+            .WillOnce(Return(0x3C));
+        EXPECT_CALL(_memory, get16BitRegister(IMemory::REG16BIT::PC))
+            .WillOnce(Return(0x0000));
+        EXPECT_CALL(_memory, readInMemory(0x0001))
+            .WillOnce(Return(0x3C));
+        EXPECT_CALL(_memory, setFlag(IMemory::FLAG::Z));
+        EXPECT_CALL(_memory, unsetFlag(IMemory::FLAG::C));
+        EXPECT_CALL(_memory, unsetFlag(IMemory::FLAG::H));
+        EXPECT_CALL(_memory, setFlag(IMemory::FLAG::N));
+
+        EXPECT_CALL(_memory, set16BitRegister(IMemory::REG16BIT::PC, 0x0002));
+        EXPECT_EQ(8, instructionHandler.doInstruction(0xFE));
+    }
+    {
+        EXPECT_CALL(_memory, get8BitRegister(IMemory::REG8BIT::A))
+            .WillOnce(Return(0x3C));
+        EXPECT_CALL(_memory, get16BitRegister(IMemory::REG16BIT::PC))
+            .WillOnce(Return(0xff00));
+        EXPECT_CALL(_memory, readInMemory(0xff01))
+            .WillOnce(Return(0x40));
+        EXPECT_CALL(_memory, unsetFlag(IMemory::FLAG::Z));
+        EXPECT_CALL(_memory, setFlag(IMemory::FLAG::C));
+        EXPECT_CALL(_memory, unsetFlag(IMemory::FLAG::H));
+        EXPECT_CALL(_memory, setFlag(IMemory::FLAG::N));
+
+        EXPECT_CALL(_memory, set16BitRegister(IMemory::REG16BIT::PC, 0xff02));
+        EXPECT_EQ(8, instructionHandler.doInstruction(0xFE));
+    }
+}
+
+// TEST Rotation instructions
+TEST_F (InstructionHandlerTest, rotateRegAContentToTheLeftAndStore7thBitTo0thBit)
+{
+    {
+        InstructionHandler instructionHandler(_memory);
+
+        EXPECT_CALL(_memory, get8BitRegister(IMemory::REG8BIT::A))
+            .WillOnce(Return(0x85));
+        EXPECT_CALL(_memory, set8BitRegister(IMemory::REG8BIT::A, 0x0A));
+        EXPECT_CALL(_memory, unsetFlag(IMemory::FLAG::Z));
+        EXPECT_CALL(_memory, unsetFlag(IMemory::FLAG::N));
+        EXPECT_CALL(_memory, unsetFlag(IMemory::FLAG::H));
+        EXPECT_CALL(_memory, setFlag(IMemory::FLAG::C));
+        EXPECT_CALL(_memory, get16BitRegister(IMemory::REG16BIT::PC))
+            .WillOnce(Return(0x0000));
+        EXPECT_CALL(_memory, set16BitRegister(IMemory::REG16BIT::PC, 0x0001));
+
+        EXPECT_EQ(4, instructionHandler.doInstruction(0x07));
+    }
+    {
+        InstructionHandler instructionHandler(_memory);
+
+        EXPECT_CALL(_memory, get8BitRegister(IMemory::REG8BIT::A))
+            .WillOnce(Return(0x00));
+        EXPECT_CALL(_memory, set8BitRegister(IMemory::REG8BIT::A, 0x00));
+        EXPECT_CALL(_memory, setFlag(IMemory::FLAG::Z));
+        EXPECT_CALL(_memory, unsetFlag(IMemory::FLAG::N));
+        EXPECT_CALL(_memory, unsetFlag(IMemory::FLAG::H));
+        EXPECT_CALL(_memory, unsetFlag(IMemory::FLAG::C));
+        EXPECT_CALL(_memory, get16BitRegister(IMemory::REG16BIT::PC))
+            .WillOnce(Return(0x0000));
+        EXPECT_CALL(_memory, set16BitRegister(IMemory::REG16BIT::PC, 0x0001));
+
+        EXPECT_EQ(4, instructionHandler.doInstruction(0x07));
+    }
+}
+
+TEST_F (InstructionHandlerTest, rotateRegAContentToTheLeftAndStoreCarryIn0thBit)
+{
+    {
+        InstructionHandler instructionHandler(_memory);
+
+        EXPECT_CALL(_memory, get8BitRegister(IMemory::REG8BIT::A))
+            .WillOnce(Return(0x95));
+        EXPECT_CALL(_memory, isSetFlag(IMemory::FLAG::C))
+            .WillOnce(Return(true));
+        EXPECT_CALL(_memory, set8BitRegister(IMemory::REG8BIT::A, 0x2B));
+        EXPECT_CALL(_memory, unsetFlag(IMemory::FLAG::Z));
+        EXPECT_CALL(_memory, unsetFlag(IMemory::FLAG::N));
+        EXPECT_CALL(_memory, unsetFlag(IMemory::FLAG::H));
+        EXPECT_CALL(_memory, setFlag(IMemory::FLAG::C));
+        EXPECT_CALL(_memory, get16BitRegister(IMemory::REG16BIT::PC))
+            .WillOnce(Return(0x0000));
+        EXPECT_CALL(_memory, set16BitRegister(IMemory::REG16BIT::PC, 0x0001));
+
+        EXPECT_EQ(4, instructionHandler.doInstruction(0x17));
+    }
+    {
+        InstructionHandler instructionHandler(_memory);
+
+        EXPECT_CALL(_memory, get8BitRegister(IMemory::REG8BIT::A))
+            .WillOnce(Return(0x00));
+        EXPECT_CALL(_memory, set8BitRegister(IMemory::REG8BIT::A, 0x00));
+        EXPECT_CALL(_memory, isSetFlag(IMemory::FLAG::C))
+            .WillOnce(Return(false));
+        EXPECT_CALL(_memory, setFlag(IMemory::FLAG::Z));
+        EXPECT_CALL(_memory, unsetFlag(IMemory::FLAG::N));
+        EXPECT_CALL(_memory, unsetFlag(IMemory::FLAG::H));
+        EXPECT_CALL(_memory, unsetFlag(IMemory::FLAG::C));
+        EXPECT_CALL(_memory, get16BitRegister(IMemory::REG16BIT::PC))
+            .WillOnce(Return(0x0000));
+        EXPECT_CALL(_memory, set16BitRegister(IMemory::REG16BIT::PC, 0x0001));
+
+        EXPECT_EQ(4, instructionHandler.doInstruction(0x17));
+    }
+}
+
+TEST_F (InstructionHandlerTest, rotateRegAContentToTheRightAndStore7thBitTo0thBit)
+{
+    {
+        InstructionHandler instructionHandler(_memory);
+
+        EXPECT_CALL(_memory, get8BitRegister(IMemory::REG8BIT::A))
+            .WillOnce(Return(0x3B));
+        EXPECT_CALL(_memory, set8BitRegister(IMemory::REG8BIT::A, 0x9D));
+        EXPECT_CALL(_memory, unsetFlag(IMemory::FLAG::Z));
+        EXPECT_CALL(_memory, unsetFlag(IMemory::FLAG::N));
+        EXPECT_CALL(_memory, unsetFlag(IMemory::FLAG::H));
+        EXPECT_CALL(_memory, setFlag(IMemory::FLAG::C));
+        EXPECT_CALL(_memory, get16BitRegister(IMemory::REG16BIT::PC))
+            .WillOnce(Return(0x0000));
+        EXPECT_CALL(_memory, set16BitRegister(IMemory::REG16BIT::PC, 0x0001));
+
+        EXPECT_EQ(4, instructionHandler.doInstruction(0x0F));
+    }
+    {
+        InstructionHandler instructionHandler(_memory);
+
+        EXPECT_CALL(_memory, get8BitRegister(IMemory::REG8BIT::A))
+            .WillOnce(Return(0xFE));
+        EXPECT_CALL(_memory, set8BitRegister(IMemory::REG8BIT::A, 0x7F));
+        EXPECT_CALL(_memory, unsetFlag(IMemory::FLAG::Z));
+        EXPECT_CALL(_memory, unsetFlag(IMemory::FLAG::N));
+        EXPECT_CALL(_memory, unsetFlag(IMemory::FLAG::H));
+        EXPECT_CALL(_memory, unsetFlag(IMemory::FLAG::C));
+        EXPECT_CALL(_memory, get16BitRegister(IMemory::REG16BIT::PC))
+            .WillOnce(Return(0x0000));
+        EXPECT_CALL(_memory, set16BitRegister(IMemory::REG16BIT::PC, 0x0001));
+
+        EXPECT_EQ(4, instructionHandler.doInstruction(0x0F));
+    }
+}
+
+TEST_F (InstructionHandlerTest, rotateRegAContentToTheRightAndStoreCarryIn0thBit)
+{
+    {
+        InstructionHandler instructionHandler(_memory);
+
+        EXPECT_CALL(_memory, get8BitRegister(IMemory::REG8BIT::A))
+            .WillOnce(Return(0x81));
+        EXPECT_CALL(_memory, isSetFlag(IMemory::FLAG::C))
+            .WillOnce(Return(false));
+        EXPECT_CALL(_memory, set8BitRegister(IMemory::REG8BIT::A, 0x40));
+        EXPECT_CALL(_memory, unsetFlag(IMemory::FLAG::Z));
+        EXPECT_CALL(_memory, unsetFlag(IMemory::FLAG::N));
+        EXPECT_CALL(_memory, unsetFlag(IMemory::FLAG::H));
+        EXPECT_CALL(_memory, setFlag(IMemory::FLAG::C));
+        EXPECT_CALL(_memory, get16BitRegister(IMemory::REG16BIT::PC))
+            .WillOnce(Return(0x0000));
+        EXPECT_CALL(_memory, set16BitRegister(IMemory::REG16BIT::PC, 0x0001));
+
+        EXPECT_EQ(4, instructionHandler.doInstruction(0x1F));
+    }
+    {
+        InstructionHandler instructionHandler(_memory);
+
+        EXPECT_CALL(_memory, get8BitRegister(IMemory::REG8BIT::A))
+            .WillOnce(Return(0x00));
+        EXPECT_CALL(_memory, isSetFlag(IMemory::FLAG::C))
+            .WillOnce(Return(true));
+        EXPECT_CALL(_memory, set8BitRegister(IMemory::REG8BIT::A, 0x80));
+        EXPECT_CALL(_memory, unsetFlag(IMemory::FLAG::Z));
+        EXPECT_CALL(_memory, unsetFlag(IMemory::FLAG::N));
+        EXPECT_CALL(_memory, unsetFlag(IMemory::FLAG::H));
+        EXPECT_CALL(_memory, unsetFlag(IMemory::FLAG::C));
+        EXPECT_CALL(_memory, get16BitRegister(IMemory::REG16BIT::PC))
+            .WillOnce(Return(0x0000));
+        EXPECT_CALL(_memory, set16BitRegister(IMemory::REG16BIT::PC, 0x0001));
+
+        EXPECT_EQ(4, instructionHandler.doInstruction(0x1F));
+    }
+}
+
+TEST_F (InstructionHandlerTest, jumpToNext16Bit)
+{
+    InstructionHandler instructionHandler(_memory);
+
+    EXPECT_CALL(_memory, get16BitRegister(IMemory::REG16BIT::PC))
+        .WillOnce(Return(0x0000));
+    EXPECT_CALL(_memory, readInMemory(0x0001))
+        .WillOnce(Return(0x00));
+    EXPECT_CALL(_memory, readInMemory(0x0002))
+        .WillOnce(Return(0x80));
+    EXPECT_CALL(_memory, set16BitRegister(IMemory::REG16BIT::PC, 0x8000));
+
+    EXPECT_EQ(16, instructionHandler.doInstruction(0xC3));
+}
+
+void InstructionHandlerTest::jumpToNext16BitWithFlagNotSet(uint8_t opCode, IMemory::FLAG flag, bool isToBeSet)
+{
+    InstructionHandler instructionHandler(_memory);
+
+    EXPECT_CALL(_memory, get16BitRegister(IMemory::REG16BIT::PC))
+        .WillOnce(Return(0x0000));
+    EXPECT_CALL(_memory, isSetFlag(flag))
+        .WillOnce(Return(false));
+    if (isToBeSet == false) {
+        EXPECT_CALL(_memory, readInMemory(0x0001))
+            .WillOnce(Return(0x00));
+        EXPECT_CALL(_memory, readInMemory(0x0002))
+            .WillOnce(Return(0x80));
+        EXPECT_CALL(_memory, set16BitRegister(IMemory::REG16BIT::PC, 0x8000));
+        EXPECT_EQ(16, instructionHandler.doInstruction(opCode));
+    }
+    else {
+        EXPECT_CALL(_memory, set16BitRegister(IMemory::REG16BIT::PC, 0x0003));
+        EXPECT_EQ(12, instructionHandler.doInstruction(opCode));
+    }
+}
+
+void InstructionHandlerTest::jumpToNext16BitWithFlagSet(uint8_t opCode, IMemory::FLAG flag, bool isToBeSet)
+{
+    InstructionHandler instructionHandler(_memory);
+
+    EXPECT_CALL(_memory, get16BitRegister(IMemory::REG16BIT::PC))
+        .WillOnce(Return(0x0000));
+    EXPECT_CALL(_memory, isSetFlag(flag))
+        .WillOnce(Return(true));
+    if (isToBeSet == true) {
+        EXPECT_CALL(_memory, readInMemory(0x0001))
+            .WillOnce(Return(0x00));
+        EXPECT_CALL(_memory, readInMemory(0x0002))
+            .WillOnce(Return(0x80));
+        EXPECT_CALL(_memory, set16BitRegister(IMemory::REG16BIT::PC, 0x8000));
+        EXPECT_EQ(16, instructionHandler.doInstruction(opCode));
+    }
+    else {
+        EXPECT_CALL(_memory, set16BitRegister(IMemory::REG16BIT::PC, 0x0003));
+        EXPECT_EQ(12, instructionHandler.doInstruction(opCode));
+    }
+}
+
+TEST_F (InstructionHandlerTest, jumpToNext16BitWithConditions)
+{
+    auto testWithFlagSet = [this](uint8_t opCode, IMemory::FLAG flag, bool isToBeSet)
+                           {
+                               jumpToNext16BitWithFlagSet(opCode, flag, isToBeSet);
+                           };
+    auto testWithFlagNotSet = [this](uint8_t opCode, IMemory::FLAG flag, bool isToBeSet)
+                              {
+                               jumpToNext16BitWithFlagNotSet(opCode, flag, isToBeSet);
+                              };
+    testWithFlagNotSet(0xC2, IMemory::FLAG::Z, 0);
+    testWithFlagNotSet(0xCA, IMemory::FLAG::Z, 1);
+    testWithFlagNotSet(0xD2, IMemory::FLAG::C, 0);
+    testWithFlagNotSet(0xDA, IMemory::FLAG::C, 1);
+
+    testWithFlagSet(0xC2, IMemory::FLAG::Z, 0);
+    testWithFlagSet(0xCA, IMemory::FLAG::Z, 1);
+    testWithFlagSet(0xD2, IMemory::FLAG::C, 0);
+    testWithFlagSet(0xDA, IMemory::FLAG::C, 1);
+}
+
+TEST_F (InstructionHandlerTest, jumpToAdressInReg)
+{
+    InstructionHandler instructionHandler(_memory);
+
+    EXPECT_CALL(_memory, get16BitRegister(IMemory::REG16BIT::HL))
+        .WillOnce(Return(0x8000));
+    EXPECT_CALL(_memory, set16BitRegister(IMemory::REG16BIT::PC, 0x8000));
+
+    EXPECT_EQ(4, instructionHandler.doInstruction(0xE9));
+}
+
+TEST_F (InstructionHandlerTest, jumpToAdressAndNext8Bit)
+{
+    {
+        InstructionHandler instructionHandler(_memory);
+
+        EXPECT_CALL(_memory, get16BitRegister(IMemory::REG16BIT::PC))
+            .WillOnce(Return(0x8000));
+        EXPECT_CALL(_memory, readInMemory(0x8001))
+            .WillOnce(Return(0x10));
+        EXPECT_CALL(_memory, set16BitRegister(IMemory::REG16BIT::PC, 0x8010));
+
+        EXPECT_EQ(12, instructionHandler.doInstruction(0x18));
+    }
+    {
+        InstructionHandler instructionHandler(_memory);
+
+        EXPECT_CALL(_memory, get16BitRegister(IMemory::REG16BIT::PC))
+            .WillOnce(Return(0x8000));
+        EXPECT_CALL(_memory, readInMemory(0x8001))
+            .WillOnce(Return(0xFE));
+        EXPECT_CALL(_memory, set16BitRegister(IMemory::REG16BIT::PC, 0x7FFE));
+
+        EXPECT_EQ(12, instructionHandler.doInstruction(0x18));
+    }
+}
+
+void InstructionHandlerTest::jumpToAdressAndNext8BitWithFlagNotSet(uint8_t opCode, IMemory::FLAG flag, bool isToBeSet)
+{
+    InstructionHandler instructionHandler(_memory);
+
+    EXPECT_CALL(_memory, get16BitRegister(IMemory::REG16BIT::PC))
+        .WillOnce(Return(0x0000));
+    EXPECT_CALL(_memory, isSetFlag(flag))
+        .WillOnce(Return(false));
+    if (isToBeSet == false) {
+        EXPECT_CALL(_memory, readInMemory(0x0001))
+            .WillOnce(Return(0x10));
+        EXPECT_CALL(_memory, set16BitRegister(IMemory::REG16BIT::PC, 0x0010));
+        EXPECT_EQ(12, instructionHandler.doInstruction(opCode));
+    }
+    else {
+        EXPECT_CALL(_memory, set16BitRegister(IMemory::REG16BIT::PC, 0x0002));
+        EXPECT_EQ(8, instructionHandler.doInstruction(opCode));
+    }
+}
+
+void InstructionHandlerTest::jumpToAdressAndNext8BitWithFlagSet(uint8_t opCode, IMemory::FLAG flag, bool isToBeSet)
+{
+    InstructionHandler instructionHandler(_memory);
+
+    EXPECT_CALL(_memory, get16BitRegister(IMemory::REG16BIT::PC))
+        .WillOnce(Return(0x8000));
+    EXPECT_CALL(_memory, isSetFlag(flag))
+        .WillOnce(Return(true));
+    if (isToBeSet == true) {
+        EXPECT_CALL(_memory, readInMemory(0x8001))
+            .WillOnce(Return(0xFE));
+        EXPECT_CALL(_memory, set16BitRegister(IMemory::REG16BIT::PC, 0x7FFE));
+        EXPECT_EQ(12, instructionHandler.doInstruction(opCode));
+    }
+    else {
+        EXPECT_CALL(_memory, set16BitRegister(IMemory::REG16BIT::PC, 0x8002));
+        EXPECT_EQ(8, instructionHandler.doInstruction(opCode));
+    }
+}
+
+TEST_F (InstructionHandlerTest, jumpToAdressAndNext8BitWithConditions)
+{
+    auto testWithFlagSet = [this](uint8_t opCode, IMemory::FLAG flag, bool isToBeSet)
+                           {
+                               jumpToAdressAndNext8BitWithFlagSet(opCode, flag, isToBeSet);
+                           };
+    auto testWithFlagNotSet = [this](uint8_t opCode, IMemory::FLAG flag, bool isToBeSet)
+                              {
+                                  jumpToAdressAndNext8BitWithFlagNotSet(opCode, flag, isToBeSet);
+                              };
+    testWithFlagNotSet(0x20, IMemory::FLAG::Z, 0);
+    testWithFlagNotSet(0x28, IMemory::FLAG::Z, 1);
+    testWithFlagNotSet(0x30, IMemory::FLAG::C, 0);
+    testWithFlagNotSet(0x38, IMemory::FLAG::C, 1);
+
+    testWithFlagSet(0x20, IMemory::FLAG::Z, 0);
+    testWithFlagSet(0x28, IMemory::FLAG::Z, 1);
+    testWithFlagSet(0x30, IMemory::FLAG::C, 0);
+    testWithFlagSet(0x38, IMemory::FLAG::C, 1);
 }

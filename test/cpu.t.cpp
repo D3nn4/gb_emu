@@ -36,13 +36,6 @@ public:
     MOCK_METHOD1(setFlag, void(IMemory::FLAG));
     MOCK_METHOD1(unsetFlag, void(IMemory::FLAG));
     MOCK_METHOD1(isSetFlag, bool(IMemory::FLAG));
-    // MOCK_METHOD2(setBitInRegister, void(int, IMemory::REG8BIT));
-    // MOCK_METHOD2(unsetBitInRegister, void(int, IMemory::REG8BIT));
-    // MOCK_METHOD2(setBitInRegister, void(int, IMemory::REG16BIT));
-    // MOCK_METHOD2(unsetBitInRegister, void(int, IMemory::REG16BIT));
-    // MOCK_METHOD2(isSet, bool(int, IMemory::REG8BIT));
-    // MOCK_METHOD2(isSet, bool(int, IMemory::REG16BIT));
-
 };
 
 class CpuTest : public ::testing::Test
