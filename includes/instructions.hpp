@@ -323,6 +323,37 @@ public:
     IMemory::REG16BIT _register;
 };
 
+// 0xF8
+class LDHL_SP_N : public IInstructions
+{
+public:
+    LDHL_SP_N (int cycles)
+        :IInstructions(cycles){};
+
+    void doInstruction(IMemory& memory) override {
+        uint16_t regValue = memory.get16BitRegister(IMemory::REG16BIT::SP);
+        uint16_t cursor = memory.get16BitRegister(IMemory::REG16BIT::PC);
+        int8_t valueToAdd = static_cast<int8_t>(memory.readInMemory(cursor + 1));
+
+        memory.unsetFlag(IMemory::FLAG::Z);
+        memory.unsetFlag(IMemory::FLAG::N);
+        if ((((regValue & 0x0F00) + (valueToAdd & 0x0F00)) & 0x1000) == 0x1000) {
+            memory.setFlag(IMemory::FLAG::H);
+        }
+        else {
+            memory.unsetFlag(IMemory::FLAG::H);
+        }
+        if (((static_cast<uint32_t>(regValue) + static_cast<uint32_t>(valueToAdd)) > 0xffff)) {
+            memory.setFlag(IMemory::FLAG::C);
+        }
+        else {
+            memory.unsetFlag(IMemory::FLAG::C);
+        }
+
+        memory.set16BitRegister(IMemory::REG16BIT::HL, regValue + valueToAdd);
+        memory.set16BitRegister(IMemory::REG16BIT::PC, cursor + 2);
+    }
+};
 
 //OpCode increment 0x04 0x05 0x0C 0x14 0x15 0x1C 0x1D 0x24 0x25 0x2C 0x2D 0x3C 0x3D
 class INC_DEC_R : public IInstructions
@@ -917,6 +948,38 @@ public:
         memory.unsetFlag(IMemory::FLAG::N);
 
         memory.set8BitRegister(IMemory::REG8BIT::A, result);
+        memory.set16BitRegister(IMemory::REG16BIT::PC, cursor + 2);
+    }
+};
+
+// 0xE8
+class ADD_SP_N : public IInstructions
+{
+public:
+    ADD_SP_N (int cycles)
+        :IInstructions(cycles){};
+
+    void doInstruction(IMemory& memory) override {
+        uint16_t regValue = memory.get16BitRegister(IMemory::REG16BIT::SP);
+        uint16_t cursor = memory.get16BitRegister(IMemory::REG16BIT::PC);
+        uint8_t valueToAdd = memory.readInMemory(cursor + 1);
+
+        memory.unsetFlag(IMemory::FLAG::Z);
+        memory.unsetFlag(IMemory::FLAG::N);
+        if ((((regValue & 0x0F00) + (valueToAdd & 0x0F00)) & 0x1000) == 0x1000) {
+            memory.setFlag(IMemory::FLAG::H);
+        }
+        else {
+            memory.unsetFlag(IMemory::FLAG::H);
+        }
+        if (((static_cast<uint32_t>(regValue) + static_cast<uint32_t>(valueToAdd)) > 0xffff)) {
+            memory.setFlag(IMemory::FLAG::C);
+        }
+        else {
+            memory.unsetFlag(IMemory::FLAG::C);
+        }
+
+        memory.set16BitRegister(IMemory::REG16BIT::SP, regValue + valueToAdd);
         memory.set16BitRegister(IMemory::REG16BIT::PC, cursor + 2);
     }
 };
@@ -1775,7 +1838,6 @@ public:
     bool _isToBeSet;
 };
 
-
 //0xD9
 class RETI : public IInstructions
 {
@@ -1820,4 +1882,123 @@ public:
     uint8_t _value;
 };
 
+//0x37
+class SCF : public IInstructions
+{
+public:
+    SCF (int cycles)
+        :IInstructions(cycles){};
+
+    void doInstruction(IMemory& memory) override {
+        memory.unsetFlag(IMemory::FLAG::N);
+        memory.unsetFlag(IMemory::FLAG::H);
+        memory.setFlag(IMemory::FLAG::C);
+    }
+};
+
+//0x3F
+class CCF : public IInstructions
+{
+public:
+    CCF (int cycles)
+        :IInstructions(cycles){};
+
+    void doInstruction(IMemory& memory) override {
+        memory.unsetFlag(IMemory::FLAG::N);
+        memory.unsetFlag(IMemory::FLAG::H);
+        if (memory.isSetFlag(IMemory::FLAG::C)) {
+            memory.unsetFlag(IMemory::FLAG::C);
+        }
+        else {
+            memory.setFlag(IMemory::FLAG::C);
+        }
+    }
+};
+
+//0x2F
+class CPL : public IInstructions
+{
+public:
+    CPL (int cycles)
+        :IInstructions(cycles){};
+
+    void doInstruction(IMemory& memory) override {
+        std::bitset<8> bitsetA(memory.get8BitRegister(IMemory::REG8BIT::A));
+        bitsetA.flip();
+        uint8_t newValue = static_cast<uint8_t>(bitsetA.to_ulong());
+        memory.set8BitRegister(IMemory::REG8BIT::A, newValue);
+        memory.setFlag(IMemory::FLAG::N);
+        memory.setFlag(IMemory::FLAG::H);
+    }
+};
+
+//0xF3
+class DI : public IInstructions
+{
+public:
+    DI (int cycles)
+        :IInstructions(cycles){};
+
+    void doInstruction(IMemory& ) override {
+        //TODO
+    }
+};
+
+//0xFB
+class EI : public IInstructions
+{
+public:
+    EI (int cycles)
+        :IInstructions(cycles){};
+
+    void doInstruction(IMemory& ) override {
+        //TODO
+    }
+};
+
+//0x76
+class HALT : public IInstructions
+{
+public:
+    HALT (int cycles)
+        :IInstructions(cycles){};
+
+    void doInstruction(IMemory& ) override {
+        //TODO
+    }
+};
+
+//0x10
+class STOP : public IInstructions
+{
+public:
+    STOP (int cycles)
+        :IInstructions(cycles){};
+
+    void doInstruction(IMemory& ) override {
+        //TODO
+    }
+};
+
+//0xCB
+class OP : public IInstructions
+{
+public:
+    OP (int cycles, std::map<uint8_t, std::shared_ptr<IInstructions>> const & binaryInstructions)
+        :IInstructions(cycles),
+         _binaryInstructions(binaryInstructions){};
+
+    void doInstruction(IMemory& memory) override {
+        uint16_t cursor = memory.get16BitRegister(IMemory::REG16BIT::PC);
+        uint8_t opCode = memory.readInMemory(cursor + 1);
+
+        auto instructMapIt = _binaryInstructions.find(opCode);
+        if (instructMapIt != _binaryInstructions.end()) {
+            std::shared_ptr<IInstructions> binaryInstruction = instructMapIt->second;
+            IInstructions::_cycles = 4 + binaryInstruction->doOp(memory);
+        }
+        memory.set16BitRegister(IMemory::REG16BIT::PC, cursor + 2);
+    }
+    std::map<uint8_t, std::shared_ptr<IInstructions>> const & _binaryInstructions;
+};
 #endif /*INSTRUCTIONS*/
