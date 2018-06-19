@@ -12,6 +12,19 @@
 //ARR == Adress in 16BitReg    ANN == Adress in next16Bit
 //AR  == Adress in 0xff00 + R       AN == Adress in 0xff00 + N
 
+//OpCode 0x00
+class NOP : public IInstructions
+{
+public :
+    NOP(int cycles)
+        :IInstructions(cycles){};
+
+    void doInstruction(IMemory& memory) override {
+        uint16_t cursor = memory.get16BitRegister(IMemory::REG16BIT::PC);
+        memory.set16BitRegister(IMemory::REG16BIT::PC, cursor + 1);
+    }
+};
+
 //OpCode 0x06 0x0E 0x16 0x1E 0x26 0x2E 0x3E
 class LD_R_N : public IInstructions
 {
@@ -290,20 +303,6 @@ public:
     IMemory::REG8BIT _8BitReg;
 };
 
-////////////////////////////////////
-//OpCode 0x00
-class NOP : public IInstructions
-{
-public :
-    NOP(int cycles)
-        :IInstructions(cycles){};
-
-    void doInstruction(IMemory& memory) override {
-        uint16_t cursor = memory.get16BitRegister(IMemory::REG16BIT::PC);
-        memory.set16BitRegister(IMemory::REG16BIT::PC, cursor + 1);
-    }
-};
-
 //OpCode 0x01 0x11 0x21 0x31
 class LD_RR_NN : public IInstructions
 {
@@ -336,9 +335,35 @@ public:
 
     void doInstruction(IMemory& memory) override {
         uint8_t regValue = memory.get8BitRegister(_reg8Bit);
-        memory.set8BitRegister(_reg8Bit, regValue + _value);
+        uint8_t newValue = regValue + _value;
+        memory.set8BitRegister(_reg8Bit, newValue);
         uint16_t cursor = memory.get16BitRegister(IMemory::REG16BIT::PC);
         memory.set16BitRegister(IMemory::REG16BIT::PC, cursor + 1);
+
+        if (newValue == 0x00) {
+            memory.setFlag(IMemory::FLAG::Z);
+        }
+        else {
+            memory.unsetFlag(IMemory::FLAG::Z);
+        }
+        if (_value < 0) {
+            memory.setFlag(IMemory::FLAG::N);
+            if ((((regValue & 0x0F) - (0x01 & 0x0F)) & 0x10) == 0x10) {
+                memory.setFlag(IMemory::FLAG::H);
+            }
+            else {
+                memory.unsetFlag(IMemory::FLAG::H);
+            }
+        }
+        else {
+            memory.unsetFlag(IMemory::FLAG::N);
+            if ((((regValue & 0x0F) + (0x01 & 0x0F)) & 0x10) == 0x10) {
+                memory.setFlag(IMemory::FLAG::H);
+            }
+            else {
+                memory.unsetFlag(IMemory::FLAG::H);
+            }
+        }
     }
 
     IMemory::REG8BIT _reg8Bit;
@@ -356,9 +381,35 @@ public:
 
     void doInstruction(IMemory& memory) override {
         uint16_t regValue = memory.get16BitRegister(_reg16Bit);
-        memory.set16BitRegister(_reg16Bit, regValue + _value);
+        uint16_t newValue = regValue + _value;
+        memory.set16BitRegister(_reg16Bit, newValue);
         uint16_t cursor = memory.get16BitRegister(IMemory::REG16BIT::PC);
         memory.set16BitRegister(IMemory::REG16BIT::PC, cursor + 1);
+
+        if (newValue == 0x0000) {
+            memory.setFlag(IMemory::FLAG::Z);
+        }
+        else {
+            memory.unsetFlag(IMemory::FLAG::Z);
+        }
+        if (_value < 0) {
+            memory.setFlag(IMemory::FLAG::N);
+            if ((((regValue & 0x0F00) + (0x0001 & 0x0F00)) & 0x1000) == 0x1000) {
+                memory.setFlag(IMemory::FLAG::H);
+            }
+            else {
+                memory.unsetFlag(IMemory::FLAG::H);
+            }
+        }
+        else {
+            memory.unsetFlag(IMemory::FLAG::N);
+            if ((((regValue & 0x0F00) + (0x0001 & 0x0F00)) & 0x1000) == 0x1000) {
+                memory.setFlag(IMemory::FLAG::H);
+            }
+            else {
+                memory.unsetFlag(IMemory::FLAG::H);
+            }
+        }
     }
 
     IMemory::REG16BIT _reg16Bit;
@@ -376,10 +427,36 @@ public:
 
     void doInstruction(IMemory& memory) override {
         uint16_t adress = memory.get16BitRegister(_reg16Bit);
-        uint8_t valueToIncrement = memory.readInMemory(adress) + _value;
-        memory.writeInROM(valueToIncrement, adress);
+        uint8_t valueToIncrement = memory.readInMemory(adress);
+        uint8_t newValue = valueToIncrement + _value;
+        memory.writeInROM(newValue, adress);
         uint16_t cursor = memory.get16BitRegister(IMemory::REG16BIT::PC);
         memory.set16BitRegister(IMemory::REG16BIT::PC, cursor + 1);
+
+        if (newValue == 0x00) {
+            memory.setFlag(IMemory::FLAG::Z);
+        }
+        else {
+            memory.unsetFlag(IMemory::FLAG::Z);
+        }
+        if (_value < 0) {
+            memory.setFlag(IMemory::FLAG::N);
+            if ((((valueToIncrement & 0x0F) - (0x01 & 0x0F)) & 0x10) == 0x10) {
+                memory.setFlag(IMemory::FLAG::H);
+            }
+            else {
+                memory.unsetFlag(IMemory::FLAG::H);
+            }
+        }
+        else {
+            memory.unsetFlag(IMemory::FLAG::N);
+            if ((((valueToIncrement & 0x0F) + (0x01 & 0x0F)) & 0x10) == 0x10) {
+                memory.setFlag(IMemory::FLAG::H);
+            }
+            else {
+                memory.unsetFlag(IMemory::FLAG::H);
+            }
+        }
     }
 
     IMemory::REG16BIT _reg16Bit;
@@ -1647,4 +1724,100 @@ public:
     IMemory::FLAG _flag;
     bool _isToBeSet;
 };
+
+//0xC9
+class RET : public IInstructions
+{
+public:
+    RET (int cycles)
+        :IInstructions(cycles){};
+
+    void doInstruction(IMemory& memory) override {
+        uint16_t stackPointer = memory.get16BitRegister(IMemory::REG16BIT::SP);
+
+        uint8_t lessSignificantBit = memory.readInMemory(stackPointer);
+        uint8_t mostSignificantBit = memory.readInMemory(stackPointer + 1);
+        uint16_t newPCValue = ((uint16_t) mostSignificantBit << 8) | lessSignificantBit;
+
+        memory.set16BitRegister(IMemory::REG16BIT::PC, newPCValue);
+        memory.set16BitRegister(IMemory::REG16BIT::SP, stackPointer +2);
+    }
+};
+
+//0xC0 0xC8 0xD0 0xD8
+class RET_CC : public IInstructions
+{
+public:
+    RET_CC (int cycles, IMemory::FLAG flag, bool isToBeSet)
+        :IInstructions(cycles),
+         _flag(flag),
+         _isToBeSet(isToBeSet){};
+
+    void doInstruction(IMemory& memory) override {
+        if (memory.isSetFlag(_flag) == _isToBeSet) {
+            uint16_t stackPointer = memory.get16BitRegister(IMemory::REG16BIT::SP);
+
+            uint8_t lessSignificantBit = memory.readInMemory(stackPointer);
+            uint8_t mostSignificantBit = memory.readInMemory(stackPointer + 1);
+            uint16_t newPCValue = ((uint16_t) mostSignificantBit << 8) | lessSignificantBit;
+
+            memory.set16BitRegister(IMemory::REG16BIT::PC, newPCValue);
+            memory.set16BitRegister(IMemory::REG16BIT::SP, stackPointer +2);
+            IInstructions::_cycles = 20;
+        }
+        else {
+            uint16_t programCounter = memory.get16BitRegister(IMemory::REG16BIT::PC);
+            memory.set16BitRegister(IMemory::REG16BIT::PC, programCounter + 1);
+            IInstructions::_cycles = 8;
+        }
+    }
+    IMemory::FLAG _flag;
+    bool _isToBeSet;
+};
+
+
+//0xD9
+class RETI : public IInstructions
+{
+public:
+    RETI (int cycles)
+        :IInstructions(cycles){};
+
+    void doInstruction(IMemory& memory) override {
+        uint16_t stackPointer = memory.get16BitRegister(IMemory::REG16BIT::SP);
+
+        uint8_t lessSignificantBit = memory.readInMemory(stackPointer);
+        uint8_t mostSignificantBit = memory.readInMemory(stackPointer + 1);
+        uint16_t newPCValue = ((uint16_t) mostSignificantBit << 8) | lessSignificantBit;
+
+        memory.set16BitRegister(IMemory::REG16BIT::PC, newPCValue);
+        memory.set16BitRegister(IMemory::REG16BIT::SP, stackPointer +2);
+        //TODO enable interrupts
+    }
+};
+
+//0xC7 0xD7 0xE7 0xF7 0xCF 0xDF 0xEF 0xFF
+class RST : public IInstructions
+{
+public:
+    RST (int cycles, uint8_t value)
+        :IInstructions(cycles),
+         _value(value){};
+
+    void doInstruction(IMemory& memory) override {
+        uint16_t programCounter = memory.get16BitRegister(IMemory::REG16BIT::PC);
+        uint16_t stackPointer = memory.get16BitRegister(IMemory::REG16BIT::SP);
+
+        uint8_t mostSignificantBit = (uint8_t)((programCounter + 0x01) >> 8) & 0xff;
+        uint8_t lessSignificantBit = (uint8_t)((programCounter + 0x01) & 0xff);
+
+        memory.writeInROM(mostSignificantBit, stackPointer - 1);
+        memory.writeInROM(lessSignificantBit, stackPointer - 2);
+
+        memory.set16BitRegister(IMemory::REG16BIT::PC, 0x0000 + _value);
+        memory.set16BitRegister(IMemory::REG16BIT::SP, stackPointer - 2);
+    }
+    uint8_t _value;
+};
+
 #endif /*INSTRUCTIONS*/
