@@ -5,6 +5,7 @@
 #include <memory>
 #include "iinstructionhandler.hpp"
 #include "instructions.hpp"
+#include "binaryinstructions.hpp"
 
 class InstructionHandler : public IInstructionHandler
 {
