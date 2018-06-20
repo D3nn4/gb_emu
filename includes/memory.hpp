@@ -39,6 +39,9 @@ public:
     void setFlag(IMemory::FLAG flag) override;
     void unsetFlag(IMemory::FLAG flag) override;
     bool isSetFlag(IMemory::FLAG flag) override;
+    void unsetBitInRegister(int bit, REG8BIT reg) override;
+    void setBitInRegister(int bit, REG8BIT reg) override;
+    bool isSet(int bit, REG8BIT reg) override;
 
 private:
 

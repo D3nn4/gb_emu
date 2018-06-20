@@ -1488,14 +1488,15 @@ public:
         uint8_t regAValue = memory.get8BitRegister(IMemory::REG8BIT::A);
         std::bitset<8> bitsetA(regAValue);
 
-        if (bitsetA[7] == 1) {
+        bool isSet = bitsetA[7];
+        bitsetA = bitsetA << 1;
+        if(isSet) {
+            bitsetA[0] = 1;
             memory.setFlag(IMemory::FLAG::C);
         }
         else {
             memory.unsetFlag(IMemory::FLAG::C);
         }
-
-        bitsetA = bitsetA << 1;
         uint8_t rotatedValue = static_cast<uint8_t>(bitsetA.to_ulong());
 
         if (rotatedValue == 0x00) {
@@ -1995,7 +1996,8 @@ public:
         auto instructMapIt = _binaryInstructions.find(opCode);
         if (instructMapIt != _binaryInstructions.end()) {
             std::shared_ptr<IInstructions> binaryInstruction = instructMapIt->second;
-            IInstructions::_cycles = 4 + binaryInstruction->doOp(memory);
+            int binaryInstructionCycle = binaryInstruction->doOp(memory);
+            IInstructions::_cycles = 4 + binaryInstructionCycle;
         }
         memory.set16BitRegister(IMemory::REG16BIT::PC, cursor + 2);
     }

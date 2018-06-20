@@ -215,99 +215,57 @@ TEST_F(MemoryTest, readInMemory)
     EXPECT_EQ(0xff, mem.readInMemory(0x00ff));
 }
 
+TEST_F(MemoryTest, setAndUnsetBitIn8BitRegister)
+{
+    Memory mem;
 
+    EXPECT_EQ(0x00, mem.get8BitRegister(IMemory::REG8BIT::A));
+    EXPECT_EQ(0x00, mem.get8BitRegister(IMemory::REG8BIT::F));
+    EXPECT_EQ(0x00, mem.get8BitRegister(IMemory::REG8BIT::B));
+    EXPECT_EQ(0x00, mem.get8BitRegister(IMemory::REG8BIT::C));
+    EXPECT_EQ(0x00, mem.get8BitRegister(IMemory::REG8BIT::D));
+    EXPECT_EQ(0x00, mem.get8BitRegister(IMemory::REG8BIT::E));
+    EXPECT_EQ(0x00, mem.get8BitRegister(IMemory::REG8BIT::H));
+    EXPECT_EQ(0x00, mem.get8BitRegister(IMemory::REG8BIT::L));
 
-// TEST_F(MemoryTest, setAndUnsetBitIn8BitRegister)
-// {
-//     Memory mem;
+    mem.setBitInRegister(0, IMemory::REG8BIT::A);
+    EXPECT_EQ(0x01, mem.get8BitRegister(IMemory::REG8BIT::A));
+    mem.setBitInRegister(1, IMemory::REG8BIT::F);
+    EXPECT_EQ(0x02, mem.get8BitRegister(IMemory::REG8BIT::F));
+    mem.setBitInRegister(2, IMemory::REG8BIT::B);
+    EXPECT_EQ(0x04, mem.get8BitRegister(IMemory::REG8BIT::B));
+    mem.setBitInRegister(3, IMemory::REG8BIT::C);
+    EXPECT_EQ(0x08, mem.get8BitRegister(IMemory::REG8BIT::C));
+    mem.setBitInRegister(4, IMemory::REG8BIT::D);
+    EXPECT_EQ(0x10, mem.get8BitRegister(IMemory::REG8BIT::D));
+    mem.setBitInRegister(5, IMemory::REG8BIT::E);
+    EXPECT_EQ(0x20, mem.get8BitRegister(IMemory::REG8BIT::E));
+    mem.setBitInRegister(6, IMemory::REG8BIT::H);
+    EXPECT_EQ(0x40, mem.get8BitRegister(IMemory::REG8BIT::H));
+    mem.setBitInRegister((int)Memory::FLAG::Z, IMemory::REG8BIT::L);
+    EXPECT_EQ(0x80, mem.get8BitRegister(IMemory::REG8BIT::L));
+    EXPECT_THROW(mem.setBitInRegister(9, IMemory::REG8BIT::L), Memory::MemoryException);
 
-//     EXPECT_EQ(0x00, mem.get8BitRegister(IMemory::REG8BIT::A));
-//     EXPECT_EQ(0x00, mem.get8BitRegister(IMemory::REG8BIT::F));
-//     EXPECT_EQ(0x00, mem.get8BitRegister(IMemory::REG8BIT::B));
-//     EXPECT_EQ(0x00, mem.get8BitRegister(IMemory::REG8BIT::C));
-//     EXPECT_EQ(0x00, mem.get8BitRegister(IMemory::REG8BIT::D));
-//     EXPECT_EQ(0x00, mem.get8BitRegister(IMemory::REG8BIT::E));
-//     EXPECT_EQ(0x00, mem.get8BitRegister(IMemory::REG8BIT::H));
-//     EXPECT_EQ(0x00, mem.get8BitRegister(IMemory::REG8BIT::L));
+    mem.unsetBitInRegister(0, IMemory::REG8BIT::A);
+    mem.unsetBitInRegister(1, IMemory::REG8BIT::F);
+    mem.unsetBitInRegister(2, IMemory::REG8BIT::B);
+    mem.unsetBitInRegister(3, IMemory::REG8BIT::C);
+    mem.unsetBitInRegister(4, IMemory::REG8BIT::D);
+    mem.unsetBitInRegister(5, IMemory::REG8BIT::E);
+    mem.unsetBitInRegister(6, IMemory::REG8BIT::H);
+    mem.unsetBitInRegister(7, IMemory::REG8BIT::L);
+    EXPECT_THROW(mem.unsetBitInRegister(9, IMemory::REG8BIT::L), Memory::MemoryException);
 
-//     mem.setBitInRegister(0, IMemory::REG8BIT::A);
-//     EXPECT_EQ(0x01, mem.get8BitRegister(IMemory::REG8BIT::A));
-//     mem.setBitInRegister(1, IMemory::REG8BIT::F);
-//     EXPECT_EQ(0x02, mem.get8BitRegister(IMemory::REG8BIT::F));
-//     mem.setBitInRegister(2, IMemory::REG8BIT::B);
-//     EXPECT_EQ(0x04, mem.get8BitRegister(IMemory::REG8BIT::B));
-//     mem.setBitInRegister(3, IMemory::REG8BIT::C);
-//     EXPECT_EQ(0x08, mem.get8BitRegister(IMemory::REG8BIT::C));
-//     mem.setBitInRegister(4, IMemory::REG8BIT::D);
-//     EXPECT_EQ(0x10, mem.get8BitRegister(IMemory::REG8BIT::D));
-//     mem.setBitInRegister(5, IMemory::REG8BIT::E);
-//     EXPECT_EQ(0x20, mem.get8BitRegister(IMemory::REG8BIT::E));
-//     mem.setBitInRegister(6, IMemory::REG8BIT::H);
-//     EXPECT_EQ(0x40, mem.get8BitRegister(IMemory::REG8BIT::H));
-//     mem.setBitInRegister((int)Memory::FLAG::Z, IMemory::REG8BIT::L);
-//     EXPECT_EQ(0x80, mem.get8BitRegister(IMemory::REG8BIT::L));
-//     EXPECT_THROW(mem.setBitInRegister(9, IMemory::REG8BIT::L), Memory::MemoryException);
+    EXPECT_EQ(0x00, mem.get8BitRegister(IMemory::REG8BIT::A));
+    EXPECT_EQ(0x00, mem.get8BitRegister(IMemory::REG8BIT::F));
+    EXPECT_EQ(0x00, mem.get8BitRegister(IMemory::REG8BIT::B));
+    EXPECT_EQ(0x00, mem.get8BitRegister(IMemory::REG8BIT::C));
+    EXPECT_EQ(0x00, mem.get8BitRegister(IMemory::REG8BIT::D));
+    EXPECT_EQ(0x00, mem.get8BitRegister(IMemory::REG8BIT::E));
+    EXPECT_EQ(0x00, mem.get8BitRegister(IMemory::REG8BIT::H));
+    EXPECT_EQ(0x00, mem.get8BitRegister(IMemory::REG8BIT::L));
+}
 
-//     mem.unsetBitInRegister(0, IMemory::REG8BIT::A);
-//     mem.unsetBitInRegister(1, IMemory::REG8BIT::F);
-//     mem.unsetBitInRegister(2, IMemory::REG8BIT::B);
-//     mem.unsetBitInRegister(3, IMemory::REG8BIT::C);
-//     mem.unsetBitInRegister(4, IMemory::REG8BIT::D);
-//     mem.unsetBitInRegister(5, IMemory::REG8BIT::E);
-//     mem.unsetBitInRegister(6, IMemory::REG8BIT::H);
-//     mem.unsetBitInRegister(7, IMemory::REG8BIT::L);
-//     EXPECT_THROW(mem.unsetBitInRegister(9, IMemory::REG8BIT::L), Memory::MemoryException);
-
-//     EXPECT_EQ(0x00, mem.get8BitRegister(IMemory::REG8BIT::A));
-//     EXPECT_EQ(0x00, mem.get8BitRegister(IMemory::REG8BIT::F));
-//     EXPECT_EQ(0x00, mem.get8BitRegister(IMemory::REG8BIT::B));
-//     EXPECT_EQ(0x00, mem.get8BitRegister(IMemory::REG8BIT::C));
-//     EXPECT_EQ(0x00, mem.get8BitRegister(IMemory::REG8BIT::D));
-//     EXPECT_EQ(0x00, mem.get8BitRegister(IMemory::REG8BIT::E));
-//     EXPECT_EQ(0x00, mem.get8BitRegister(IMemory::REG8BIT::H));
-//     EXPECT_EQ(0x00, mem.get8BitRegister(IMemory::REG8BIT::L));
-// }
-
-// TEST_F(MemoryTest, setAndUnsetBitIn16BitRegister)
-// {
-//     Memory mem;
-
-//     EXPECT_EQ(0x0000, mem.get16BitRegister(IMemory::REG16BIT::AF));
-//     EXPECT_EQ(0x0000, mem.get16BitRegister(IMemory::REG16BIT::BC));
-//     EXPECT_EQ(0x0000, mem.get16BitRegister(IMemory::REG16BIT::DE));
-//     EXPECT_EQ(0x0000, mem.get16BitRegister(IMemory::REG16BIT::HL));
-//     EXPECT_EQ(0x0000, mem.get16BitRegister(IMemory::REG16BIT::PC));
-//     EXPECT_EQ(0x0000, mem.get16BitRegister(IMemory::REG16BIT::SP));
-
-//     mem.setBitInRegister(0, IMemory::REG16BIT::AF);
-//     EXPECT_EQ(0x0001, mem.get16BitRegister(IMemory::REG16BIT::AF));
-//     mem.setBitInRegister(4, IMemory::REG16BIT::BC);
-//     EXPECT_EQ(0x0010, mem.get16BitRegister(IMemory::REG16BIT::BC));
-//     mem.setBitInRegister(8, IMemory::REG16BIT::DE);
-//     EXPECT_EQ(0x0100, mem.get16BitRegister(IMemory::REG16BIT::DE));
-//     mem.setBitInRegister(12, IMemory::REG16BIT::HL);
-//     EXPECT_EQ(0x1000, mem.get16BitRegister(IMemory::REG16BIT::HL));
-//     mem.setBitInRegister(14, IMemory::REG16BIT::PC);
-//     EXPECT_EQ(0x4000, mem.get16BitRegister(IMemory::REG16BIT::PC));
-//     mem.setBitInRegister(15, IMemory::REG16BIT::SP);
-//     EXPECT_EQ(0x8000, mem.get16BitRegister(IMemory::REG16BIT::SP));
-//     EXPECT_THROW(mem.setBitInRegister(17, IMemory::REG16BIT::HL), Memory::MemoryException);
-
-//     mem.unsetBitInRegister(0, IMemory::REG16BIT::AF);
-//     mem.unsetBitInRegister(4, IMemory::REG16BIT::BC);
-//     mem.unsetBitInRegister(8, IMemory::REG16BIT::DE);
-//     mem.unsetBitInRegister(12, IMemory::REG16BIT::HL);
-//     mem.unsetBitInRegister(14, IMemory::REG16BIT::PC);
-//     mem.unsetBitInRegister(15, IMemory::REG16BIT::SP);
-//     EXPECT_THROW(mem.unsetBitInRegister(17, IMemory::REG16BIT::HL), Memory::MemoryException);
-
-//     EXPECT_EQ(0x0000, mem.get16BitRegister(IMemory::REG16BIT::AF));
-//     EXPECT_EQ(0x0000, mem.get16BitRegister(IMemory::REG16BIT::BC));
-//     EXPECT_EQ(0x0000, mem.get16BitRegister(IMemory::REG16BIT::DE));
-//     EXPECT_EQ(0x0000, mem.get16BitRegister(IMemory::REG16BIT::HL));
-//     EXPECT_EQ(0x0000, mem.get16BitRegister(IMemory::REG16BIT::PC));
-//     EXPECT_EQ(0x0000, mem.get16BitRegister(IMemory::REG16BIT::SP));
-// }
 
 // TEST_F (MemoryTest, isBitIn8BitRegisterSet)
 // {
