@@ -36,7 +36,7 @@ bool Memory::setCartridge(IMemory::CartridgeData const & cartridge)
     return false;
 }
 
-bool Memory::writeInROM(uint8_t data, uint16_t adress)
+bool Memory::writeInMemory(uint8_t data, uint16_t adress)
 {
     //TODO
     if (adress < 0x8000) {

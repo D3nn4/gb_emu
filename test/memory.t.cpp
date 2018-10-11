@@ -105,14 +105,14 @@ TEST_F (MemoryTest, getRom)
     }
 }
 
-TEST_F (MemoryTest, writeInROM)
+TEST_F (MemoryTest, writeInMemory)
 {
     Memory mem;
 
-    EXPECT_FALSE(mem.writeInROM(0xff, 0x1000));
+    EXPECT_FALSE(mem.writeInMemory(0xff, 0x1000));
     IMemory::RomData rom = mem.getReadOnlyMemory();
     EXPECT_EQ(0, rom[0x8001]);
-    EXPECT_TRUE(mem.writeInROM(0xff, 0x8001));
+    EXPECT_TRUE(mem.writeInMemory(0xff, 0x8001));
     rom = mem.getReadOnlyMemory();
     EXPECT_EQ(0xff, rom[0x8001]);
 }

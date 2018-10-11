@@ -19,7 +19,7 @@ public:
     MOCK_METHOD0(getCartridge, CartridgeData const());
     MOCK_METHOD0(getReadOnlyMemory, RomData const());
     MOCK_METHOD1(setCartridge, bool(CartridgeData const &));
-    MOCK_METHOD2(writeInROM, bool(uint8_t, uint16_t));
+    MOCK_METHOD2(writeInMemory, bool(uint8_t, uint16_t));
     MOCK_METHOD1(readInMemory, uint8_t(uint16_t));
     MOCK_METHOD2(set8BitRegister, void(IMemory::REG8BIT, uint8_t));
     MOCK_METHOD2(set16BitRegister, void(IMemory::REG16BIT, uint16_t));
@@ -173,7 +173,7 @@ int InstructionHandlerTest::load8BitRegValueToAdressAt16BitReg(IMemory::RomData 
         .WillOnce(Return(0xff));
     EXPECT_CALL(_memory, get16BitRegister(reg16Bit))
         .WillOnce(Return(0x8000));
-    EXPECT_CALL(_memory, writeInROM(0xff, 0x8000))
+    EXPECT_CALL(_memory, writeInMemory(0xff, 0x8000))
         .WillOnce(Return(true));
     EXPECT_CALL(_memory, get16BitRegister(IMemory::REG16BIT::PC))
         .WillOnce(Return(0x0000));
@@ -327,7 +327,7 @@ TEST_F (InstructionHandlerTest, load8NextBitToAdressIn16BitReg)
         .WillOnce(Return(0xff00));
     EXPECT_CALL(_memory, readInMemory(0x0001))
         .WillOnce(Return(0xff));
-    EXPECT_CALL(_memory, writeInROM(0xff, 0xff00));
+    EXPECT_CALL(_memory, writeInMemory(0xff, 0xff00));
     EXPECT_CALL(_memory, set16BitRegister(IMemory::REG16BIT::PC, 0x0002));
 
     EXPECT_EQ(12, instructionHandler.doInstruction(data[0]));
@@ -347,9 +347,9 @@ TEST_F (InstructionHandlerTest, loadSPToNext16BitAdress)
         .WillOnce(Return(0x00));
     EXPECT_CALL(_memory, get16BitRegister(IMemory::REG16BIT::SP))
         .WillOnce(Return(0x8000));
-    EXPECT_CALL(_memory, writeInROM(0x00, 0xff00))
+    EXPECT_CALL(_memory, writeInMemory(0x00, 0xff00))
         .WillOnce(Return(true));
-    EXPECT_CALL(_memory, writeInROM(0x80, 0xff01))
+    EXPECT_CALL(_memory, writeInMemory(0x80, 0xff01))
         .WillOnce(Return(true));
     EXPECT_CALL(_memory, set16BitRegister(IMemory::REG16BIT::PC, 0x0003));
 
@@ -366,7 +366,7 @@ TEST_F (InstructionHandlerTest, load8BitRegToNext8BitAdress)
         .WillOnce(Return(0x0000));
     EXPECT_CALL(_memory, readInMemory(0x0001))
         .WillOnce(Return(0x01));
-    EXPECT_CALL(_memory, writeInROM(0xff, 0xff01))
+    EXPECT_CALL(_memory, writeInMemory(0xff, 0xff01))
         .WillOnce(Return(true));
     EXPECT_CALL(_memory, set16BitRegister(IMemory::REG16BIT::PC, 0x0002));
 
@@ -397,7 +397,7 @@ TEST_F (InstructionHandlerTest, load8BitRegToAdressIn8BitReg)
         .WillOnce(Return(0x00));
     EXPECT_CALL(_memory, get8BitRegister(IMemory::REG8BIT::A))
         .WillOnce(Return(0xff));
-    EXPECT_CALL(_memory, writeInROM(0xff, 0xff00))
+    EXPECT_CALL(_memory, writeInMemory(0xff, 0xff00))
         .WillOnce(Return(true));
     EXPECT_CALL(_memory, get16BitRegister(IMemory::REG16BIT::PC))
         .WillOnce(Return(0x0000));
@@ -451,7 +451,7 @@ TEST_F (InstructionHandlerTest, loadAToAdressAtNext16Bit)
         .WillOnce(Return(0xff));
     EXPECT_CALL(_memory, readInMemory(0x0001))
         .WillOnce(Return(0xfe));
-    EXPECT_CALL(_memory, writeInROM(0xff, 0xfffe))
+    EXPECT_CALL(_memory, writeInMemory(0xff, 0xfffe))
         .WillOnce(Return(true));
     EXPECT_CALL(_memory, set16BitRegister(IMemory::REG16BIT::PC, 0x0003));
 
@@ -584,7 +584,7 @@ int InstructionHandlerTest::addValueAtAdressInReg(uint16_t opCode, IMemory::REG1
         EXPECT_CALL(_memory, unsetFlag(IMemory::FLAG::N));
     }
     EXPECT_CALL(_memory, unsetFlag(IMemory::FLAG::H));
-    EXPECT_CALL(_memory, writeInROM(rom[0xfffe] + value, 0xfffe));
+    EXPECT_CALL(_memory, writeInMemory(rom[0xfffe] + value, 0xfffe));
     EXPECT_CALL(_memory, get16BitRegister(IMemory::REG16BIT::PC))
         .WillOnce(Return(0x0000));
     EXPECT_CALL(_memory, set16BitRegister(IMemory::REG16BIT::PC, 0x0001));
@@ -957,8 +957,8 @@ int InstructionHandlerTest::push16BitReg(uint8_t opCode, IMemory::REG16BIT reg16
         .WillOnce(Return(0x3C5F));
     EXPECT_CALL(_memory, get16BitRegister(IMemory::REG16BIT::SP))
         .WillOnce(Return(0xFFFE));
-    EXPECT_CALL(_memory, writeInROM(0x3C, 0xFFFD));
-    EXPECT_CALL(_memory, writeInROM(0x5F, 0xFFFC));
+    EXPECT_CALL(_memory, writeInMemory(0x3C, 0xFFFD));
+    EXPECT_CALL(_memory, writeInMemory(0x5F, 0xFFFC));
     EXPECT_CALL(_memory, set16BitRegister(IMemory::REG16BIT::SP, 0xFFFC));
     EXPECT_CALL(_memory, get16BitRegister(IMemory::REG16BIT::PC))
         .WillOnce(Return(0x0000));
@@ -2010,9 +2010,9 @@ TEST_F (InstructionHandlerTest, callNext16Bit)
     EXPECT_CALL(_memory, readInMemory(0x8002))
         .WillOnce(Return(0x12));
 
-    EXPECT_CALL(_memory, writeInROM(0x80, 0xFFFD))
+    EXPECT_CALL(_memory, writeInMemory(0x80, 0xFFFD))
         .WillOnce(Return(true));
-    EXPECT_CALL(_memory, writeInROM(0x03, 0xFFFC))
+    EXPECT_CALL(_memory, writeInMemory(0x03, 0xFFFC))
         .WillOnce(Return(true));
 
     EXPECT_CALL(_memory, set16BitRegister(IMemory::REG16BIT::SP, 0xFFFC));
@@ -2038,9 +2038,9 @@ void InstructionHandlerTest::callNext16BitWithFlagSet(uint8_t opCode, IMemory::F
         EXPECT_CALL(_memory, readInMemory(0x8002))
             .WillOnce(Return(0x12));
 
-        EXPECT_CALL(_memory, writeInROM(0x80, 0xFFFD))
+        EXPECT_CALL(_memory, writeInMemory(0x80, 0xFFFD))
             .WillOnce(Return(true));
-        EXPECT_CALL(_memory, writeInROM(0x03, 0xFFFC))
+        EXPECT_CALL(_memory, writeInMemory(0x03, 0xFFFC))
             .WillOnce(Return(true));
 
         EXPECT_CALL(_memory, set16BitRegister(IMemory::REG16BIT::SP, 0xFFFC));
@@ -2071,9 +2071,9 @@ void InstructionHandlerTest::callNext16BitWithFlagNotSet(uint8_t opCode, IMemory
         EXPECT_CALL(_memory, readInMemory(0x8002))
             .WillOnce(Return(0x12));
 
-        EXPECT_CALL(_memory, writeInROM(0x80, 0xFFFD))
+        EXPECT_CALL(_memory, writeInMemory(0x80, 0xFFFD))
             .WillOnce(Return(true));
-        EXPECT_CALL(_memory, writeInROM(0x03, 0xFFFC))
+        EXPECT_CALL(_memory, writeInMemory(0x03, 0xFFFC))
             .WillOnce(Return(true));
 
         EXPECT_CALL(_memory, set16BitRegister(IMemory::REG16BIT::SP, 0xFFFC));
@@ -2224,9 +2224,9 @@ void InstructionHandlerTest::restartPCAdress(uint8_t opCode, uint8_t value)
         .WillOnce(Return(0x8000));
     EXPECT_CALL(_memory, get16BitRegister(IMemory::REG16BIT::SP))
         .WillOnce(Return(0xFFF9));
-    EXPECT_CALL(_memory, writeInROM(0x80, 0xFFF8))
+    EXPECT_CALL(_memory, writeInMemory(0x80, 0xFFF8))
         .WillOnce(Return(true));
-    EXPECT_CALL(_memory, writeInROM(0x01, 0xFFF7))
+    EXPECT_CALL(_memory, writeInMemory(0x01, 0xFFF7))
         .WillOnce(Return(true));
     EXPECT_CALL(_memory, set16BitRegister(IMemory::REG16BIT::SP, 0xFFF7));
     EXPECT_CALL(_memory, set16BitRegister(IMemory::REG16BIT::PC, 0x0000 + value));
@@ -2386,7 +2386,7 @@ TEST_F (InstructionHandlerTest, rotateLeftAtAdressInHLAndPutInCarryBinaryInstruc
         .WillOnce(Return(0xff00));
     EXPECT_CALL(_memory, readInMemory(0xff00))
         .WillOnce(Return(0x00));
-    EXPECT_CALL(_memory, writeInROM(0x00, 0xff00));
+    EXPECT_CALL(_memory, writeInMemory(0x00, 0xff00));
     EXPECT_CALL(_memory, setFlag(IMemory::FLAG::Z));
     EXPECT_CALL(_memory, unsetFlag(IMemory::FLAG::N));
     EXPECT_CALL(_memory, unsetFlag(IMemory::FLAG::H));
@@ -2438,7 +2438,7 @@ TEST_F (InstructionHandlerTest, rotateRightAtAdressInHLAndPutInCarryBinaryInstru
         .WillOnce(Return(0xff00));
     EXPECT_CALL(_memory, readInMemory(0xff00))
         .WillOnce(Return(0x00));
-    EXPECT_CALL(_memory, writeInROM(0x00, 0xff00));
+    EXPECT_CALL(_memory, writeInMemory(0x00, 0xff00));
     EXPECT_CALL(_memory, setFlag(IMemory::FLAG::Z));
     EXPECT_CALL(_memory, unsetFlag(IMemory::FLAG::N));
     EXPECT_CALL(_memory, unsetFlag(IMemory::FLAG::H));
@@ -2493,7 +2493,7 @@ TEST_F (InstructionHandlerTest, rotateLeftAtAdressInHLAndBinaryInstruction)
         .WillOnce(Return(0x11));
     EXPECT_CALL(_memory, isSetFlag(IMemory::FLAG::C))
         .WillOnce(Return(false));
-    EXPECT_CALL(_memory, writeInROM(0x22, 0xff00));
+    EXPECT_CALL(_memory, writeInMemory(0x22, 0xff00));
     EXPECT_CALL(_memory, unsetFlag(IMemory::FLAG::Z));
     EXPECT_CALL(_memory, unsetFlag(IMemory::FLAG::N));
     EXPECT_CALL(_memory, unsetFlag(IMemory::FLAG::H));
@@ -2547,7 +2547,7 @@ TEST_F (InstructionHandlerTest, rotateRightAtAdressInHLAndBinaryInstruction)
         .WillOnce(Return(0x8A));
     EXPECT_CALL(_memory, isSetFlag(IMemory::FLAG::C))
         .WillOnce(Return(false));
-    EXPECT_CALL(_memory, writeInROM(0x45, 0xff00));
+    EXPECT_CALL(_memory, writeInMemory(0x45, 0xff00));
     EXPECT_CALL(_memory, unsetFlag(IMemory::FLAG::Z));
     EXPECT_CALL(_memory, unsetFlag(IMemory::FLAG::N));
     EXPECT_CALL(_memory, unsetFlag(IMemory::FLAG::H));
@@ -2597,7 +2597,7 @@ TEST_F (InstructionHandlerTest, shiftLeftAtAdressInHLAndBinaryInstruction)
         .WillOnce(Return(0xff00));
     EXPECT_CALL(_memory, readInMemory(0xff00))
         .WillOnce(Return(0xFF));
-    EXPECT_CALL(_memory, writeInROM(0xFE, 0xff00));
+    EXPECT_CALL(_memory, writeInMemory(0xFE, 0xff00));
     EXPECT_CALL(_memory, unsetFlag(IMemory::FLAG::Z));
     EXPECT_CALL(_memory, unsetFlag(IMemory::FLAG::N));
     EXPECT_CALL(_memory, unsetFlag(IMemory::FLAG::H));
@@ -2647,7 +2647,7 @@ TEST_F (InstructionHandlerTest, shiftRightAtAdressInHLAndRetainBit7BinaryInstruc
         .WillOnce(Return(0xff00));
     EXPECT_CALL(_memory, readInMemory(0xff00))
         .WillOnce(Return(0x01));
-    EXPECT_CALL(_memory, writeInROM(0x00, 0xff00));
+    EXPECT_CALL(_memory, writeInMemory(0x00, 0xff00));
     EXPECT_CALL(_memory, setFlag(IMemory::FLAG::Z));
     EXPECT_CALL(_memory, unsetFlag(IMemory::FLAG::N));
     EXPECT_CALL(_memory, unsetFlag(IMemory::FLAG::H));
@@ -2697,7 +2697,7 @@ TEST_F (InstructionHandlerTest, swapInAdressBinaryInstruction)
         .WillOnce(Return(0xFF00));
     EXPECT_CALL(_memory, readInMemory(0xFF00))
         .WillOnce(Return(0xF0));
-    EXPECT_CALL(_memory, writeInROM(0x0F, 0xFF00));
+    EXPECT_CALL(_memory, writeInMemory(0x0F, 0xFF00));
     EXPECT_CALL(_memory, unsetFlag(IMemory::FLAG::Z));
     EXPECT_CALL(_memory, unsetFlag(IMemory::FLAG::N));
     EXPECT_CALL(_memory, unsetFlag(IMemory::FLAG::H));
@@ -2748,7 +2748,7 @@ TEST_F (InstructionHandlerTest, shiftRightAtAdressInHLAndZeroedBit7BinaryInstruc
         .WillOnce(Return(0xFF00));
     EXPECT_CALL(_memory, readInMemory(0xff00))
         .WillOnce(Return(0xFF));
-    EXPECT_CALL(_memory, writeInROM(0x7F, 0xFF00));
+    EXPECT_CALL(_memory, writeInMemory(0x7F, 0xFF00));
     EXPECT_CALL(_memory, unsetFlag(IMemory::FLAG::Z));
     EXPECT_CALL(_memory, unsetFlag(IMemory::FLAG::N));
     EXPECT_CALL(_memory, unsetFlag(IMemory::FLAG::H));
@@ -2853,7 +2853,7 @@ TEST_F (InstructionHandlerTest, setBitInAdressInHL)
                         .WillOnce(Return(0xff00));
                     EXPECT_CALL(_memory, readInMemory(0xff00))
                         .WillOnce(Return(0x00));
-                    EXPECT_CALL(_memory, writeInROM(newValue, 0xff00))
+                    EXPECT_CALL(_memory, writeInMemory(newValue, 0xff00))
                         .WillOnce(Return(true));
                     EXPECT_CALL(_memory, set16BitRegister(IMemory::REG16BIT::PC, 0x0002));
                     EXPECT_EQ(20, instructionHandler.doInstruction(0xCB));// 4 cycle for opcode CB, 16 for binary op
@@ -2964,7 +2964,7 @@ TEST_F (InstructionHandlerTest, resetBitInAdressInHL)
                         .WillOnce(Return(0xff00));
                     EXPECT_CALL(_memory, readInMemory(0xff00))
                         .WillOnce(Return(0xFF));
-                    EXPECT_CALL(_memory, writeInROM(newValue, 0xff00))
+                    EXPECT_CALL(_memory, writeInMemory(newValue, 0xff00))
                         .WillOnce(Return(true));
                     EXPECT_CALL(_memory, set16BitRegister(IMemory::REG16BIT::PC, 0x0002));
                     EXPECT_EQ(20, instructionHandler.doInstruction(0xCB));// 4 cycle for opcode CB, 16 for binary op

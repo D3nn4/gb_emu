@@ -83,7 +83,7 @@ public:
     void doInstruction(IMemory& memory) override {
         uint8_t reg8BitValue = memory.get8BitRegister(_8BitReg);
         uint16_t reg16BitValue = memory.get16BitRegister(_16BitReg);
-        memory.writeInROM(reg8BitValue, reg16BitValue);
+        memory.writeInMemory(reg8BitValue, reg16BitValue);
         uint16_t cursor = memory.get16BitRegister(IMemory::REG16BIT::PC);
         memory.set16BitRegister(IMemory::REG16BIT::PC, cursor + 1);
         if (_addTo16BitReg != 0) {
@@ -129,7 +129,7 @@ public:
         uint16_t cursor = memory.get16BitRegister(IMemory::REG16BIT::PC);
         uint16_t adress = memory.get16BitRegister(_16BitReg);
         uint8_t valueToLoad = memory.readInMemory(cursor + 1);
-        memory.writeInROM(valueToLoad, adress);
+        memory.writeInMemory(valueToLoad, adress);
         memory.set16BitRegister(IMemory::REG16BIT::PC, cursor + 2);
     }
 
@@ -153,8 +153,8 @@ public:
 
         uint8_t mostSignificantBit = (uint8_t)(reg16BitValue >> 8) & 0xff;
         uint8_t lessSignificantBit = (uint8_t)(reg16BitValue & 0xff);
-        memory.writeInROM(lessSignificantBit, adress);
-        memory.writeInROM(mostSignificantBit, adress + 1);
+        memory.writeInMemory(lessSignificantBit, adress);
+        memory.writeInMemory(mostSignificantBit, adress + 1);
         memory.set16BitRegister(IMemory::REG16BIT::PC, cursor + 3);
     }
 
@@ -195,7 +195,7 @@ public:
         uint8_t MS = memory.readInMemory(cursor + 2);
         uint8_t LS = memory.readInMemory(cursor + 1);
         uint16_t adress = ((uint16_t) MS << 8) | LS;
-        memory.writeInROM(reg8BitValue, adress);
+        memory.writeInMemory(reg8BitValue, adress);
         memory.set16BitRegister(IMemory::REG16BIT::PC, cursor + 3);
     }
     IMemory::REG8BIT _8BitReg;
@@ -233,7 +233,7 @@ public:
         uint16_t cursor = memory.get16BitRegister(IMemory::REG16BIT::PC);
         uint8_t valueToLoad = memory.get8BitRegister(_8BitReg);
         uint16_t adress = 0xff00 + memory.readInMemory(cursor + 1);
-        memory.writeInROM(valueToLoad, adress);
+        memory.writeInMemory(valueToLoad, adress);
         memory.set16BitRegister(IMemory::REG16BIT::PC, cursor + 2);
     }
 
@@ -272,7 +272,7 @@ public:
         uint8_t valueForAdress = memory.get8BitRegister(_8BitReg);
         uint8_t valueToLoad = memory.get8BitRegister(_8BitRegToLoad);
         uint16_t adress = 0xff00 + valueForAdress;
-        memory.writeInROM(valueToLoad, adress);
+        memory.writeInMemory(valueToLoad, adress);
         uint16_t cursor = memory.get16BitRegister(IMemory::REG16BIT::PC);
         memory.set16BitRegister(IMemory::REG16BIT::PC, cursor + 1);
     }
@@ -460,7 +460,7 @@ public:
         uint16_t adress = memory.get16BitRegister(_reg16Bit);
         uint8_t valueToIncrement = memory.readInMemory(adress);
         uint8_t newValue = valueToIncrement + _value;
-        memory.writeInROM(newValue, adress);
+        memory.writeInMemory(newValue, adress);
         uint16_t cursor = memory.get16BitRegister(IMemory::REG16BIT::PC);
         memory.set16BitRegister(IMemory::REG16BIT::PC, cursor + 1);
 
@@ -790,8 +790,8 @@ public:
 
         uint8_t mostSignificantBit = (uint8_t)(valueToLoad >> 8) & 0xff;
         uint8_t lessSignificantBit = (uint8_t)(valueToLoad & 0xff);
-        memory.writeInROM(mostSignificantBit, stackPointer - 1);
-        memory.writeInROM(lessSignificantBit, stackPointer - 2);
+        memory.writeInMemory(mostSignificantBit, stackPointer - 1);
+        memory.writeInMemory(lessSignificantBit, stackPointer - 2);
 
         memory.set16BitRegister(IMemory::REG16BIT::SP, stackPointer - 2);
         uint16_t cursor = memory.get16BitRegister(IMemory::REG16BIT::PC);
@@ -1742,8 +1742,8 @@ public:
         uint16_t stackPointer = memory.get16BitRegister(IMemory::REG16BIT::SP);
         uint8_t pcHightBit = (uint8_t)((programCounter + 3) >> 8) & 0xff;
         uint8_t pcLowBit = (uint8_t)((programCounter + 3) & 0xff);
-        memory.writeInROM(pcHightBit, stackPointer - 1);
-        memory.writeInROM(pcLowBit, stackPointer - 2);
+        memory.writeInMemory(pcHightBit, stackPointer - 1);
+        memory.writeInMemory(pcLowBit, stackPointer - 2);
 
         uint8_t lessSignificantBit = memory.readInMemory(programCounter + 1);
         uint8_t mostSignificantBit = memory.readInMemory(programCounter + 2);
@@ -1769,8 +1769,8 @@ public:
             uint16_t stackPointer = memory.get16BitRegister(IMemory::REG16BIT::SP);
             uint8_t pcHightBit = (uint8_t)((programCounter + 3) >> 8) & 0xff;
             uint8_t pcLowBit = (uint8_t)((programCounter + 3) & 0xff);
-            memory.writeInROM(pcHightBit, stackPointer - 1);
-            memory.writeInROM(pcLowBit, stackPointer - 2);
+            memory.writeInMemory(pcHightBit, stackPointer - 1);
+            memory.writeInMemory(pcLowBit, stackPointer - 2);
 
             uint8_t lessSignificantBit = memory.readInMemory(programCounter + 1);
             uint8_t mostSignificantBit = memory.readInMemory(programCounter + 2);
@@ -1874,8 +1874,8 @@ public:
         uint8_t mostSignificantBit = (uint8_t)((programCounter + 0x01) >> 8) & 0xff;
         uint8_t lessSignificantBit = (uint8_t)((programCounter + 0x01) & 0xff);
 
-        memory.writeInROM(mostSignificantBit, stackPointer - 1);
-        memory.writeInROM(lessSignificantBit, stackPointer - 2);
+        memory.writeInMemory(mostSignificantBit, stackPointer - 1);
+        memory.writeInMemory(lessSignificantBit, stackPointer - 2);
 
         memory.set16BitRegister(IMemory::REG16BIT::PC, 0x0000 + _value);
         memory.set16BitRegister(IMemory::REG16BIT::SP, stackPointer - 2);

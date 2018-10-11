@@ -17,6 +17,6 @@ int main()
     FileIO fileIO;
     RomLoader romLoader(fileIO);
     Cpu cpu(romLoader);
-    cpu.launchGame(fileName);
+    // cpu.launchGame(fileName);
     return 0;
 }

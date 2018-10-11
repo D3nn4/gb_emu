@@ -34,7 +34,7 @@ public:
         std::bitset<8> bitsetValue(value);
         bitsetValue[_bit] = 1;
         uint8_t newValue = static_cast<uint8_t>(bitsetValue.to_ulong());
-        memory.writeInROM(newValue, adress);
+        memory.writeInMemory(newValue, adress);
     }
 
     int _bit;
@@ -69,7 +69,7 @@ public:
         std::bitset<8> bitsetValue(value);
         bitsetValue[_bit] = 0;
         uint8_t newValue = static_cast<uint8_t>(bitsetValue.to_ulong());
-        memory.writeInROM(newValue, adress);
+        memory.writeInMemory(newValue, adress);
     }
 
     int _bit;
@@ -189,7 +189,7 @@ public:
         memory.unsetFlag(IMemory::FLAG::H);
         memory.unsetFlag(IMemory::FLAG::N);
 
-        memory.writeInROM(rotatedValue, adress);
+        memory.writeInMemory(rotatedValue, adress);
     }
 };
 
@@ -260,7 +260,7 @@ public:
         memory.unsetFlag(IMemory::FLAG::H);
         memory.unsetFlag(IMemory::FLAG::N);
 
-        memory.writeInROM(rotatedValue, adress);
+        memory.writeInMemory(rotatedValue, adress);
     }
 };
 
@@ -333,7 +333,7 @@ public:
         memory.unsetFlag(IMemory::FLAG::H);
         memory.unsetFlag(IMemory::FLAG::N);
 
-        memory.writeInROM(rotatedValue, adress);
+        memory.writeInMemory(rotatedValue, adress);
     }
 };
 
@@ -406,7 +406,7 @@ public:
         memory.unsetFlag(IMemory::FLAG::H);
         memory.unsetFlag(IMemory::FLAG::N);
 
-        memory.writeInROM(rotatedValue, adress);
+        memory.writeInMemory(rotatedValue, adress);
     }
 };
 
@@ -477,7 +477,7 @@ public:
         memory.unsetFlag(IMemory::FLAG::H);
         memory.unsetFlag(IMemory::FLAG::N);
 
-        memory.writeInROM(rotatedValue, adress);
+        memory.writeInMemory(rotatedValue, adress);
     }
 };
 
@@ -550,7 +550,7 @@ public:
         memory.unsetFlag(IMemory::FLAG::H);
         memory.unsetFlag(IMemory::FLAG::N);
 
-        memory.writeInROM(rotatedValue, adress);
+        memory.writeInMemory(rotatedValue, adress);
     }
 };
 
@@ -621,7 +621,7 @@ public:
         memory.unsetFlag(IMemory::FLAG::H);
         memory.unsetFlag(IMemory::FLAG::N);
 
-        memory.writeInROM(rotatedValue, adress);
+        memory.writeInMemory(rotatedValue, adress);
     }
 };
 
@@ -672,7 +672,7 @@ public:
         memory.unsetFlag(IMemory::FLAG::N);
         memory.unsetFlag(IMemory::FLAG::C);
 
-        memory.writeInROM(newValue, adress);
+        memory.writeInMemory(newValue, adress);
     }
 };
 #endif /*BINARYINSTRUCTIONS*/

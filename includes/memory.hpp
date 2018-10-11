@@ -30,15 +30,18 @@ public:
     CartridgeData const  getCartridge() override;
     RomData const  getReadOnlyMemory() override;
     bool setCartridge(CartridgeData const & cartridge) override;
-    bool writeInROM(uint8_t data, uint16_t adress) override;
+    bool writeInMemory(uint8_t data, uint16_t adress) override;
     uint8_t readInMemory(uint16_t adress) override;
+    
     void set8BitRegister(REG8BIT reg,uint8_t value) override;
     void set16BitRegister(REG16BIT reg,uint16_t value) override;
     uint8_t get8BitRegister(REG8BIT reg) override;
     uint16_t get16BitRegister(REG16BIT reg) override;
+    
     void setFlag(IMemory::FLAG flag) override;
     void unsetFlag(IMemory::FLAG flag) override;
     bool isSetFlag(IMemory::FLAG flag) override;
+    
     void unsetBitInRegister(int bit, REG8BIT reg) override;
     void setBitInRegister(int bit, REG8BIT reg) override;
     bool isSet(int bit, REG8BIT reg) override;
