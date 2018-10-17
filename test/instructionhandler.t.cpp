@@ -492,6 +492,10 @@ TEST_F (InstructionHandlerTest, load8NextBitAndSPToHL)
             .WillOnce(Return(0x02));
         EXPECT_CALL(_memory, set16BitRegister(IMemory::REG16BIT::HL, 0xFFFA));
         EXPECT_CALL(_memory, set16BitRegister(IMemory::REG16BIT::PC, 0x0002));
+        EXPECT_CALL(_memory, unsetFlag(IMemory::FLAG::Z));
+        EXPECT_CALL(_memory, unsetFlag(IMemory::FLAG::N));
+        EXPECT_CALL(_memory, unsetFlag(IMemory::FLAG::H));
+        EXPECT_CALL(_memory, unsetFlag(IMemory::FLAG::C));
 
         EXPECT_EQ(12, instructionHandler.doInstruction(0xF8));
     }
@@ -504,6 +508,10 @@ TEST_F (InstructionHandlerTest, load8NextBitAndSPToHL)
             .WillOnce(Return(0xfe));
         EXPECT_CALL(_memory, set16BitRegister(IMemory::REG16BIT::HL, 0xFFF6));
         EXPECT_CALL(_memory, set16BitRegister(IMemory::REG16BIT::PC, 0x0002));
+        EXPECT_CALL(_memory, unsetFlag(IMemory::FLAG::Z));
+        EXPECT_CALL(_memory, unsetFlag(IMemory::FLAG::N));
+        EXPECT_CALL(_memory, setFlag(IMemory::FLAG::H));
+        EXPECT_CALL(_memory, unsetFlag(IMemory::FLAG::C));
 
         EXPECT_EQ(12, instructionHandler.doInstruction(0xF8));
     }
@@ -1295,6 +1303,10 @@ TEST_F (InstructionHandlerTest, add8NextBitToSP)
         .WillOnce(Return(0x02));
     EXPECT_CALL(_memory, set16BitRegister(IMemory::REG16BIT::SP, 0xFFFA));
     EXPECT_CALL(_memory, set16BitRegister(IMemory::REG16BIT::PC, 0x0002));
+    EXPECT_CALL(_memory, unsetFlag(IMemory::FLAG::Z));
+    EXPECT_CALL(_memory, unsetFlag(IMemory::FLAG::C));
+    EXPECT_CALL(_memory, unsetFlag(IMemory::FLAG::H));
+    EXPECT_CALL(_memory, unsetFlag(IMemory::FLAG::N));
 
     EXPECT_EQ(16, instructionHandler.doInstruction(0xE8));
 }
@@ -2330,16 +2342,6 @@ TEST_F (InstructionHandlerTest, stop)
     EXPECT_EQ(4, instructionHandler.doInstruction(0x10));
 }
 
-TEST_F (InstructionHandlerTest, doBinaryOp)
-{
-    InstructionHandler instructionHandler(_memory);
-
-    EXPECT_CALL(_memory, get16BitRegister(IMemory::REG16BIT::PC))
-        .WillOnce(Return(0x0000));
-    EXPECT_CALL(_memory, readInMemory(0x0001));
-    EXPECT_CALL(_memory, set16BitRegister(IMemory::REG16BIT::PC, 0x0002));
-    instructionHandler.doInstruction(0xCB);
-}
 
 //binaryInstructions
 
