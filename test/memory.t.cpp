@@ -242,7 +242,7 @@ TEST_F(MemoryTest, setAndUnsetBitIn8BitRegister)
     EXPECT_EQ(0x20, mem.get8BitRegister(IMemory::REG8BIT::E));
     mem.setBitInRegister(6, IMemory::REG8BIT::H);
     EXPECT_EQ(0x40, mem.get8BitRegister(IMemory::REG8BIT::H));
-    mem.setBitInRegister((int)Memory::FLAG::Z, IMemory::REG8BIT::L);
+    mem.setBitInRegister(static_cast<int>(Memory::FLAG::Z), IMemory::REG8BIT::L);
     EXPECT_EQ(0x80, mem.get8BitRegister(IMemory::REG8BIT::L));
     EXPECT_THROW(mem.setBitInRegister(9, IMemory::REG8BIT::L), Memory::MemoryException);
 

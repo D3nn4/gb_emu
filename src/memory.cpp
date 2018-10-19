@@ -48,6 +48,7 @@ bool Memory::writeInMemory(uint8_t data, uint16_t adress)
 
 uint8_t Memory::readInMemory(uint16_t adress)
 {
+    //TODO
     return _readOnlyMemory[adress];
 }
 
@@ -101,14 +102,14 @@ uint16_t Memory::get16BitRegister(REG16BIT reg)
 void Memory::setFlag(IMemory::FLAG flag)
 {
     uint8_t regValue = *_8BitRegisters[IMemory::REG8BIT::F];
-    regValue = 1 << (int)flag;
+    regValue = 1 << static_cast<int>(flag);
     set8BitRegister(IMemory::REG8BIT::F, regValue);
 }
 
 void Memory::unsetFlag(IMemory::FLAG flag)
 {
     uint8_t regValue = *_8BitRegisters[IMemory::REG8BIT::F];
-    regValue = 0 << (int)flag;
+    regValue = 0 << static_cast<int>(flag);
     set8BitRegister(IMemory::REG8BIT::F, regValue);
 }
 
@@ -134,12 +135,13 @@ void Memory::setBitInRegister(int bit, REG8BIT reg)
 
 bool Memory::isSetFlag(FLAG flag)
 {
-    if ((int)flag > 7) {
+    int flagValue = static_cast<int>(flag);
+    if (flagValue > 7) {
         throw MemoryException(__PRETTY_FUNCTION__);
     }
     uint8_t regValue = *_8BitRegisters[REG8BIT::F];
     std::bitset<8> bitset(regValue);
-    return bitset.test((int)flag);
+    return bitset.test(flagValue);
 }
 
 bool Memory::isSet(int bit, REG8BIT reg)
