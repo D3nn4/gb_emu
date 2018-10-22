@@ -6,8 +6,16 @@
 class IInstructions
 {
 public:
+    IInstructions(int cycles)
+        :_cycles(cycles){};
 
-private:
+    int doOp(IMemory& memory) {
+        doInstruction(memory);
+        return _cycles;
+    };
 
+    virtual void doInstruction(IMemory& memory) = 0;
+
+    int _cycles;
 };
 #endif /*IINSTRUCTIONS*/
