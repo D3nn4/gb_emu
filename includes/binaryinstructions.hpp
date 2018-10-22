@@ -1,5 +1,5 @@
 #ifndef _BINARYINSTRUCTIONS_
-#define _INSTRUCTIONS_
+#define _BINARYINSTRUCTIONS_
 
 #include <iostream>
 #include <bitset>
@@ -17,6 +17,7 @@ public:
         memory.setBitInRegister(_bit, _reg8Bit);
     }
 
+private:
     int _bit;
     IMemory::REG8BIT _reg8Bit;
 };
@@ -37,6 +38,7 @@ public:
         memory.writeInMemory(newValue, adress);
     }
 
+private:
     int _bit;
 };
 
@@ -52,6 +54,7 @@ public:
         memory.unsetBitInRegister(_bit, _reg8Bit);
     }
 
+private:
     int _bit;
     IMemory::REG8BIT _reg8Bit;
 };
@@ -72,6 +75,7 @@ public:
         memory.writeInMemory(newValue, adress);
     }
 
+private:
     int _bit;
 };
 
@@ -94,6 +98,7 @@ public:
         memory.setFlag(IMemory::FLAG::H);
     }
 
+private:
     int _bit;
     IMemory::REG8BIT _reg8Bit;
 };
@@ -119,6 +124,7 @@ public:
         memory.setFlag(IMemory::FLAG::H);
     }
 
+private:
     int _bit;
 };
 
@@ -155,6 +161,8 @@ public:
 
         memory.set8BitRegister(_reg8Bit, rotatedValue);
     }
+
+private:
     IMemory::REG8BIT _reg8Bit;
 };
 
@@ -226,6 +234,8 @@ public:
 
         memory.set8BitRegister(_reg8Bit, rotatedValue);
     }
+
+private:
     IMemory::REG8BIT _reg8Bit;
 };
 
@@ -298,6 +308,8 @@ public:
 
         memory.set8BitRegister(_reg8Bit, rotatedValue);
     }
+
+private:
     IMemory::REG8BIT _reg8Bit;
 };
 
@@ -371,6 +383,8 @@ public:
 
         memory.set8BitRegister(_reg8Bit, rotatedValue);
     }
+
+private:
     IMemory::REG8BIT _reg8Bit;
 };
 
@@ -443,6 +457,8 @@ public:
 
         memory.set8BitRegister(_reg8Bit, rotatedValue);
     }
+
+private:
     IMemory::REG8BIT _reg8Bit;
 };
 
@@ -515,6 +531,8 @@ public:
 
         memory.set8BitRegister(_reg8Bit, rotatedValue);
     }
+
+private:
     IMemory::REG8BIT _reg8Bit;
 };
 
@@ -587,6 +605,8 @@ public:
 
         memory.set8BitRegister(_reg8Bit, rotatedValue);
     }
+
+private:
     IMemory::REG8BIT _reg8Bit;
 };
 
@@ -648,6 +668,8 @@ public:
 
         memory.set8BitRegister(_reg8Bit, newValue);
     }
+
+private:
     IMemory::REG8BIT _reg8Bit;
 };
 

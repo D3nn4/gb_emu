@@ -47,6 +47,7 @@ TEST_F (RomLoaderTest, loadValidFile)
     bool isLoaded = romLoader.load(fileName);
 
     IMemory::CartridgeData data = romLoader.getData();
+    //TODO find why this magic numbers
     for (uint16_t i = 0x0000; i < 0x0100; i++) {
         EXPECT_EQ(data[i], 0);
     }

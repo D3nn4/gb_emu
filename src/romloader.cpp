@@ -15,6 +15,7 @@ bool RomLoader::load(std::string const & romName)
     if (fd > 0) {
         _data.fill(0);
         uint8_t buff[512];
+        //TODO find/understand why this
         int readCount = 0x0100;
         while (int readBit = _fileIO.readFile(buff, fd)) {
             std::copy(std::begin(buff), std::end(buff), _data.begin() + readCount);
