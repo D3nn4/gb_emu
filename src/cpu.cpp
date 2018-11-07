@@ -4,7 +4,8 @@
 
 Cpu::Cpu(IRomLoader& romLoader)
     :_romLoader(romLoader),
-     _instructionHandler(_memory){}
+     _interruptHandler(_memory),
+     _instructionHandler(_memory, _interruptHandler){}
 
 int Cpu::getCurrentCycles()
 {
@@ -22,7 +23,6 @@ void Cpu::executeOneFrame()
         catch (...) {
         	std::cout << "error catch\n";
         }
-        
     }
     _cycles -= _maxCycles;
 }*/

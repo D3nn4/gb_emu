@@ -5,6 +5,7 @@
 #include <bitset>
 
 #include "iinstructions.hpp"
+#include "iinterupthandler.hpp"
 
 //RR  == 16bitReg   NN == next16Bit
 //R   == 8bitReg     N == next8Bit
@@ -146,13 +147,13 @@ public:
 
     void doInstruction(IMemory& memory) override {
         uint16_t cursor = memory.get16BitRegister(IMemory::REG16BIT::PC);
-        uint8_t MS = memory.readInMemory(cursor + 2);
+        uint8_t (MS) = memory.readInMemory(cursor + 2);
         uint8_t LS = memory.readInMemory(cursor + 1);
-        uint16_t adress = ((uint16_t) MS << 8) | LS;
+        uint16_t adress = (static_cast<uint16_t> (MS) << 8) | LS;
         uint16_t reg16BitValue = memory.get16BitRegister(_16BitReg);
 
-        uint8_t mostSignificantBit = (uint8_t)(reg16BitValue >> 8) & 0xff;
-        uint8_t lessSignificantBit = (uint8_t)(reg16BitValue & 0xff);
+        uint8_t(mostSignificantBit) = static_cast<uint8_t>((reg16BitValue >> 8) & 0xff);
+        uint8_t lessSignificantBit = static_cast<uint8_t>(reg16BitValue & 0xff);
         memory.writeInMemory(lessSignificantBit, adress);
         memory.writeInMemory(mostSignificantBit, adress + 1);
         memory.set16BitRegister(IMemory::REG16BIT::PC, cursor + 3);
@@ -192,9 +193,9 @@ public:
     void doInstruction(IMemory& memory) override {
         uint8_t reg8BitValue = memory.get8BitRegister(_8BitReg);
         uint16_t cursor = memory.get16BitRegister(IMemory::REG16BIT::PC);
-        uint8_t MS = memory.readInMemory(cursor + 2);
+        uint8_t (MS) = memory.readInMemory(cursor + 2);
         uint8_t LS = memory.readInMemory(cursor + 1);
-        uint16_t adress = ((uint16_t) MS << 8) | LS;
+        uint16_t adress = (static_cast<uint16_t>(MS) << 8) | LS;
         memory.writeInMemory(reg8BitValue, adress);
         memory.set16BitRegister(IMemory::REG16BIT::PC, cursor + 3);
     }
@@ -211,9 +212,9 @@ public:
 
     void doInstruction(IMemory& memory) override {
         uint16_t cursor = memory.get16BitRegister(IMemory::REG16BIT::PC);
-        uint8_t MS = memory.readInMemory(cursor + 2);
+        uint8_t (MS) = memory.readInMemory(cursor + 2);
         uint8_t LS = memory.readInMemory(cursor + 1);
-        uint16_t adress = ((uint16_t) MS << 8) | LS;
+        uint16_t adress = (static_cast<uint16_t> (MS) << 8) | LS;
         uint8_t value = memory.readInMemory(adress);
         memory.set8BitRegister(_8BitReg, value);
         memory.set16BitRegister(IMemory::REG16BIT::PC, cursor + 3);
@@ -313,9 +314,9 @@ public:
 
     void doInstruction(IMemory& memory) override {
         uint16_t cursor = memory.get16BitRegister(IMemory::REG16BIT::PC);
-        uint8_t MS = memory.readInMemory(cursor + 2);
+        uint8_t (MS) = memory.readInMemory(cursor + 2);
         uint8_t LS = memory.readInMemory(cursor + 1);
-        uint16_t valueToLoad = ((uint16_t) MS << 8) | LS;
+        uint16_t valueToLoad = (static_cast<uint16_t> (MS) << 8) | LS;
         memory.set16BitRegister(_register, valueToLoad);
         memory.set16BitRegister(IMemory::REG16BIT::PC, cursor + 3);
     }
@@ -765,9 +766,9 @@ public:
 
     void doInstruction(IMemory& memory) override {
         uint16_t stackPointer = memory.get16BitRegister(IMemory::REG16BIT::SP);
-        uint8_t mostSignificantBit = memory.readInMemory(stackPointer + 1);
+        uint8_t(mostSignificantBit) = memory.readInMemory(stackPointer + 1);
         uint8_t lessSignificantBit = memory.readInMemory(stackPointer);
-        uint16_t valueToLoad = ((uint16_t) mostSignificantBit << 8) | lessSignificantBit;
+        uint16_t valueToLoad = (static_cast<uint16_t> (mostSignificantBit) << 8) | lessSignificantBit;
         memory.set16BitRegister(_16BitReg, valueToLoad);
         memory.set16BitRegister(IMemory::REG16BIT::SP, stackPointer + 2);
         uint16_t cursor = memory.get16BitRegister(IMemory::REG16BIT::PC);
@@ -788,8 +789,8 @@ public:
         uint16_t stackPointer = memory.get16BitRegister(IMemory::REG16BIT::SP);
         uint16_t valueToLoad = memory.get16BitRegister(_16BitReg);
 
-        uint8_t mostSignificantBit = (uint8_t)(valueToLoad >> 8) & 0xff;
-        uint8_t lessSignificantBit = (uint8_t)(valueToLoad & 0xff);
+        uint8_t(mostSignificantBit) = static_cast<uint8_t>(valueToLoad >> 8) & 0xff;
+        uint8_t lessSignificantBit = static_cast<uint8_t>(valueToLoad & 0xff);
         memory.writeInMemory(mostSignificantBit, stackPointer - 1);
         memory.writeInMemory(lessSignificantBit, stackPointer - 2);
 
@@ -1641,9 +1642,9 @@ public:
     void doInstruction(IMemory& memory) override {
         uint16_t cursor = memory.get16BitRegister(IMemory::REG16BIT::PC);
         uint8_t lessSignificantBit = memory.readInMemory(cursor + 1);
-        uint8_t mostSignificantBit = memory.readInMemory(cursor + 2);
+        uint8_t(mostSignificantBit) = memory.readInMemory(cursor + 2);
 
-        uint16_t adress = ((uint16_t) mostSignificantBit << 8) | lessSignificantBit;
+        uint16_t adress = (static_cast<uint16_t>(mostSignificantBit) << 8) | lessSignificantBit;
         memory.set16BitRegister(IMemory::REG16BIT::PC, adress);
     }
 };
@@ -1661,9 +1662,9 @@ public:
         uint16_t cursor = memory.get16BitRegister(IMemory::REG16BIT::PC);
         if (memory.isSetFlag(_flag) == _isToBeSet) {
             uint8_t lessSignificantBit = memory.readInMemory(cursor + 1);
-            uint8_t mostSignificantBit = memory.readInMemory(cursor + 2);
+            uint8_t(mostSignificantBit) = memory.readInMemory(cursor + 2);
 
-            uint16_t adress = ((uint16_t) mostSignificantBit << 8) | lessSignificantBit;
+            uint16_t adress = (static_cast<uint16_t>(mostSignificantBit) << 8) | lessSignificantBit;
             memory.set16BitRegister(IMemory::REG16BIT::PC, adress);
             IInstructions::_cycles = 16;
         }
@@ -1740,14 +1741,14 @@ public:
     void doInstruction(IMemory& memory) override {
         uint16_t programCounter = memory.get16BitRegister(IMemory::REG16BIT::PC);
         uint16_t stackPointer = memory.get16BitRegister(IMemory::REG16BIT::SP);
-        uint8_t pcHightBit = (uint8_t)((programCounter + 3) >> 8) & 0xff;
-        uint8_t pcLowBit = (uint8_t)((programCounter + 3) & 0xff);
+        uint8_t pcHightBit = static_cast<uint8_t>(((programCounter + 3) >> 8) & 0xff);
+        uint8_t pcLowBit = static_cast<uint8_t>((programCounter + 3) & 0xff);
         memory.writeInMemory(pcHightBit, stackPointer - 1);
         memory.writeInMemory(pcLowBit, stackPointer - 2);
 
         uint8_t lessSignificantBit = memory.readInMemory(programCounter + 1);
-        uint8_t mostSignificantBit = memory.readInMemory(programCounter + 2);
-        uint16_t newPCValue = ((uint16_t) mostSignificantBit << 8) | lessSignificantBit;
+        uint8_t(mostSignificantBit) = memory.readInMemory(programCounter + 2);
+        uint16_t newPCValue = (static_cast<uint16_t>(mostSignificantBit) << 8) | lessSignificantBit;
 
         memory.set16BitRegister(IMemory::REG16BIT::PC, newPCValue);
         memory.set16BitRegister(IMemory::REG16BIT::SP, stackPointer - 2);
@@ -1767,14 +1768,14 @@ public:
         uint16_t programCounter = memory.get16BitRegister(IMemory::REG16BIT::PC);
         if (memory.isSetFlag(_flag) == _isToBeSet) {
             uint16_t stackPointer = memory.get16BitRegister(IMemory::REG16BIT::SP);
-            uint8_t pcHightBit = (uint8_t)((programCounter + 3) >> 8) & 0xff;
-            uint8_t pcLowBit = (uint8_t)((programCounter + 3) & 0xff);
+            uint8_t pcHightBit = static_cast<uint8_t>(((programCounter + 3) >> 8) & 0xff);
+            uint8_t pcLowBit = static_cast<uint8_t>((programCounter + 3) & 0xff);
             memory.writeInMemory(pcHightBit, stackPointer - 1);
             memory.writeInMemory(pcLowBit, stackPointer - 2);
 
             uint8_t lessSignificantBit = memory.readInMemory(programCounter + 1);
-            uint8_t mostSignificantBit = memory.readInMemory(programCounter + 2);
-            uint16_t newPCValue = ((uint16_t) mostSignificantBit << 8) | lessSignificantBit;
+            uint8_t(mostSignificantBit) = memory.readInMemory(programCounter + 2);
+            uint16_t newPCValue = (static_cast<uint16_t>(mostSignificantBit) << 8) | lessSignificantBit;
 
             memory.set16BitRegister(IMemory::REG16BIT::PC, newPCValue);
             memory.set16BitRegister(IMemory::REG16BIT::SP, stackPointer - 2);
@@ -1800,8 +1801,8 @@ public:
         uint16_t stackPointer = memory.get16BitRegister(IMemory::REG16BIT::SP);
 
         uint8_t lessSignificantBit = memory.readInMemory(stackPointer);
-        uint8_t mostSignificantBit = memory.readInMemory(stackPointer + 1);
-        uint16_t newPCValue = ((uint16_t) mostSignificantBit << 8) | lessSignificantBit;
+        uint8_t(mostSignificantBit) = memory.readInMemory(stackPointer + 1);
+        uint16_t newPCValue = (static_cast<uint16_t>(mostSignificantBit) << 8) | lessSignificantBit;
 
         memory.set16BitRegister(IMemory::REG16BIT::PC, newPCValue);
         memory.set16BitRegister(IMemory::REG16BIT::SP, stackPointer +2);
@@ -1822,8 +1823,8 @@ public:
             uint16_t stackPointer = memory.get16BitRegister(IMemory::REG16BIT::SP);
 
             uint8_t lessSignificantBit = memory.readInMemory(stackPointer);
-            uint8_t mostSignificantBit = memory.readInMemory(stackPointer + 1);
-            uint16_t newPCValue = ((uint16_t) mostSignificantBit << 8) | lessSignificantBit;
+            uint8_t(mostSignificantBit) = memory.readInMemory(stackPointer + 1);
+            uint16_t newPCValue = (static_cast<uint16_t>(mostSignificantBit) << 8) | lessSignificantBit;
 
             memory.set16BitRegister(IMemory::REG16BIT::PC, newPCValue);
             memory.set16BitRegister(IMemory::REG16BIT::SP, stackPointer +2);
@@ -1843,20 +1844,24 @@ public:
 class RETI : public IInstructions
 {
 public:
-    RETI (int cycles)
-        :IInstructions(cycles){};
+    RETI (int cycles, IInterruptHandler& interruptHandler)
+        :IInstructions(cycles),
+         _interruptHandler(interruptHandler){};
 
     void doInstruction(IMemory& memory) override {
         uint16_t stackPointer = memory.get16BitRegister(IMemory::REG16BIT::SP);
 
         uint8_t lessSignificantBit = memory.readInMemory(stackPointer);
-        uint8_t mostSignificantBit = memory.readInMemory(stackPointer + 1);
-        uint16_t newPCValue = ((uint16_t) mostSignificantBit << 8) | lessSignificantBit;
+        uint8_t(mostSignificantBit) = memory.readInMemory(stackPointer + 1);
+        uint16_t newPCValue = (static_cast<uint16_t>(mostSignificantBit) << 8) | lessSignificantBit;
 
         memory.set16BitRegister(IMemory::REG16BIT::PC, newPCValue);
         memory.set16BitRegister(IMemory::REG16BIT::SP, stackPointer +2);
-        //TODO enable interrupts
+
+        _interruptHandler.enableMasterSwitch();
     }
+
+    IInterruptHandler& _interruptHandler;
 };
 
 //0xC7 0xD7 0xE7 0xF7 0xCF 0xDF 0xEF 0xFF
@@ -1871,8 +1876,8 @@ public:
         uint16_t programCounter = memory.get16BitRegister(IMemory::REG16BIT::PC);
         uint16_t stackPointer = memory.get16BitRegister(IMemory::REG16BIT::SP);
 
-        uint8_t mostSignificantBit = (uint8_t)((programCounter + 0x01) >> 8) & 0xff;
-        uint8_t lessSignificantBit = (uint8_t)((programCounter + 0x01) & 0xff);
+        uint8_t(mostSignificantBit) = static_cast<uint8_t>(((programCounter + 0x01) >> 8) & 0xff);
+        uint8_t lessSignificantBit = static_cast<uint8_t>((programCounter + 0x01) & 0xff);
 
         memory.writeInMemory(mostSignificantBit, stackPointer - 1);
         memory.writeInMemory(lessSignificantBit, stackPointer - 2);
@@ -1937,24 +1942,28 @@ public:
 class DI : public IInstructions
 {
 public:
-    DI (int cycles)
-        :IInstructions(cycles){};
+    DI (int cycles, IInterruptHandler& interruptHandler)
+        :IInstructions(cycles),
+         _interruptHandler(interruptHandler){};
 
     void doInstruction(IMemory& ) override {
-        //TODO
+        _interruptHandler.disableMasterSwitch();
     }
+    IInterruptHandler& _interruptHandler;
 };
 
 //0xFB
 class EI : public IInstructions
 {
 public:
-    EI (int cycles)
-        :IInstructions(cycles){};
+    EI (int cycles, IInterruptHandler& interruptHandler)
+        :IInstructions(cycles),
+         _interruptHandler(interruptHandler){};
 
     void doInstruction(IMemory& ) override {
-        //TODO
+        _interruptHandler.enableMasterSwitch();
     }
+    IInterruptHandler& _interruptHandler;
 };
 
 //0x76
@@ -1978,6 +1987,10 @@ public:
 
     void doInstruction(IMemory& ) override {
         //TODO
+        // The STOP command halts the GameBoy processor
+        // and screen until any button is pressed. The GB
+        // and GBP screen goes white with a single dark
+        // horizontal line.
     }
 };
 
