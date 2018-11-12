@@ -19,7 +19,8 @@ void InterruptHandler::doInterrupt()
             for (int interruptID = 0; interruptID < 5; interruptID++) {
                 if (bitsetRequest.test(interruptID)
                     && bitsetEnabled.test(interruptID)) {
-                    serviceInterrupt(interruptID, bitsetRequest);
+                    serviceInterrupt(static_cast<IInterruptHandler::INTERRUPT>(interruptID),
+                                     bitsetRequest);
                 }
             }
         }
@@ -41,18 +42,20 @@ void InterruptHandler::disableMasterSwitch()
     _masterInterruptSwitch = false;
 }
 
-void InterruptHandler::requestInterrupt(int id)
+void InterruptHandler::requestInterrupt(IInterruptHandler::INTERRUPT id)
 {
     uint8_t interruptRequest = _memory.readInMemory(_interruptRequestRegister);
     std::bitset<8> bitsetRequest(interruptRequest);
-    bitsetRequest.set(id);
+    bitsetRequest.set(static_cast<int>(id));
     _memory.writeInMemory(bitsetRequest.to_ulong(), _interruptRequestRegister);
 }
 
-void InterruptHandler::serviceInterrupt(int id, std::bitset<8> bitsetRequest)
+void InterruptHandler::serviceInterrupt(IInterruptHandler::INTERRUPT id,
+                                        std::bitset<8> bitsetRequest)
 {
+    int const interruptID = static_cast<int>(id);
    _masterInterruptSwitch = false;
-   bitsetRequest.reset(id);
+   bitsetRequest.reset(interruptID);
    _memory.writeInMemory(bitsetRequest.to_ulong(), _interruptRequestRegister);
 
    uint16_t programCounter = _memory.get16BitRegister(IMemory::REG16BIT::PC);
@@ -63,5 +66,5 @@ void InterruptHandler::serviceInterrupt(int id, std::bitset<8> bitsetRequest)
    _memory.writeInMemory(mostSignificantBit, stackPointer);
 
    _memory.set16BitRegister(IMemory::REG16BIT::SP, stackPointer - 2);
-   _memory.set16BitRegister(IMemory::REG16BIT::PC, serviceRoutineAdress[id]);
+   _memory.set16BitRegister(IMemory::REG16BIT::PC, serviceRoutineAdress[interruptID]);
 }

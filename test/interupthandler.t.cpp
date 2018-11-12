@@ -65,25 +65,25 @@ TEST_F (InterruptHandlerTest, requestInterrupt)
         EXPECT_CALL(_memory, readInMemory(0xff0f))
             .WillOnce(Return(0x00));
         EXPECT_CALL(_memory, writeInMemory(0x01, 0xff0f));
-        interruptHandler.requestInterrupt(0);//vblanc
+        interruptHandler.requestInterrupt(IInterruptHandler::INTERRUPT::VBLANC);
     }
     {
         EXPECT_CALL(_memory, readInMemory(0xff0f))
             .WillOnce(Return(0x00));
         EXPECT_CALL(_memory, writeInMemory(0x02, 0xff0f));
-        interruptHandler.requestInterrupt(1);//lcd
+        interruptHandler.requestInterrupt(IInterruptHandler::INTERRUPT::LCD);
     }
     {
         EXPECT_CALL(_memory, readInMemory(0xff0f))
             .WillOnce(Return(0x00));
         EXPECT_CALL(_memory, writeInMemory(0x04, 0xff0f));
-        interruptHandler.requestInterrupt(2);//timer
+        interruptHandler.requestInterrupt(IInterruptHandler::INTERRUPT::TIMER);
     }
     {
         EXPECT_CALL(_memory, readInMemory(0xff0f))
             .WillOnce(Return(0x00));
         EXPECT_CALL(_memory, writeInMemory(0x10, 0xff0f));
-        interruptHandler.requestInterrupt(4);//joypad
+        interruptHandler.requestInterrupt(IInterruptHandler::INTERRUPT::JOYPAD);
     }
 }
 

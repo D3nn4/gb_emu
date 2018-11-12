@@ -13,13 +13,13 @@ public:
     bool isMasterSwitchEnabled() override;
     void enableMasterSwitch() override;
     void disableMasterSwitch() override;
-    void requestInterrupt(int id) override;
+    void requestInterrupt(IInterruptHandler::INTERRUPT id) override;
     // void halt();
     // void stop();
 
 
 private:
-    void serviceInterrupt(int id, std::bitset<8> bitsetRequest);
+    void serviceInterrupt(IInterruptHandler::INTERRUPT id, std::bitset<8> bitsetRequest);
 
     IMemory& _memory;
 };

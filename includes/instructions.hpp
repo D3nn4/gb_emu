@@ -147,7 +147,7 @@ public:
 
     void doInstruction(IMemory& memory) override {
         uint16_t cursor = memory.get16BitRegister(IMemory::REG16BIT::PC);
-        uint8_t (MS) = memory.readInMemory(cursor + 2);
+        uint8_t MS = memory.readInMemory(cursor + 2);
         uint8_t LS = memory.readInMemory(cursor + 1);
         uint16_t adress = (static_cast<uint16_t> (MS) << 8) | LS;
         uint16_t reg16BitValue = memory.get16BitRegister(_16BitReg);
@@ -193,7 +193,7 @@ public:
     void doInstruction(IMemory& memory) override {
         uint8_t reg8BitValue = memory.get8BitRegister(_8BitReg);
         uint16_t cursor = memory.get16BitRegister(IMemory::REG16BIT::PC);
-        uint8_t (MS) = memory.readInMemory(cursor + 2);
+        uint8_t MS = memory.readInMemory(cursor + 2);
         uint8_t LS = memory.readInMemory(cursor + 1);
         uint16_t adress = (static_cast<uint16_t>(MS) << 8) | LS;
         memory.writeInMemory(reg8BitValue, adress);
@@ -212,7 +212,7 @@ public:
 
     void doInstruction(IMemory& memory) override {
         uint16_t cursor = memory.get16BitRegister(IMemory::REG16BIT::PC);
-        uint8_t (MS) = memory.readInMemory(cursor + 2);
+        uint8_t MS = memory.readInMemory(cursor + 2);
         uint8_t LS = memory.readInMemory(cursor + 1);
         uint16_t adress = (static_cast<uint16_t> (MS) << 8) | LS;
         uint8_t value = memory.readInMemory(adress);
@@ -314,7 +314,7 @@ public:
 
     void doInstruction(IMemory& memory) override {
         uint16_t cursor = memory.get16BitRegister(IMemory::REG16BIT::PC);
-        uint8_t (MS) = memory.readInMemory(cursor + 2);
+        uint8_t MS = memory.readInMemory(cursor + 2);
         uint8_t LS = memory.readInMemory(cursor + 1);
         uint16_t valueToLoad = (static_cast<uint16_t> (MS) << 8) | LS;
         memory.set16BitRegister(_register, valueToLoad);

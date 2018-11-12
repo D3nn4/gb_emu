@@ -20,7 +20,7 @@ public:
     MOCK_METHOD0(isMasterSwitchEnabled, bool());
     MOCK_METHOD0(enableMasterSwitch, void());
     MOCK_METHOD0(disableMasterSwitch, void());
-    MOCK_METHOD1(requestInterrupt, void(int));
+    MOCK_METHOD1(requestInterrupt, void(IInterruptHandler::INTERRUPT));
 };
 
 class MockMemory : public IMemory
