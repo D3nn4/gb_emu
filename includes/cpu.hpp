@@ -5,7 +5,7 @@
 #include "memory.hpp"
 #include "iromloader.hpp"
 #include "instructionhandler.hpp"
-
+#include "interupthandler.hpp"
 class Cpu
 {
 public:
@@ -22,6 +22,7 @@ private:
     int const _maxCycles = 70244;
     Memory _memory;
     IRomLoader& _romLoader;
+    InterruptHandler _interruptHandler;
     InstructionHandler _instructionHandler;
 
 

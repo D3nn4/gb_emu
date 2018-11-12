@@ -12,6 +12,17 @@ using ::testing::SetArgPointee;
 using ::testing::SetArrayArgument;
 using ::testing::InSequence;
 
+class MockInterruptHandler : public IInterruptHandler
+{
+public:
+
+    MOCK_METHOD0(doInterrupt, void());
+    MOCK_METHOD0(isMasterSwitchEnabled, bool());
+    MOCK_METHOD0(enableMasterSwitch, void());
+    MOCK_METHOD0(disableMasterSwitch, void());
+    MOCK_METHOD1(requestInterrupt, void(IInterruptHandler::INTERRUPT));
+};
+
 class MockMemory : public IMemory
 {
 public:
@@ -40,10 +51,6 @@ public:
     InstructionHandlerTest() {
         _cartridge.fill(0);
     }
-
-    MockMemory _memory;
-
-    IMemory::CartridgeData _cartridge;
 
     int load16NextBitToRegister(IMemory::RomData rom, IMemory::REG16BIT reg);
     int load8NextBitToRegister(IMemory::RomData rom, IMemory::REG8BIT reg);
@@ -74,6 +81,10 @@ public:
     void returnPCToAdressWithFlagSet(uint8_t opCode, IMemory::FLAG flag, bool isToBeSet);
     void restartPCAdress(uint8_t opCode, uint8_t value);
 
+    MockMemory _memory;
+    MockInterruptHandler _interruptHandler;
+    IMemory::CartridgeData _cartridge;
+
 };
 
 template <class ARRAY>
@@ -92,7 +103,7 @@ IMemory::RomData getDataForTest(ARRAY opCode)
 //// TEST LOAD
 TEST_F (InstructionHandlerTest, instructionNop)
 {
-    InstructionHandler instructionHandler(_memory);
+    InstructionHandler instructionHandler(_memory, _interruptHandler);
     EXPECT_CALL(_memory, get16BitRegister(IMemory::REG16BIT::PC))
         .WillOnce(Return(0x0000));
     EXPECT_CALL(_memory, set16BitRegister(IMemory::REG16BIT::PC, 0x0001));
@@ -102,7 +113,7 @@ TEST_F (InstructionHandlerTest, instructionNop)
 
 int InstructionHandlerTest::load16NextBitToRegister(IMemory::RomData rom, IMemory::REG16BIT reg)
 {
-    InstructionHandler instructionHandler(_memory);
+    InstructionHandler instructionHandler(_memory, _interruptHandler);
 
     uint16_t next16Bit = ((uint16_t)rom[2] << 8) | rom[1];
 
@@ -134,7 +145,7 @@ TEST_F (InstructionHandlerTest, load16NextBitToRegisterInstructions)
 
 int InstructionHandlerTest::load8NextBitToRegister(IMemory::RomData rom, IMemory::REG8BIT reg)
 {
-    InstructionHandler instructionHandler(_memory);
+    InstructionHandler instructionHandler(_memory, _interruptHandler);
 
     uint8_t next8Bit = rom[1];
 
@@ -167,7 +178,7 @@ TEST_F (InstructionHandlerTest, load8NextBitToRegisterInstructions)
 
 int InstructionHandlerTest::load8BitRegValueToAdressAt16BitReg(IMemory::RomData rom, IMemory::REG8BIT reg8Bit, IMemory::REG16BIT reg16Bit, int toAdd)
 {
-    InstructionHandler instructionHandler(_memory);
+    InstructionHandler instructionHandler(_memory, _interruptHandler);
 
     EXPECT_CALL(_memory, get8BitRegister(reg8Bit))
         .WillOnce(Return(0xff));
@@ -207,7 +218,7 @@ TEST_F (InstructionHandlerTest, load8BitRegValueToAdressAt16BitRegInstructions)
 
 int InstructionHandlerTest::loadValueFromAdressIn16BitRegto8BitReg(IMemory::RomData rom, IMemory::REG8BIT reg8Bit, IMemory::REG16BIT reg16Bit, int toAdd)
 {
-    InstructionHandler instructionHandler(_memory);
+    InstructionHandler instructionHandler(_memory, _interruptHandler);
 
     EXPECT_CALL(_memory, get16BitRegister(reg16Bit))
         .WillOnce(Return(0xff00));
@@ -246,7 +257,7 @@ TEST_F (InstructionHandlerTest, loadValueFromAdressIn16BitRegto8BitRegInstructio
 
 int InstructionHandlerTest::load8BitRegValueTo8BitReg(uint8_t opCode, IMemory::REG8BIT toCopyTo, IMemory::REG8BIT toCopyFrom)
 {
-    InstructionHandler instructionHandler(_memory);
+    InstructionHandler instructionHandler(_memory, _interruptHandler);
 
     EXPECT_CALL(_memory, get8BitRegister(toCopyFrom))
         .WillOnce(Return(0xff));
@@ -317,7 +328,7 @@ auto testLD = [this](uint8_t opCode, IMemory::REG8BIT toCopyTo, IMemory::REG8BIT
 
 TEST_F (InstructionHandlerTest, load8NextBitToAdressIn16BitReg)
 {
-    InstructionHandler instructionHandler(_memory);
+    InstructionHandler instructionHandler(_memory, _interruptHandler);
 
     std::array<uint8_t, 3> data = {0x36, 0xff, 0x00};
 
@@ -335,7 +346,7 @@ TEST_F (InstructionHandlerTest, load8NextBitToAdressIn16BitReg)
 
 TEST_F (InstructionHandlerTest, loadSPToNext16BitAdress)
 {
-    InstructionHandler instructionHandler(_memory);
+    InstructionHandler instructionHandler(_memory, _interruptHandler);
 
     std::array<uint8_t, 3> data = {0x08, 0x00, 0xff};
 
@@ -358,7 +369,7 @@ TEST_F (InstructionHandlerTest, loadSPToNext16BitAdress)
 
 TEST_F (InstructionHandlerTest, load8BitRegToNext8BitAdress)
 {
-    InstructionHandler instructionHandler(_memory);
+    InstructionHandler instructionHandler(_memory, _interruptHandler);
 
     EXPECT_CALL(_memory, get8BitRegister(IMemory::REG8BIT::A))
         .WillOnce(Return(0xff));
@@ -375,7 +386,7 @@ TEST_F (InstructionHandlerTest, load8BitRegToNext8BitAdress)
 
 TEST_F (InstructionHandlerTest, loadNext8BitAdressTo8BitReg)
 {
-    InstructionHandler instructionHandler(_memory);
+    InstructionHandler instructionHandler(_memory, _interruptHandler);
 
     EXPECT_CALL(_memory, get16BitRegister(IMemory::REG16BIT::PC))
         .WillOnce(Return(0x0000));
@@ -391,7 +402,7 @@ TEST_F (InstructionHandlerTest, loadNext8BitAdressTo8BitReg)
 
 TEST_F (InstructionHandlerTest, load8BitRegToAdressIn8BitReg)
 {
-    InstructionHandler instructionHandler(_memory);
+    InstructionHandler instructionHandler(_memory, _interruptHandler);
 
     EXPECT_CALL(_memory, get8BitRegister(IMemory::REG8BIT::C))
         .WillOnce(Return(0x00));
@@ -408,7 +419,7 @@ TEST_F (InstructionHandlerTest, load8BitRegToAdressIn8BitReg)
 
 TEST_F (InstructionHandlerTest, loadValueAtAdressIn8BitRegTo8BitReg)
 {
-    InstructionHandler instructionHandler(_memory);
+    InstructionHandler instructionHandler(_memory, _interruptHandler);
 
     EXPECT_CALL(_memory, get8BitRegister(IMemory::REG8BIT::C))
         .WillOnce(Return(0x00));
@@ -424,7 +435,7 @@ TEST_F (InstructionHandlerTest, loadValueAtAdressIn8BitRegTo8BitReg)
 
 TEST_F (InstructionHandlerTest, loadHLToSP)
 {
-    InstructionHandler instructionHandler(_memory);
+    InstructionHandler instructionHandler(_memory, _interruptHandler);
 
     EXPECT_CALL(_memory, get16BitRegister(IMemory::REG16BIT::HL))
         .WillOnce(Return(0x00ff));
@@ -438,7 +449,7 @@ TEST_F (InstructionHandlerTest, loadHLToSP)
 
 TEST_F (InstructionHandlerTest, loadAToAdressAtNext16Bit)
 {
-    InstructionHandler instructionHandler(_memory);
+    InstructionHandler instructionHandler(_memory, _interruptHandler);
 
     IMemory::RomData rom;
     rom.fill(0xfe);
@@ -460,7 +471,7 @@ TEST_F (InstructionHandlerTest, loadAToAdressAtNext16Bit)
 
 TEST_F (InstructionHandlerTest, loadFromAdressAtNext16BitToA)
 {
-    InstructionHandler instructionHandler(_memory);
+    InstructionHandler instructionHandler(_memory, _interruptHandler);
 
     IMemory::RomData rom;
     rom.fill(0xfe);
@@ -481,7 +492,7 @@ TEST_F (InstructionHandlerTest, loadFromAdressAtNext16BitToA)
 
 TEST_F (InstructionHandlerTest, load8NextBitAndSPToHL)
 {
-    InstructionHandler instructionHandler(_memory);
+    InstructionHandler instructionHandler(_memory, _interruptHandler);
 
     {
         EXPECT_CALL(_memory, get16BitRegister(IMemory::REG16BIT::PC))
@@ -519,7 +530,7 @@ TEST_F (InstructionHandlerTest, load8NextBitAndSPToHL)
 //// TEST INC && DEC
 int InstructionHandlerTest::addValueTo8BitRegister(uint8_t opCode, IMemory::REG8BIT reg, int value)
 {
-    InstructionHandler instructionHandler(_memory);
+    InstructionHandler instructionHandler(_memory, _interruptHandler);
 
     EXPECT_CALL(_memory, get8BitRegister(reg))
         .WillOnce(Return(0x01));
@@ -545,7 +556,7 @@ int InstructionHandlerTest::addValueTo8BitRegister(uint8_t opCode, IMemory::REG8
 
 int InstructionHandlerTest::addValueTo16BitRegister(uint16_t opCode, IMemory::REG16BIT reg, int value)
 {
-    InstructionHandler instructionHandler(_memory);
+    InstructionHandler instructionHandler(_memory, _interruptHandler);
 
     EXPECT_CALL(_memory, get16BitRegister(reg))
         .WillOnce(Return(0x0000));
@@ -571,7 +582,7 @@ int InstructionHandlerTest::addValueTo16BitRegister(uint16_t opCode, IMemory::RE
 
 int InstructionHandlerTest::addValueAtAdressInReg(uint16_t opCode, IMemory::REG16BIT reg, int value)
 {
-    InstructionHandler instructionHandler(_memory);
+    InstructionHandler instructionHandler(_memory, _interruptHandler);
 
     IMemory::RomData rom;
     rom.fill(0x01);
@@ -660,7 +671,7 @@ TEST_F (InstructionHandlerTest, decrementValueInstructions)
 //// TEST AND && XOR && OR
 int InstructionHandlerTest::xorAWith8BitReg(int opCode, IMemory::REG8BIT reg8Bit)
 {
-    InstructionHandler instructionHandler(_memory);
+    InstructionHandler instructionHandler(_memory, _interruptHandler);
 
     if(reg8Bit == IMemory::REG8BIT::A) {
         EXPECT_CALL(_memory, get8BitRegister(IMemory::REG8BIT::A))
@@ -705,7 +716,7 @@ TEST_F(InstructionHandlerTest, xorAWith8BitRegInstructions)
 
 int InstructionHandlerTest::orAWith8BitReg(int opCode, IMemory::REG8BIT reg8Bit)
 {
-    InstructionHandler instructionHandler(_memory);
+    InstructionHandler instructionHandler(_memory, _interruptHandler);
     if (reg8Bit == IMemory::REG8BIT::A) {
         EXPECT_CALL(_memory, get8BitRegister(IMemory::REG8BIT::A))
             .WillOnce(Return(0x10))
@@ -748,7 +759,7 @@ TEST_F(InstructionHandlerTest, orAWith8BitRegInstructions)
 
 int InstructionHandlerTest::andAWith8BitReg(int opCode, IMemory::REG8BIT reg8Bit)
 {
-    InstructionHandler instructionHandler(_memory);
+    InstructionHandler instructionHandler(_memory, _interruptHandler);
     if (reg8Bit == IMemory::REG8BIT::A) {
         EXPECT_CALL(_memory, get8BitRegister(IMemory::REG8BIT::A))
             .WillOnce(Return(0x10))
@@ -791,7 +802,7 @@ TEST_F(InstructionHandlerTest, andAWith8BitRegInstructions)
 
 TEST_F(InstructionHandlerTest, xorAWith8BitAtAdressInHL)
 {
-    InstructionHandler instructionHandler(_memory);
+    InstructionHandler instructionHandler(_memory, _interruptHandler);
 
     EXPECT_CALL(_memory, get8BitRegister(IMemory::REG8BIT::A))
         .WillOnce(Return(0x10));
@@ -814,7 +825,7 @@ TEST_F(InstructionHandlerTest, xorAWith8BitAtAdressInHL)
 
 TEST_F(InstructionHandlerTest, orAWith8BitAtAdressInHL)
 {
-    InstructionHandler instructionHandler(_memory);
+    InstructionHandler instructionHandler(_memory, _interruptHandler);
 
 
     EXPECT_CALL(_memory, get8BitRegister(IMemory::REG8BIT::A))
@@ -838,7 +849,7 @@ TEST_F(InstructionHandlerTest, orAWith8BitAtAdressInHL)
 
 TEST_F(InstructionHandlerTest, andAWith8BitAtAdressInHL)
 {
-    InstructionHandler instructionHandler(_memory);
+    InstructionHandler instructionHandler(_memory, _interruptHandler);
 
     EXPECT_CALL(_memory, get8BitRegister(IMemory::REG8BIT::A))
         .WillOnce(Return(0x11));
@@ -861,7 +872,7 @@ TEST_F(InstructionHandlerTest, andAWith8BitAtAdressInHL)
 
 TEST_F(InstructionHandlerTest, xorAWithNext8Bit)
 {
-    InstructionHandler instructionHandler(_memory);
+    InstructionHandler instructionHandler(_memory, _interruptHandler);
 
     IMemory::RomData rom;
     rom.fill(0x01);
@@ -885,7 +896,7 @@ TEST_F(InstructionHandlerTest, xorAWithNext8Bit)
 
 TEST_F(InstructionHandlerTest, orAWithNext8Bit)
 {
-    InstructionHandler instructionHandler(_memory);
+    InstructionHandler instructionHandler(_memory, _interruptHandler);
 
     EXPECT_CALL(_memory, get8BitRegister(IMemory::REG8BIT::A))
         .WillOnce(Return(0x10));
@@ -906,7 +917,7 @@ TEST_F(InstructionHandlerTest, orAWithNext8Bit)
 
 TEST_F(InstructionHandlerTest, andAWithNext8Bit)
 {
-    InstructionHandler instructionHandler(_memory);
+    InstructionHandler instructionHandler(_memory, _interruptHandler);
 
     EXPECT_CALL(_memory, get8BitRegister(IMemory::REG8BIT::A))
         .WillOnce(Return(0x10));
@@ -928,7 +939,7 @@ TEST_F(InstructionHandlerTest, andAWithNext8Bit)
 //// TEST POP && PUSH
 int InstructionHandlerTest::popIn16BitReg(uint8_t opCode, IMemory::REG16BIT reg16Bit)
 {
-    InstructionHandler instructionHandler(_memory);
+    InstructionHandler instructionHandler(_memory, _interruptHandler);
 
     EXPECT_CALL(_memory, get16BitRegister(IMemory::REG16BIT::SP))
         .WillOnce(Return(0xFFFC));
@@ -959,7 +970,7 @@ TEST_F (InstructionHandlerTest, popIn16BitRegInstructions)
 
 int InstructionHandlerTest::push16BitReg(uint8_t opCode, IMemory::REG16BIT reg16Bit)
 {
-    InstructionHandler instructionHandler(_memory);
+    InstructionHandler instructionHandler(_memory, _interruptHandler);
 
     EXPECT_CALL(_memory, get16BitRegister(reg16Bit))
         .WillOnce(Return(0x3C5F));
@@ -989,7 +1000,7 @@ TEST_F (InstructionHandlerTest, push16BitRegisterInstructions)
 //// TEST ADD ADC
 int InstructionHandlerTest::add8BitToA(uint8_t opCode, IMemory::REG8BIT toAdd)
 {
-    InstructionHandler instructionHandler(_memory);
+    InstructionHandler instructionHandler(_memory, _interruptHandler);
 
     if(toAdd == IMemory::REG8BIT::A) {
         EXPECT_CALL(_memory, get8BitRegister(IMemory::REG8BIT::A))
@@ -1035,7 +1046,7 @@ TEST_F (InstructionHandlerTest, add8BitToAInstructions)
 
 TEST_F (InstructionHandlerTest, add8BitInAdressToA)
 {
-    InstructionHandler instructionHandler(_memory);
+    InstructionHandler instructionHandler(_memory, _interruptHandler);
 
     {
         EXPECT_CALL(_memory, get8BitRegister(IMemory::REG8BIT::A))
@@ -1077,7 +1088,7 @@ TEST_F (InstructionHandlerTest, add8BitInAdressToA)
 
 TEST_F (InstructionHandlerTest, add8NextBitToA)
 {
-    InstructionHandler instructionHandler(_memory);
+    InstructionHandler instructionHandler(_memory, _interruptHandler);
 
     {
         EXPECT_CALL(_memory, get8BitRegister(IMemory::REG8BIT::A))
@@ -1115,7 +1126,7 @@ TEST_F (InstructionHandlerTest, add8NextBitToA)
 
 int InstructionHandlerTest::add16BitToHL(uint8_t opCode, IMemory::REG16BIT toAdd)
 {
-    InstructionHandler instructionHandler(_memory);
+    InstructionHandler instructionHandler(_memory, _interruptHandler);
 
     if(toAdd == IMemory::REG16BIT::HL) {
         EXPECT_CALL(_memory, get16BitRegister(IMemory::REG16BIT::HL))
@@ -1156,7 +1167,7 @@ TEST_F (InstructionHandlerTest, add16BitToHLInstructions)
 
 int InstructionHandlerTest::add8BitAndCarryToA(uint8_t opCode, IMemory::REG8BIT toAdd)
 {
-    InstructionHandler instructionHandler(_memory);
+    InstructionHandler instructionHandler(_memory, _interruptHandler);
 
     if(toAdd == IMemory::REG8BIT::A) {
         EXPECT_CALL(_memory, get8BitRegister(IMemory::REG8BIT::A))
@@ -1206,7 +1217,7 @@ TEST_F (InstructionHandlerTest, add8BitAndCarryToAInstructions)
 
 TEST_F (InstructionHandlerTest, add8BitInAdressAndCarryToA)
 {
-    InstructionHandler instructionHandler(_memory);
+    InstructionHandler instructionHandler(_memory, _interruptHandler);
 
     {
         EXPECT_CALL(_memory, get8BitRegister(IMemory::REG8BIT::A))
@@ -1251,7 +1262,7 @@ TEST_F (InstructionHandlerTest, add8BitInAdressAndCarryToA)
 
 TEST_F (InstructionHandlerTest, add8NextBitAndCarryToA)
 {
-    InstructionHandler instructionHandler(_memory);
+    InstructionHandler instructionHandler(_memory, _interruptHandler);
 
     {
         EXPECT_CALL(_memory, get8BitRegister(IMemory::REG8BIT::A))
@@ -1293,7 +1304,7 @@ TEST_F (InstructionHandlerTest, add8NextBitAndCarryToA)
 
 TEST_F (InstructionHandlerTest, add8NextBitToSP)
 {
-    InstructionHandler instructionHandler(_memory);
+    InstructionHandler instructionHandler(_memory, _interruptHandler);
 
     EXPECT_CALL(_memory, get16BitRegister(IMemory::REG16BIT::PC))
         .WillOnce(Return(0x0000));
@@ -1314,7 +1325,7 @@ TEST_F (InstructionHandlerTest, add8NextBitToSP)
 
 int InstructionHandlerTest::sub8BitToA(uint8_t opCode, IMemory::REG8BIT toSub)
 {
-    InstructionHandler instructionHandler(_memory);
+    InstructionHandler instructionHandler(_memory, _interruptHandler);
 
     if(toSub == IMemory::REG8BIT::A) {
         EXPECT_CALL(_memory, get8BitRegister(IMemory::REG8BIT::A))
@@ -1360,7 +1371,7 @@ TEST_F (InstructionHandlerTest, sub8BitToAInstructions)
 
 TEST_F (InstructionHandlerTest, sub8BitInAdressToA)
 {
-    InstructionHandler instructionHandler(_memory);
+    InstructionHandler instructionHandler(_memory, _interruptHandler);
 
     {
         EXPECT_CALL(_memory, get8BitRegister(IMemory::REG8BIT::A))
@@ -1402,7 +1413,7 @@ TEST_F (InstructionHandlerTest, sub8BitInAdressToA)
 
 TEST_F (InstructionHandlerTest, sub8NextBitToA)
 {
-    InstructionHandler instructionHandler(_memory);
+    InstructionHandler instructionHandler(_memory, _interruptHandler);
 
     {
         EXPECT_CALL(_memory, get8BitRegister(IMemory::REG8BIT::A))
@@ -1440,7 +1451,7 @@ TEST_F (InstructionHandlerTest, sub8NextBitToA)
 
 int InstructionHandlerTest::sub8BitAndCarryToA(uint8_t opCode, IMemory::REG8BIT toSub)
 {
-    InstructionHandler instructionHandler(_memory);
+    InstructionHandler instructionHandler(_memory, _interruptHandler);
 
     if(toSub == IMemory::REG8BIT::A) {
         EXPECT_CALL(_memory, get8BitRegister(IMemory::REG8BIT::A))
@@ -1490,7 +1501,7 @@ TEST_F (InstructionHandlerTest, sub8BitAndCarryToAInstructions)
 
 TEST_F (InstructionHandlerTest, sub8BitInAdressAndCarryToA)
 {
-    InstructionHandler instructionHandler(_memory);
+    InstructionHandler instructionHandler(_memory, _interruptHandler);
 
     {
         EXPECT_CALL(_memory, get8BitRegister(IMemory::REG8BIT::A))
@@ -1535,7 +1546,7 @@ TEST_F (InstructionHandlerTest, sub8BitInAdressAndCarryToA)
 
 TEST_F (InstructionHandlerTest, sub8NextBitAndCarryToA)
 {
-    InstructionHandler instructionHandler(_memory);
+    InstructionHandler instructionHandler(_memory, _interruptHandler);
 
     EXPECT_CALL(_memory, get8BitRegister(IMemory::REG8BIT::A))
         .WillOnce(Return(0x3B));
@@ -1557,7 +1568,7 @@ TEST_F (InstructionHandlerTest, sub8NextBitAndCarryToA)
 //// TEST CP
 int InstructionHandlerTest::cp8BitToA(uint8_t opCode, IMemory::REG8BIT toCp)
 {
-    InstructionHandler instructionHandler(_memory);
+    InstructionHandler instructionHandler(_memory, _interruptHandler);
 
     if(toCp == IMemory::REG8BIT::A) {
         EXPECT_CALL(_memory, get8BitRegister(IMemory::REG8BIT::A))
@@ -1601,7 +1612,7 @@ TEST_F (InstructionHandlerTest, cp8BitToAInstructions)
 
 TEST_F (InstructionHandlerTest, cp8BitInAdressToA)
 {
-    InstructionHandler instructionHandler(_memory);
+    InstructionHandler instructionHandler(_memory, _interruptHandler);
 
     {
         EXPECT_CALL(_memory, get8BitRegister(IMemory::REG8BIT::A))
@@ -1641,7 +1652,7 @@ TEST_F (InstructionHandlerTest, cp8BitInAdressToA)
 
 TEST_F (InstructionHandlerTest, cp8NextBitToA)
 {
-    InstructionHandler instructionHandler(_memory);
+    InstructionHandler instructionHandler(_memory, _interruptHandler);
 
     {
         EXPECT_CALL(_memory, get8BitRegister(IMemory::REG8BIT::A))
@@ -1679,7 +1690,7 @@ TEST_F (InstructionHandlerTest, cp8NextBitToA)
 TEST_F (InstructionHandlerTest, rotateRegAContentToTheLeftAndStore7thBitTo0thBit)
 {
     {
-        InstructionHandler instructionHandler(_memory);
+        InstructionHandler instructionHandler(_memory, _interruptHandler);
 
         EXPECT_CALL(_memory, get8BitRegister(IMemory::REG8BIT::A))
             .WillOnce(Return(0x85));
@@ -1695,7 +1706,7 @@ TEST_F (InstructionHandlerTest, rotateRegAContentToTheLeftAndStore7thBitTo0thBit
         EXPECT_EQ(4, instructionHandler.doInstruction(0x07));
     }
     {
-        InstructionHandler instructionHandler(_memory);
+        InstructionHandler instructionHandler(_memory, _interruptHandler);
 
         EXPECT_CALL(_memory, get8BitRegister(IMemory::REG8BIT::A))
             .WillOnce(Return(0x00));
@@ -1715,7 +1726,7 @@ TEST_F (InstructionHandlerTest, rotateRegAContentToTheLeftAndStore7thBitTo0thBit
 TEST_F (InstructionHandlerTest, rotateRegAContentToTheLeftAndStoreCarryIn0thBit)
 {
     {
-        InstructionHandler instructionHandler(_memory);
+        InstructionHandler instructionHandler(_memory, _interruptHandler);
 
         EXPECT_CALL(_memory, get8BitRegister(IMemory::REG8BIT::A))
             .WillOnce(Return(0x95));
@@ -1733,7 +1744,7 @@ TEST_F (InstructionHandlerTest, rotateRegAContentToTheLeftAndStoreCarryIn0thBit)
         EXPECT_EQ(4, instructionHandler.doInstruction(0x17));
     }
     {
-        InstructionHandler instructionHandler(_memory);
+        InstructionHandler instructionHandler(_memory, _interruptHandler);
 
         EXPECT_CALL(_memory, get8BitRegister(IMemory::REG8BIT::A))
             .WillOnce(Return(0x00));
@@ -1755,7 +1766,7 @@ TEST_F (InstructionHandlerTest, rotateRegAContentToTheLeftAndStoreCarryIn0thBit)
 TEST_F (InstructionHandlerTest, rotateRegAContentToTheRightAndStore7thBitTo0thBit)
 {
     {
-        InstructionHandler instructionHandler(_memory);
+        InstructionHandler instructionHandler(_memory, _interruptHandler);
 
         EXPECT_CALL(_memory, get8BitRegister(IMemory::REG8BIT::A))
             .WillOnce(Return(0x3B));
@@ -1771,7 +1782,7 @@ TEST_F (InstructionHandlerTest, rotateRegAContentToTheRightAndStore7thBitTo0thBi
         EXPECT_EQ(4, instructionHandler.doInstruction(0x0F));
     }
     {
-        InstructionHandler instructionHandler(_memory);
+        InstructionHandler instructionHandler(_memory, _interruptHandler);
 
         EXPECT_CALL(_memory, get8BitRegister(IMemory::REG8BIT::A))
             .WillOnce(Return(0xFE));
@@ -1791,7 +1802,7 @@ TEST_F (InstructionHandlerTest, rotateRegAContentToTheRightAndStore7thBitTo0thBi
 TEST_F (InstructionHandlerTest, rotateRegAContentToTheRightAndStoreCarryIn0thBit)
 {
     {
-        InstructionHandler instructionHandler(_memory);
+        InstructionHandler instructionHandler(_memory, _interruptHandler);
 
         EXPECT_CALL(_memory, get8BitRegister(IMemory::REG8BIT::A))
             .WillOnce(Return(0x81));
@@ -1809,7 +1820,7 @@ TEST_F (InstructionHandlerTest, rotateRegAContentToTheRightAndStoreCarryIn0thBit
         EXPECT_EQ(4, instructionHandler.doInstruction(0x1F));
     }
     {
-        InstructionHandler instructionHandler(_memory);
+        InstructionHandler instructionHandler(_memory, _interruptHandler);
 
         EXPECT_CALL(_memory, get8BitRegister(IMemory::REG8BIT::A))
             .WillOnce(Return(0x00));
@@ -1831,7 +1842,7 @@ TEST_F (InstructionHandlerTest, rotateRegAContentToTheRightAndStoreCarryIn0thBit
 // TEST Jump instructions 
 TEST_F (InstructionHandlerTest, jumpToNext16Bit)
 {
-    InstructionHandler instructionHandler(_memory);
+    InstructionHandler instructionHandler(_memory, _interruptHandler);
 
     EXPECT_CALL(_memory, get16BitRegister(IMemory::REG16BIT::PC))
         .WillOnce(Return(0x0000));
@@ -1846,7 +1857,7 @@ TEST_F (InstructionHandlerTest, jumpToNext16Bit)
 
 void InstructionHandlerTest::jumpToNext16BitWithFlagNotSet(uint8_t opCode, IMemory::FLAG flag, bool isToBeSet)
 {
-    InstructionHandler instructionHandler(_memory);
+    InstructionHandler instructionHandler(_memory, _interruptHandler);
 
     EXPECT_CALL(_memory, get16BitRegister(IMemory::REG16BIT::PC))
         .WillOnce(Return(0x0000));
@@ -1868,7 +1879,7 @@ void InstructionHandlerTest::jumpToNext16BitWithFlagNotSet(uint8_t opCode, IMemo
 
 void InstructionHandlerTest::jumpToNext16BitWithFlagSet(uint8_t opCode, IMemory::FLAG flag, bool isToBeSet)
 {
-    InstructionHandler instructionHandler(_memory);
+    InstructionHandler instructionHandler(_memory, _interruptHandler);
 
     EXPECT_CALL(_memory, get16BitRegister(IMemory::REG16BIT::PC))
         .WillOnce(Return(0x0000));
@@ -1911,7 +1922,7 @@ TEST_F (InstructionHandlerTest, jumpToNext16BitWithConditions)
 
 TEST_F (InstructionHandlerTest, jumpToAdressInReg)
 {
-    InstructionHandler instructionHandler(_memory);
+    InstructionHandler instructionHandler(_memory, _interruptHandler);
 
     EXPECT_CALL(_memory, get16BitRegister(IMemory::REG16BIT::HL))
         .WillOnce(Return(0x8000));
@@ -1923,7 +1934,7 @@ TEST_F (InstructionHandlerTest, jumpToAdressInReg)
 TEST_F (InstructionHandlerTest, jumpToAdressAndNext8Bit)
 {
     {
-        InstructionHandler instructionHandler(_memory);
+        InstructionHandler instructionHandler(_memory, _interruptHandler);
 
         EXPECT_CALL(_memory, get16BitRegister(IMemory::REG16BIT::PC))
             .WillOnce(Return(0x8000));
@@ -1934,7 +1945,7 @@ TEST_F (InstructionHandlerTest, jumpToAdressAndNext8Bit)
         EXPECT_EQ(12, instructionHandler.doInstruction(0x18));
     }
     {
-        InstructionHandler instructionHandler(_memory);
+        InstructionHandler instructionHandler(_memory, _interruptHandler);
 
         EXPECT_CALL(_memory, get16BitRegister(IMemory::REG16BIT::PC))
             .WillOnce(Return(0x8000));
@@ -1948,7 +1959,7 @@ TEST_F (InstructionHandlerTest, jumpToAdressAndNext8Bit)
 
 void InstructionHandlerTest::jumpToAdressAndNext8BitWithFlagNotSet(uint8_t opCode, IMemory::FLAG flag, bool isToBeSet)
 {
-    InstructionHandler instructionHandler(_memory);
+    InstructionHandler instructionHandler(_memory, _interruptHandler);
 
     EXPECT_CALL(_memory, get16BitRegister(IMemory::REG16BIT::PC))
         .WillOnce(Return(0x0000));
@@ -1968,7 +1979,7 @@ void InstructionHandlerTest::jumpToAdressAndNext8BitWithFlagNotSet(uint8_t opCod
 
 void InstructionHandlerTest::jumpToAdressAndNext8BitWithFlagSet(uint8_t opCode, IMemory::FLAG flag, bool isToBeSet)
 {
-    InstructionHandler instructionHandler(_memory);
+    InstructionHandler instructionHandler(_memory, _interruptHandler);
 
     EXPECT_CALL(_memory, get16BitRegister(IMemory::REG16BIT::PC))
         .WillOnce(Return(0x8000));
@@ -2010,7 +2021,7 @@ TEST_F (InstructionHandlerTest, jumpToAdressAndNext8BitWithConditions)
 // TEST Call instructions 
 TEST_F (InstructionHandlerTest, callNext16Bit)
 {
-    InstructionHandler instructionHandler(_memory);
+    InstructionHandler instructionHandler(_memory, _interruptHandler);
 
     EXPECT_CALL(_memory, get16BitRegister(IMemory::REG16BIT::PC))
         .WillOnce(Return(0x8000));
@@ -2035,7 +2046,7 @@ TEST_F (InstructionHandlerTest, callNext16Bit)
 
 void InstructionHandlerTest::callNext16BitWithFlagSet(uint8_t opCode, IMemory::FLAG flag, bool isToBeSet)
 {
-    InstructionHandler instructionHandler(_memory);
+    InstructionHandler instructionHandler(_memory, _interruptHandler);
     EXPECT_CALL(_memory, get16BitRegister(IMemory::REG16BIT::PC))
         .WillOnce(Return(0x8000));
     EXPECT_CALL(_memory, isSetFlag(flag))
@@ -2068,7 +2079,7 @@ void InstructionHandlerTest::callNext16BitWithFlagSet(uint8_t opCode, IMemory::F
 
 void InstructionHandlerTest::callNext16BitWithFlagNotSet(uint8_t opCode, IMemory::FLAG flag, bool isToBeSet)
 {
-    InstructionHandler instructionHandler(_memory);
+    InstructionHandler instructionHandler(_memory, _interruptHandler);
     EXPECT_CALL(_memory, get16BitRegister(IMemory::REG16BIT::PC))
         .WillOnce(Return(0x8000));
     EXPECT_CALL(_memory, isSetFlag(flag))
@@ -2123,7 +2134,7 @@ TEST_F (InstructionHandlerTest, callNext16BitWithCondition)
 // TEST Return instructions
 TEST_F (InstructionHandlerTest, ReturnPCToAdressInStack)
 {
-    InstructionHandler instructionHandler(_memory);
+    InstructionHandler instructionHandler(_memory, _interruptHandler);
 
     EXPECT_CALL(_memory, get16BitRegister(IMemory::REG16BIT::SP))
         .WillOnce(Return(0x0000));
@@ -2139,7 +2150,7 @@ TEST_F (InstructionHandlerTest, ReturnPCToAdressInStack)
 
 void InstructionHandlerTest::returnPCToAdressWithFlagSet(uint8_t opCode, IMemory::FLAG flag, bool isToBeSet)
 {
-    InstructionHandler instructionHandler(_memory);
+    InstructionHandler instructionHandler(_memory, _interruptHandler);
 
     EXPECT_CALL(_memory, isSetFlag(flag))
         .WillOnce(Return(true));
@@ -2165,7 +2176,7 @@ void InstructionHandlerTest::returnPCToAdressWithFlagSet(uint8_t opCode, IMemory
 
 void InstructionHandlerTest::returnPCToAdressWithFlagNotSet(uint8_t opCode, IMemory::FLAG flag, bool isToBeSet)
 {
-    InstructionHandler instructionHandler(_memory);
+    InstructionHandler instructionHandler(_memory, _interruptHandler);
 
     EXPECT_CALL(_memory, isSetFlag(flag))
         .WillOnce(Return(false));
@@ -2212,7 +2223,7 @@ TEST_F (InstructionHandlerTest, ReturnPCToAdressInStackWithConditions)
 
 TEST_F (InstructionHandlerTest, ReturnPCToAdressInStackAndEnableInterrupts)
 {
-    InstructionHandler instructionHandler(_memory);
+    InstructionHandler instructionHandler(_memory, _interruptHandler);
 
     EXPECT_CALL(_memory, get16BitRegister(IMemory::REG16BIT::SP))
         .WillOnce(Return(0x0000));
@@ -2223,14 +2234,14 @@ TEST_F (InstructionHandlerTest, ReturnPCToAdressInStackAndEnableInterrupts)
     EXPECT_CALL(_memory, set16BitRegister(IMemory::REG16BIT::SP, 0x0002));
     EXPECT_CALL(_memory, set16BitRegister(IMemory::REG16BIT::PC, 0x8003));
 
-    //TODO  test enable interrupts
+    EXPECT_CALL(_interruptHandler, enableMasterSwitch());
     EXPECT_EQ(16, instructionHandler.doInstruction(0xD9));
 }
 
 // TEST Restart instructions
 void InstructionHandlerTest::restartPCAdress(uint8_t opCode, uint8_t value)
 {
-    InstructionHandler instructionHandler(_memory);
+    InstructionHandler instructionHandler(_memory, _interruptHandler);
 
     EXPECT_CALL(_memory, get16BitRegister(IMemory::REG16BIT::PC))
         .WillOnce(Return(0x8000));
@@ -2266,7 +2277,7 @@ TEST_F (InstructionHandlerTest, restartPCAdress)
 
 TEST_F (InstructionHandlerTest, setCarryFlagInstruction)
 {
-    InstructionHandler instructionHandler(_memory);
+    InstructionHandler instructionHandler(_memory, _interruptHandler);
 
     EXPECT_CALL(_memory, unsetFlag(IMemory::FLAG::N));
     EXPECT_CALL(_memory, unsetFlag(IMemory::FLAG::H));
@@ -2278,7 +2289,7 @@ TEST_F (InstructionHandlerTest, setCarryFlagInstruction)
 TEST_F (InstructionHandlerTest, complementCarryFlag)
 {
     {
-        InstructionHandler instructionHandler(_memory);
+        InstructionHandler instructionHandler(_memory, _interruptHandler);
 
         EXPECT_CALL(_memory, isSetFlag(IMemory::FLAG::C))
             .WillOnce(Return(false));
@@ -2289,7 +2300,7 @@ TEST_F (InstructionHandlerTest, complementCarryFlag)
         EXPECT_EQ(4, instructionHandler.doInstruction(0x3F));
     }
     {
-        InstructionHandler instructionHandler(_memory);
+        InstructionHandler instructionHandler(_memory, _interruptHandler);
 
         EXPECT_CALL(_memory, isSetFlag(IMemory::FLAG::C))
             .WillOnce(Return(true));
@@ -2303,7 +2314,7 @@ TEST_F (InstructionHandlerTest, complementCarryFlag)
 
 TEST_F (InstructionHandlerTest, complementRegA)
 {
-    InstructionHandler instructionHandler(_memory);
+    InstructionHandler instructionHandler(_memory, _interruptHandler);
 
     EXPECT_CALL(_memory, get8BitRegister(IMemory::REG8BIT::A))
         .WillOnce(Return(0x09));
@@ -2316,17 +2327,17 @@ TEST_F (InstructionHandlerTest, complementRegA)
 
 TEST_F (InstructionHandlerTest, enableDisableInterrups)
 {
-    InstructionHandler instructionHandler(_memory);
+    InstructionHandler instructionHandler(_memory, _interruptHandler);
 
-    //TODO
-
+    EXPECT_CALL(_interruptHandler, disableMasterSwitch());
     EXPECT_EQ(4, instructionHandler.doInstruction(0xF3));
+    EXPECT_CALL(_interruptHandler, enableMasterSwitch());
     EXPECT_EQ(4, instructionHandler.doInstruction(0xFB));
 }
 
 TEST_F (InstructionHandlerTest, halt)
 {
-    InstructionHandler instructionHandler(_memory);
+    InstructionHandler instructionHandler(_memory, _interruptHandler);
 
     //TODO
 
@@ -2335,7 +2346,7 @@ TEST_F (InstructionHandlerTest, halt)
 
 TEST_F (InstructionHandlerTest, stop)
 {
-    InstructionHandler instructionHandler(_memory);
+    InstructionHandler instructionHandler(_memory, _interruptHandler);
 
     //TODO
 
@@ -2349,7 +2360,7 @@ TEST_F (InstructionHandlerTest, rotateLeft8BitRegAndPutInCarryBinaryInstruction)
 {
     auto test = [this](uint8_t opCode, IMemory::REG8BIT reg)
                 {
-                    InstructionHandler instructionHandler(_memory);
+                    InstructionHandler instructionHandler(_memory, _interruptHandler);
 
                     EXPECT_CALL(_memory, get16BitRegister(IMemory::REG16BIT::PC))
                         .WillOnce(Return(0x0000));
@@ -2378,7 +2389,7 @@ TEST_F (InstructionHandlerTest, rotateLeft8BitRegAndPutInCarryBinaryInstruction)
 
 TEST_F (InstructionHandlerTest, rotateLeftAtAdressInHLAndPutInCarryBinaryInstruction)
 {
-    InstructionHandler instructionHandler(_memory);
+    InstructionHandler instructionHandler(_memory, _interruptHandler);
 
     EXPECT_CALL(_memory, get16BitRegister(IMemory::REG16BIT::PC))
         .WillOnce(Return(0x0000));
@@ -2401,7 +2412,7 @@ TEST_F (InstructionHandlerTest, rotateRight8BitAndPutInCarryRegBinaryInstruction
 {
     auto test = [this](uint8_t opCode, IMemory::REG8BIT reg)
                 {
-                    InstructionHandler instructionHandler(_memory);
+                    InstructionHandler instructionHandler(_memory, _interruptHandler);
 
                     EXPECT_CALL(_memory, get16BitRegister(IMemory::REG16BIT::PC))
                         .WillOnce(Return(0x0000));
@@ -2430,7 +2441,7 @@ TEST_F (InstructionHandlerTest, rotateRight8BitAndPutInCarryRegBinaryInstruction
 
 TEST_F (InstructionHandlerTest, rotateRightAtAdressInHLAndPutInCarryBinaryInstruction)
 {
-    InstructionHandler instructionHandler(_memory);
+    InstructionHandler instructionHandler(_memory, _interruptHandler);
 
     EXPECT_CALL(_memory, get16BitRegister(IMemory::REG16BIT::PC))
         .WillOnce(Return(0x0000));
@@ -2454,7 +2465,7 @@ TEST_F (InstructionHandlerTest, rotateLeft8BitRegBinaryInstruction)
 {
     auto test = [this](uint8_t opCode, IMemory::REG8BIT reg)
                 {
-                    InstructionHandler instructionHandler(_memory);
+                    InstructionHandler instructionHandler(_memory, _interruptHandler);
 
                     EXPECT_CALL(_memory, get16BitRegister(IMemory::REG16BIT::PC))
                         .WillOnce(Return(0x0000));
@@ -2483,7 +2494,7 @@ TEST_F (InstructionHandlerTest, rotateLeft8BitRegBinaryInstruction)
 
 TEST_F (InstructionHandlerTest, rotateLeftAtAdressInHLAndBinaryInstruction)
 {
-    InstructionHandler instructionHandler(_memory);
+    InstructionHandler instructionHandler(_memory, _interruptHandler);
 
     EXPECT_CALL(_memory, get16BitRegister(IMemory::REG16BIT::PC))
         .WillOnce(Return(0x0000));
@@ -2508,7 +2519,7 @@ TEST_F (InstructionHandlerTest, rotateRight8BitRegBinaryInstruction)
 {
     auto test = [this](uint8_t opCode, IMemory::REG8BIT reg)
                 {
-                    InstructionHandler instructionHandler(_memory);
+                    InstructionHandler instructionHandler(_memory, _interruptHandler);
 
                     EXPECT_CALL(_memory, get16BitRegister(IMemory::REG16BIT::PC))
                         .WillOnce(Return(0x0000));
@@ -2537,7 +2548,7 @@ TEST_F (InstructionHandlerTest, rotateRight8BitRegBinaryInstruction)
 
 TEST_F (InstructionHandlerTest, rotateRightAtAdressInHLAndBinaryInstruction)
 {
-    InstructionHandler instructionHandler(_memory);
+    InstructionHandler instructionHandler(_memory, _interruptHandler);
 
     EXPECT_CALL(_memory, get16BitRegister(IMemory::REG16BIT::PC))
         .WillOnce(Return(0x0000));
@@ -2562,7 +2573,7 @@ TEST_F (InstructionHandlerTest, shiftLeft8BitRegBinaryInstruction)
 {
     auto test = [this](uint8_t opCode, IMemory::REG8BIT reg)
                 {
-                    InstructionHandler instructionHandler(_memory);
+                    InstructionHandler instructionHandler(_memory, _interruptHandler);
 
                     EXPECT_CALL(_memory, get16BitRegister(IMemory::REG16BIT::PC))
                         .WillOnce(Return(0x0000));
@@ -2589,7 +2600,7 @@ TEST_F (InstructionHandlerTest, shiftLeft8BitRegBinaryInstruction)
 
 TEST_F (InstructionHandlerTest, shiftLeftAtAdressInHLAndBinaryInstruction)
 {
-    InstructionHandler instructionHandler(_memory);
+    InstructionHandler instructionHandler(_memory, _interruptHandler);
 
     EXPECT_CALL(_memory, get16BitRegister(IMemory::REG16BIT::PC))
         .WillOnce(Return(0x0000));
@@ -2612,7 +2623,7 @@ TEST_F (InstructionHandlerTest, shiftRight8BitRegAndRetainBit7BinaryInstruction)
 {
     auto test = [this](uint8_t opCode, IMemory::REG8BIT reg)
                 {
-                    InstructionHandler instructionHandler(_memory);
+                    InstructionHandler instructionHandler(_memory, _interruptHandler);
 
                     EXPECT_CALL(_memory, get16BitRegister(IMemory::REG16BIT::PC))
                         .WillOnce(Return(0x0000));
@@ -2639,7 +2650,7 @@ TEST_F (InstructionHandlerTest, shiftRight8BitRegAndRetainBit7BinaryInstruction)
 
 TEST_F (InstructionHandlerTest, shiftRightAtAdressInHLAndRetainBit7BinaryInstruction)
 {
-    InstructionHandler instructionHandler(_memory);
+    InstructionHandler instructionHandler(_memory, _interruptHandler);
 
     EXPECT_CALL(_memory, get16BitRegister(IMemory::REG16BIT::PC))
         .WillOnce(Return(0x0000));
@@ -2662,7 +2673,7 @@ TEST_F (InstructionHandlerTest, swapBinaryInstruction)
 {
     auto test = [this](uint8_t opCode, IMemory::REG8BIT reg)
                 {
-                    InstructionHandler instructionHandler(_memory);
+                    InstructionHandler instructionHandler(_memory, _interruptHandler);
 
                     EXPECT_CALL(_memory, get16BitRegister(IMemory::REG16BIT::PC))
                         .WillOnce(Return(0x0000));
@@ -2689,7 +2700,7 @@ TEST_F (InstructionHandlerTest, swapBinaryInstruction)
 
 TEST_F (InstructionHandlerTest, swapInAdressBinaryInstruction)
 {
-    InstructionHandler instructionHandler(_memory);
+    InstructionHandler instructionHandler(_memory, _interruptHandler);
     
     EXPECT_CALL(_memory, get16BitRegister(IMemory::REG16BIT::PC))
         .WillOnce(Return(0x0000));
@@ -2713,7 +2724,7 @@ TEST_F (InstructionHandlerTest, shiftRight8BitRegAndZeroedBit7BinaryInstruction)
 {
     auto test = [this](uint8_t opCode, IMemory::REG8BIT reg)
                 {
-                    InstructionHandler instructionHandler(_memory);
+                    InstructionHandler instructionHandler(_memory, _interruptHandler);
 
                     EXPECT_CALL(_memory, get16BitRegister(IMemory::REG16BIT::PC))
                         .WillOnce(Return(0x0000));
@@ -2740,7 +2751,7 @@ TEST_F (InstructionHandlerTest, shiftRight8BitRegAndZeroedBit7BinaryInstruction)
 
 TEST_F (InstructionHandlerTest, shiftRightAtAdressInHLAndZeroedBit7BinaryInstruction)
 {
-    InstructionHandler instructionHandler(_memory);
+    InstructionHandler instructionHandler(_memory, _interruptHandler);
 
     EXPECT_CALL(_memory, get16BitRegister(IMemory::REG16BIT::PC))
         .WillOnce(Return(0x0000));
@@ -2763,7 +2774,7 @@ TEST_F (InstructionHandlerTest, setBitInRegister)
 {
     auto test = [this](uint8_t opCode, int bit, IMemory::REG8BIT reg)
                 {
-                    InstructionHandler instructionHandler(_memory);
+                    InstructionHandler instructionHandler(_memory, _interruptHandler);
                     EXPECT_CALL(_memory, get16BitRegister(IMemory::REG16BIT::PC))
                         .WillOnce(Return(0x0000));
                     EXPECT_CALL(_memory, readInMemory(0x0001))
@@ -2845,7 +2856,7 @@ TEST_F (InstructionHandlerTest, setBitInAdressInHL)
                     bitsetToLoad[bit] = 1;
                     uint8_t newValue = static_cast<uint8_t>(bitsetToLoad.to_ulong());
 
-                    InstructionHandler instructionHandler(_memory);
+                    InstructionHandler instructionHandler(_memory, _interruptHandler);
 
                     EXPECT_CALL(_memory, get16BitRegister(IMemory::REG16BIT::PC))
                         .WillOnce(Return(0x0000));
@@ -2874,7 +2885,7 @@ TEST_F (InstructionHandlerTest, resetBitInRegister)
 {
     auto test = [this](uint8_t opCode, int bit, IMemory::REG8BIT reg)
                 {
-                    InstructionHandler instructionHandler(_memory);
+                    InstructionHandler instructionHandler(_memory, _interruptHandler);
                     EXPECT_CALL(_memory, get16BitRegister(IMemory::REG16BIT::PC))
                         .WillOnce(Return(0x0000));
                     EXPECT_CALL(_memory, readInMemory(0x0001))
@@ -2956,7 +2967,7 @@ TEST_F (InstructionHandlerTest, resetBitInAdressInHL)
                     bitsetToLoad[bit] = 0;
                     uint8_t newValue = static_cast<uint8_t>(bitsetToLoad.to_ulong());
 
-                    InstructionHandler instructionHandler(_memory);
+                    InstructionHandler instructionHandler(_memory, _interruptHandler);
 
                     EXPECT_CALL(_memory, get16BitRegister(IMemory::REG16BIT::PC))
                         .WillOnce(Return(0x0000));
@@ -2985,7 +2996,7 @@ TEST_F (InstructionHandlerTest, testBitInRegister)
 {
     auto test = [this](uint8_t opCode, int bit, IMemory::REG8BIT reg)
                 {
-                    InstructionHandler instructionHandler(_memory);
+                    InstructionHandler instructionHandler(_memory, _interruptHandler);
                     EXPECT_CALL(_memory, get16BitRegister(IMemory::REG16BIT::PC))
                         .WillOnce(Return(0x0000));
                     EXPECT_CALL(_memory, readInMemory(0x0001))
@@ -3066,7 +3077,7 @@ TEST_F (InstructionHandlerTest, testBitInAdressInHL)
 {
     auto test = [this](uint8_t opCode, int )
                 {
-                    InstructionHandler instructionHandler(_memory);
+                    InstructionHandler instructionHandler(_memory, _interruptHandler);
 
                     EXPECT_CALL(_memory, get16BitRegister(IMemory::REG16BIT::PC))
                         .WillOnce(Return(0x0000));

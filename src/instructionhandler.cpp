@@ -1,7 +1,8 @@
 #include "instructionhandler.hpp"
 
-InstructionHandler::InstructionHandler(IMemory& memory)
-    :_memory(memory){};
+InstructionHandler::InstructionHandler(IMemory& memory, IInterruptHandler& interruptHandler)
+    :_memory(memory),
+     _interruptHandler(interruptHandler){};
      // _bootRom(BootRom()){};
 
 int InstructionHandler::doInstruction(uint8_t opCode)
