@@ -1,8 +1,10 @@
 #ifndef _INTERRUPTHANDLER_
 #define _INTERRUPTHANDLER_
 
+#include <bitset>
 #include "imemory.hpp"
 #include "iinterupthandler.hpp"
+
 
 class InterruptHandler : public IInterruptHandler
 {
