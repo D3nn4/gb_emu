@@ -7,6 +7,7 @@ InstructionHandler::InstructionHandler(IMemory& memory, IInterruptHandler& inter
 
 int InstructionHandler::doInstruction(uint8_t opCode)
 {
+    BOOST_LOG_TRIVIAL(debug) << "[" << std::hex << static_cast<int>(opCode) << "]";
     auto instructMapIt = _instructions.find(opCode);
     if (instructMapIt == _instructions.end()) {
         throw InstructionException(__PRETTY_FUNCTION__);

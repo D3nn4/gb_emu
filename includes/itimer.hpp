@@ -14,16 +14,16 @@ public:
     virtual uint32_t getClockFrequency() = 0;
     virtual int setClockFrequency() = 0;
 
+    static uint16_t const _DIV = 0xff04; //timer divider
+    static uint16_t const _TIMA = 0xff05; //timer counter
+    static uint16_t const _TMA = 0xff06; // timer modulo
+    static uint16_t const _TMC = 0xff07; //timer controler
 
 protected:
 
     int _cycleCounter = 1024;
     int _dividerRegister = 0;
     uint32_t const _clockSpeed = 4194304;
-    uint16_t const _DIV = 0xff04; //timer divider
-    uint16_t const _TIMA = 0xff05; //timer counter
-    uint16_t const _TMA = 0xff06; // timer modulo
-    uint16_t const _TMC = 0xff07; //timer controler
 
     std::map<uint8_t, uint32_t> const _speed = {
         {0x00, 4096},

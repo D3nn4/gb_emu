@@ -24,5 +24,5 @@ target_include_directories(gbTest PUBLIC ../includes)
 target_compile_options(gbTest ${COMPILE_FLAGS})
 
 # Link test executable against gtest & gtest_main
-target_link_libraries(gbTest gb_lib gtest gtest_main gmock pthread)
+target_link_libraries(gbTest gb_lib gtest gtest_main gmock pthread boost_system boost_thread boost_log boost_log_setup)
 add_test( gbTest gbTest )

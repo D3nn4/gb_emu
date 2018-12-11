@@ -12,9 +12,11 @@ class MockMemory : public IMemory
 {
 public:
 
+    MOCK_METHOD0(incrementDivderRegister, void());
     MOCK_METHOD0(getCartridge, CartridgeData const());
     MOCK_METHOD0(getReadOnlyMemory, RomData const());
     MOCK_METHOD1(setCartridge, bool(CartridgeData const &));
+    MOCK_METHOD0(initializeMemory, void());
     MOCK_METHOD2(writeInMemory, bool(uint8_t, uint16_t));
     MOCK_METHOD1(readInMemory, uint8_t(uint16_t));
     MOCK_METHOD2(set8BitRegister, void(IMemory::REG8BIT, uint8_t));
@@ -64,6 +66,7 @@ TEST_F(TimerTest, updateTimerWithClockDisabled)
     Timer timer(_memory, _interruptHandler);
     EXPECT_CALL(_memory, readInMemory(0xff07))
         .WillOnce(Return(0x00)); //clock disabled
+    EXPECT_CALL(_memory, incrementDivderRegister());
     timer.update(1024);
 }
 
@@ -74,6 +77,7 @@ TEST_F(TimerTest, updateTimerWithClockEnabledAndWithOverflow)
     EXPECT_CALL(_memory, readInMemory(0xff07))
         .WillOnce(Return(0x04)) //clock enabled
         .WillOnce(Return(0x00));//for set frequency
+    EXPECT_CALL(_memory, incrementDivderRegister());
     EXPECT_CALL(_memory, readInMemory(0xff05))
         .WillOnce(Return(0xff));
     EXPECT_CALL(_memory, readInMemory(0xff06))
@@ -82,7 +86,6 @@ TEST_F(TimerTest, updateTimerWithClockEnabledAndWithOverflow)
     EXPECT_CALL(_interruptHandler, requestInterrupt(IInterruptHandler::INTERRUPT::TIMER));
 
     timer.update(1024);
-    
 }
 
 TEST_F(TimerTest, IsTimerEnabled)

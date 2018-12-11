@@ -6,23 +6,27 @@
 #include "iromloader.hpp"
 #include "instructionhandler.hpp"
 #include "interupthandler.hpp"
+#include "timer.hpp"
+
 class Cpu
 {
 public:
     Cpu(IRomLoader& romloader);
     int getCurrentCycles();
     // void boot();
-    void executeOneFrame();
+    void update();
     void launchGame(std::string const & cartridgeName);
+    void stopGame();
 
 private:
 
-
+    bool _gameLoaded = false;
     int _cycles = 0;
-    int const _maxCycles = 70244;
+    int const _maxCycles = 70221;
     Memory _memory;
     IRomLoader& _romLoader;
     InterruptHandler _interruptHandler;
+    Timer _timer;
     InstructionHandler _instructionHandler;
 
 

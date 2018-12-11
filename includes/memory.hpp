@@ -5,6 +5,7 @@
 #include <bitset>
 #include <exception>
 #include "imemory.hpp"
+#include "itimer.hpp"
 
 
 class Memory : public IMemory
@@ -27,6 +28,9 @@ public:
     };
 
     Memory();
+    void setTimer(ITimer* timer);
+    void incrementDivderRegister() override;
+
     CartridgeData const  getCartridge() override;
     RomData const  getReadOnlyMemory() override;
     bool setCartridge(CartridgeData const & cartridge) override;
@@ -49,15 +53,17 @@ public:
 private:
 
     bool reset();
-    void resetRegisters();
     bool fillROM();
+    void initializeMemory();
     template <class ARRAY>
     bool isEmpty(ARRAY const & memory);
 
     Registers _registers;
     CartridgeData _cartridge;
     RomData _readOnlyMemory;
-
+    // unique_ptr<ITimer> _timer;
+    ITimer* _timer;
+    
     std::map<IMemory::REG8BIT, uint8_t*> _8BitRegisters =
         {
             {IMemory::REG8BIT::A, &_registers.a},

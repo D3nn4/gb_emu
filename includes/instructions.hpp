@@ -3,6 +3,9 @@
 
 #include <iostream>
 #include <bitset>
+#include <map>
+#include <string>
+#include <boost/log/trivial.hpp>
 
 #include "iinstructions.hpp"
 #include "iinterupthandler.hpp"
@@ -13,6 +16,29 @@
 //ARR == Adress in 16BitReg    ANN == Adress in next16Bit
 //AR  == Adress in 0xff00 + R       AN == Adress in 0xff00 + N
 
+static std::map<IMemory::FLAG, std::string> debugflag = {
+    {IMemory::FLAG::Z, "z"},
+    {IMemory::FLAG::N, "n"},
+    {IMemory::FLAG::H, "h"},
+    {IMemory::FLAG::C, "c"}
+};
+static std::map<IMemory::REG8BIT, std::string> debugReg8Bit = {
+    {IMemory::REG8BIT::A, "a"},
+    {IMemory::REG8BIT::F, "f"},
+    {IMemory::REG8BIT::B, "b"},
+    {IMemory::REG8BIT::C, "c"},
+    {IMemory::REG8BIT::D, "d"},
+    {IMemory::REG8BIT::E, "e"},
+    {IMemory::REG8BIT::H, "h"},
+    {IMemory::REG8BIT::L, "l"}
+};
+
+static std::map<IMemory::REG16BIT, std::string> debugReg16Bit = {
+    {IMemory::REG16BIT::AF, "af"},
+    {IMemory::REG16BIT::BC, "bc"},
+    {IMemory::REG16BIT::DE, "de"},
+    {IMemory::REG16BIT::HL, "hl"}
+};
 //OpCode 0x00
 class NOP : public IInstructions
 {
@@ -21,6 +47,7 @@ public :
         :IInstructions(cycles){};
 
     void doInstruction(IMemory& memory) override {
+        BOOST_LOG_TRIVIAL(debug) << "nop";
         uint16_t cursor = memory.get16BitRegister(IMemory::REG16BIT::PC);
         memory.set16BitRegister(IMemory::REG16BIT::PC, cursor + 1);
     }
@@ -39,6 +66,9 @@ public:
         uint16_t valueToLoad = memory.readInMemory(cursor + 1);
         memory.set8BitRegister(_register, valueToLoad);
         memory.set16BitRegister(IMemory::REG16BIT::PC, cursor + 2);
+        BOOST_LOG_TRIVIAL(debug)
+            << "ld " << debugReg8Bit[_register] << ","
+            << std::hex << static_cast<int>(valueToLoad);
     }
 
     IMemory::REG8BIT _register;
@@ -60,6 +90,11 @@ public:
         memory.set8BitRegister(_8BitReg, valueToLoad);
         uint16_t cursor = memory.get16BitRegister(IMemory::REG16BIT::PC);
         memory.set16BitRegister(IMemory::REG16BIT::PC, cursor + 1);
+        BOOST_LOG_TRIVIAL(debug)
+            << "ld " << debugReg8Bit[_8BitReg]
+            << ",(" << debugReg16Bit[_16BitReg]
+            <<  (_addTo16BitReg == 0 ? "" : _addTo16BitReg > 0 ? "+" : "-")
+            << ")";
         if (_addTo16BitReg != 0) {
             adress += _addTo16BitReg;
             memory.set16BitRegister(_16BitReg, adress);
@@ -87,6 +122,11 @@ public:
         memory.writeInMemory(reg8BitValue, reg16BitValue);
         uint16_t cursor = memory.get16BitRegister(IMemory::REG16BIT::PC);
         memory.set16BitRegister(IMemory::REG16BIT::PC, cursor + 1);
+        BOOST_LOG_TRIVIAL(debug)
+            << "ld (" << debugReg16Bit[_16BitReg]
+            <<  (_addTo16BitReg == 0 ? "" : _addTo16BitReg > 0 ? "+" : "-")
+            << ")," << debugReg8Bit[_8BitReg];
+
         if (_addTo16BitReg != 0) {
             reg16BitValue += _addTo16BitReg;
             memory.set16BitRegister(_16BitReg, reg16BitValue);
@@ -112,6 +152,9 @@ public:
         memory.set8BitRegister(_toCopyTo, valueToCopy);
         uint16_t cursor = memory.get16BitRegister(IMemory::REG16BIT::PC);
         memory.set16BitRegister(IMemory::REG16BIT::PC, cursor + 1);
+        BOOST_LOG_TRIVIAL(debug)
+            << "ld " << debugReg8Bit[_toCopyTo]
+            << ", " << debugReg8Bit[_toCopyFrom];
     }
 
     IMemory::REG8BIT _toCopyTo;
@@ -132,6 +175,9 @@ public:
         uint8_t valueToLoad = memory.readInMemory(cursor + 1);
         memory.writeInMemory(valueToLoad, adress);
         memory.set16BitRegister(IMemory::REG16BIT::PC, cursor + 2);
+        BOOST_LOG_TRIVIAL(debug)
+            << "ld (" << debugReg16Bit[_16BitReg]
+            << "), " << std::hex << static_cast<int>(valueToLoad);
     }
 
     IMemory::REG16BIT _16BitReg;
@@ -157,6 +203,9 @@ public:
         memory.writeInMemory(lessSignificantBit, adress);
         memory.writeInMemory(mostSignificantBit, adress + 1);
         memory.set16BitRegister(IMemory::REG16BIT::PC, cursor + 3);
+        BOOST_LOG_TRIVIAL(debug)
+            << "ld $" << std::hex << static_cast<int>(adress)
+            << ", " << debugReg16Bit[_16BitReg];
     }
 
     IMemory::REG16BIT _16BitReg;
@@ -176,6 +225,9 @@ public:
         memory.set16BitRegister(_16BitReg, valueToLoad);
         uint16_t cursor = memory.get16BitRegister(IMemory::REG16BIT::PC);
         memory.set16BitRegister(IMemory::REG16BIT::PC, cursor + 1);
+        BOOST_LOG_TRIVIAL(debug)
+            << "ld " << debugReg16Bit[_16BitReg]
+            << "," << debugReg16Bit[_16BitRegToCopy];
     }
 
     IMemory::REG16BIT _16BitReg;
@@ -198,6 +250,10 @@ public:
         uint16_t adress = (static_cast<uint16_t>(MS) << 8) | LS;
         memory.writeInMemory(reg8BitValue, adress);
         memory.set16BitRegister(IMemory::REG16BIT::PC, cursor + 3);
+
+        BOOST_LOG_TRIVIAL(debug)
+            << "ld $" << std::hex << static_cast<int>(adress)
+            << debugReg8Bit[_8BitReg];
     }
     IMemory::REG8BIT _8BitReg;
 };
@@ -218,6 +274,10 @@ public:
         uint8_t value = memory.readInMemory(adress);
         memory.set8BitRegister(_8BitReg, value);
         memory.set16BitRegister(IMemory::REG16BIT::PC, cursor + 3);
+
+        BOOST_LOG_TRIVIAL(debug)
+            << "ld " << debugReg8Bit[_8BitReg]
+            << ",$" << std::hex << static_cast<int>(adress);
     }
     IMemory::REG8BIT _8BitReg;
 };
@@ -233,9 +293,14 @@ public:
     void doInstruction(IMemory& memory) override {
         uint16_t cursor = memory.get16BitRegister(IMemory::REG16BIT::PC);
         uint8_t valueToLoad = memory.get8BitRegister(_8BitReg);
-        uint16_t adress = 0xff00 + memory.readInMemory(cursor + 1);
+        uint8_t next8Bit = memory.readInMemory(cursor + 1);
+        uint16_t adress = 0xff00 + next8Bit;
         memory.writeInMemory(valueToLoad, adress);
         memory.set16BitRegister(IMemory::REG16BIT::PC, cursor + 2);
+
+        BOOST_LOG_TRIVIAL(debug)
+            << "ldh (" << std::hex << static_cast<int>(next8Bit)
+            << ")," << debugReg8Bit[_8BitReg];
     }
 
     IMemory::REG8BIT _8BitReg;
@@ -251,10 +316,15 @@ public:
 
     void doInstruction(IMemory& memory) override {
         uint16_t cursor = memory.get16BitRegister(IMemory::REG16BIT::PC);
-        uint16_t adress = 0xff00 + memory.readInMemory(cursor + 1);
+        uint8_t next8Bit = memory.readInMemory(cursor + 1);
+        uint16_t adress = 0xff00 + next8Bit;
         uint8_t valueToLoad = memory.readInMemory(adress);
         memory.set8BitRegister(_8BitReg, valueToLoad);
         memory.set16BitRegister(IMemory::REG16BIT::PC, cursor + 2);
+        BOOST_LOG_TRIVIAL(debug)
+            << "ldh " << debugReg8Bit[_8BitReg]
+            << ",(" << std::hex
+            << static_cast<int>(next8Bit) << ")";
     }
 
     IMemory::REG8BIT _8BitReg;
@@ -276,6 +346,9 @@ public:
         memory.writeInMemory(valueToLoad, adress);
         uint16_t cursor = memory.get16BitRegister(IMemory::REG16BIT::PC);
         memory.set16BitRegister(IMemory::REG16BIT::PC, cursor + 1);
+        BOOST_LOG_TRIVIAL(debug)
+            << "ldh (" << debugReg8Bit[_8BitReg]
+            << ")," << debugReg8Bit[_8BitRegToLoad];
     }
 
     IMemory::REG8BIT _8BitRegToLoad;
@@ -298,6 +371,9 @@ public:
         memory.set8BitRegister(_8BitRegToLoad, valueToLoad);
         uint16_t cursor = memory.get16BitRegister(IMemory::REG16BIT::PC);
         memory.set16BitRegister(IMemory::REG16BIT::PC, cursor + 1);
+        BOOST_LOG_TRIVIAL(debug)
+            << "ldh " << debugReg8Bit[_8BitRegToLoad]
+            << ",(" << debugReg8Bit[_8BitReg] << ")";
     }
 
     IMemory::REG8BIT _8BitRegToLoad;
@@ -319,6 +395,10 @@ public:
         uint16_t valueToLoad = (static_cast<uint16_t> (MS) << 8) | LS;
         memory.set16BitRegister(_register, valueToLoad);
         memory.set16BitRegister(IMemory::REG16BIT::PC, cursor + 3);
+        BOOST_LOG_TRIVIAL(debug) 
+            << "ld " << debugReg16Bit[_register]
+            << "," << std::hex
+            << static_cast<int>(valueToLoad);
     }
 
     IMemory::REG16BIT _register;
@@ -353,6 +433,9 @@ public:
 
         memory.set16BitRegister(IMemory::REG16BIT::HL, regValue + valueToAdd);
         memory.set16BitRegister(IMemory::REG16BIT::PC, cursor + 2);
+        BOOST_LOG_TRIVIAL(debug)
+            << "ld hl, sp + " << std::hex
+            << static_cast<int>(valueToAdd);
     }
 };
 
@@ -371,6 +454,9 @@ public:
         memory.set8BitRegister(_reg8Bit, newValue);
         uint16_t cursor = memory.get16BitRegister(IMemory::REG16BIT::PC);
         memory.set16BitRegister(IMemory::REG16BIT::PC, cursor + 1);
+        BOOST_LOG_TRIVIAL(debug)
+            << (_value == -1 ? "dec ":"inc ")
+            << debugReg8Bit[_reg8Bit];
 
         if (newValue == 0x00) {
             memory.setFlag(IMemory::FLAG::Z);
@@ -417,6 +503,9 @@ public:
         memory.set16BitRegister(_reg16Bit, newValue);
         uint16_t cursor = memory.get16BitRegister(IMemory::REG16BIT::PC);
         memory.set16BitRegister(IMemory::REG16BIT::PC, cursor + 1);
+        BOOST_LOG_TRIVIAL(debug)
+            << (_value == -1 ? "dec ":"inc ")
+            << debugReg16Bit[_reg16Bit];
 
         if (newValue == 0x0000) {
             memory.setFlag(IMemory::FLAG::Z);
@@ -465,6 +554,10 @@ public:
         uint16_t cursor = memory.get16BitRegister(IMemory::REG16BIT::PC);
         memory.set16BitRegister(IMemory::REG16BIT::PC, cursor + 1);
 
+        BOOST_LOG_TRIVIAL(debug)
+            << (_value == -1 ? "dec (":"inc (")
+            << debugReg16Bit[_reg16Bit] << ")";
+
         if (newValue == 0x00) {
             memory.setFlag(IMemory::FLAG::Z);
         }
@@ -510,6 +603,8 @@ public:
         memory.set8BitRegister(IMemory::REG8BIT::A,result);
         uint16_t cursor = memory.get16BitRegister(IMemory::REG16BIT::PC);
         memory.set16BitRegister(IMemory::REG16BIT::PC, cursor + 1);
+        BOOST_LOG_TRIVIAL(debug)
+            << "xor " << debugReg8Bit[_8BitReg];
 
         if (result == 0x00) {
             memory.setFlag(IMemory::FLAG::Z);
@@ -540,6 +635,9 @@ public:
         uint16_t cursor = memory.get16BitRegister(IMemory::REG16BIT::PC);
         memory.set16BitRegister(IMemory::REG16BIT::PC, cursor + 1);
 
+        BOOST_LOG_TRIVIAL(debug)
+            << "or " << debugReg8Bit[_8BitReg];
+
         if (result == 0x00) {
             memory.setFlag(IMemory::FLAG::Z);
         }
@@ -568,6 +666,9 @@ public:
         memory.set8BitRegister(IMemory::REG8BIT::A,result);
         uint16_t cursor = memory.get16BitRegister(IMemory::REG16BIT::PC);
         memory.set16BitRegister(IMemory::REG16BIT::PC, cursor + 1);
+
+        BOOST_LOG_TRIVIAL(debug)
+            << "and " << debugReg8Bit[_8BitReg];
 
         if (result == 0x00) {
             memory.setFlag(IMemory::FLAG::Z);
@@ -599,6 +700,9 @@ public:
         uint16_t cursor = memory.get16BitRegister(IMemory::REG16BIT::PC);
         memory.set16BitRegister(IMemory::REG16BIT::PC, cursor + 1);
 
+        BOOST_LOG_TRIVIAL(debug)
+            << "xor (" << debugReg16Bit[_16BitReg] << ")";
+
         if (result == 0x00) {
             memory.setFlag(IMemory::FLAG::Z);
         }
@@ -628,6 +732,10 @@ public:
         memory.set8BitRegister(IMemory::REG8BIT::A,result);
         uint16_t cursor = memory.get16BitRegister(IMemory::REG16BIT::PC);
         memory.set16BitRegister(IMemory::REG16BIT::PC, cursor + 1);
+
+        BOOST_LOG_TRIVIAL(debug)
+            << "or (" << debugReg16Bit[_16BitReg] << ")";
+
 
         if (result == 0x00) {
             memory.setFlag(IMemory::FLAG::Z);
@@ -659,6 +767,10 @@ public:
         uint16_t cursor = memory.get16BitRegister(IMemory::REG16BIT::PC);
         memory.set16BitRegister(IMemory::REG16BIT::PC, cursor + 1);
 
+
+        BOOST_LOG_TRIVIAL(debug)
+            << "and (" << debugReg16Bit[_16BitReg] << ")";
+
         if (result == 0x00) {
             memory.setFlag(IMemory::FLAG::Z);
         }
@@ -686,6 +798,11 @@ public:
         uint8_t result = AValue ^ reg8BitValue;
         memory.set8BitRegister(IMemory::REG8BIT::A,result);
         memory.set16BitRegister(IMemory::REG16BIT::PC, cursor + 2);
+
+
+        BOOST_LOG_TRIVIAL(debug)
+            << "xor $" << std::hex
+            << static_cast<int>(reg8BitValue);
 
         if (result == 0x00) {
             memory.setFlag(IMemory::FLAG::Z);
@@ -715,6 +832,11 @@ public:
         memory.set8BitRegister(IMemory::REG8BIT::A,result);
         memory.set16BitRegister(IMemory::REG16BIT::PC, cursor + 2);
 
+
+        BOOST_LOG_TRIVIAL(debug)
+            << "or $" << std::hex
+            << static_cast<int>(reg8BitValue);
+
         if (result == 0x00) {
             memory.setFlag(IMemory::FLAG::Z);
         }
@@ -742,6 +864,11 @@ public:
         uint8_t result = AValue & reg8BitValue;
         memory.set8BitRegister(IMemory::REG8BIT::A,result);
         memory.set16BitRegister(IMemory::REG16BIT::PC, cursor + 2);
+
+
+        BOOST_LOG_TRIVIAL(debug)
+            << "and $" << std::hex
+            << static_cast<int>(reg8BitValue);
 
         if (result == 0x00) {
             memory.setFlag(IMemory::FLAG::Z);
@@ -773,6 +900,10 @@ public:
         memory.set16BitRegister(IMemory::REG16BIT::SP, stackPointer + 2);
         uint16_t cursor = memory.get16BitRegister(IMemory::REG16BIT::PC);
         memory.set16BitRegister(IMemory::REG16BIT::PC, cursor + 1);
+
+        BOOST_LOG_TRIVIAL(debug)
+            << "pop " << debugReg16Bit[_16BitReg];
+
     }
     IMemory::REG16BIT _16BitReg;
 };
@@ -797,6 +928,10 @@ public:
         memory.set16BitRegister(IMemory::REG16BIT::SP, stackPointer - 2);
         uint16_t cursor = memory.get16BitRegister(IMemory::REG16BIT::PC);
         memory.set16BitRegister(IMemory::REG16BIT::PC, cursor + 1);
+
+        BOOST_LOG_TRIVIAL(debug)
+            << "push " << debugReg16Bit[_16BitReg];
+
     }
     IMemory::REG16BIT _16BitReg;
 };
@@ -812,6 +947,10 @@ public:
     void doInstruction(IMemory& memory) override {
         uint8_t regAValue = memory.get8BitRegister(IMemory::REG8BIT::A);
         uint8_t valueToAdd = memory.get8BitRegister(_8BitReg);
+
+
+        BOOST_LOG_TRIVIAL(debug)
+            << "add a," << debugReg8Bit[_8BitReg];
 
         uint8_t result = regAValue + valueToAdd;
         if (result == 0x00) {
@@ -853,6 +992,10 @@ public:
         uint16_t adress = memory.get16BitRegister(IMemory::REG16BIT::HL);
         uint8_t valueToAdd = memory.readInMemory(adress);
 
+
+        BOOST_LOG_TRIVIAL(debug)
+            << "add a,(hl)";
+
         uint8_t result = regAValue + valueToAdd;
         if (result == 0x00) {
             memory.setFlag(IMemory::FLAG::Z);
@@ -893,6 +1036,10 @@ public:
         uint16_t regAValue = memory.get16BitRegister(IMemory::REG16BIT::HL);
         uint16_t valueToAdd = memory.get16BitRegister(_16BitReg);
 
+
+        BOOST_LOG_TRIVIAL(debug)
+            << "add hl," << debugReg16Bit[_16BitReg];
+
         uint16_t result = regAValue + valueToAdd;
         if ((((regAValue & 0x0F00) + (valueToAdd & 0x0F00)) & 0x1000) == 0x1000) {
             memory.setFlag(IMemory::FLAG::H);
@@ -926,6 +1073,11 @@ public:
         uint8_t regAValue = memory.get8BitRegister(IMemory::REG8BIT::A);
         uint16_t cursor = memory.get16BitRegister(IMemory::REG16BIT::PC);
         uint8_t valueToAdd = memory.readInMemory(cursor + 1);
+
+
+        BOOST_LOG_TRIVIAL(debug)
+            << "add a,$" << std::hex
+            << static_cast<int>(valueToAdd);
 
         uint8_t result = regAValue + valueToAdd;
         if (result == 0x00) {
@@ -965,6 +1117,11 @@ public:
         uint16_t cursor = memory.get16BitRegister(IMemory::REG16BIT::PC);
         uint8_t valueToAdd = memory.readInMemory(cursor + 1);
 
+
+        BOOST_LOG_TRIVIAL(debug)
+            << "add sp,$" << std::hex
+            << static_cast<int>(valueToAdd);
+
         memory.unsetFlag(IMemory::FLAG::Z);
         memory.unsetFlag(IMemory::FLAG::N);
         if ((((regValue & 0x0F00) + (valueToAdd & 0x0F00)) & 0x1000) == 0x1000) {
@@ -997,6 +1154,10 @@ public:
         uint8_t regAValue = memory.get8BitRegister(IMemory::REG8BIT::A);
         uint8_t valueToAdd = memory.get8BitRegister(_8BitReg);
         uint8_t carryValue = 0x00;
+
+        BOOST_LOG_TRIVIAL(debug)
+            << "adc a," << debugReg8Bit[_8BitReg];
+
         if (memory.isSetFlag(IMemory::FLAG::C)) {
             carryValue = 0x01;
         }
@@ -1039,6 +1200,10 @@ public:
         uint8_t regAValue = memory.get8BitRegister(IMemory::REG8BIT::A);
         uint16_t adress = memory.get16BitRegister(IMemory::REG16BIT::HL);
         uint8_t valueToAdd = memory.readInMemory(adress);
+
+        BOOST_LOG_TRIVIAL(debug)
+            << "adc a,(hl)";
+
 
         uint8_t carryValue = 0x00;
         if (memory.isSetFlag(IMemory::FLAG::C)) {
@@ -1083,6 +1248,11 @@ public:
         uint16_t cursor = memory.get16BitRegister(IMemory::REG16BIT::PC);
         uint8_t valueToAdd = memory.readInMemory(cursor + 1);
 
+
+        BOOST_LOG_TRIVIAL(debug)
+            << "adc a,(" << std::hex
+            << static_cast<int>(valueToAdd)<< ")";
+
         uint8_t carryValue = 0x00;
         if (memory.isSetFlag(IMemory::FLAG::C)) {
             carryValue = 0x01;
@@ -1125,6 +1295,10 @@ public:
         uint8_t regAValue = memory.get8BitRegister(IMemory::REG8BIT::A);
         uint8_t valueToSub = memory.get8BitRegister(_8BitReg);
 
+
+        BOOST_LOG_TRIVIAL(debug)
+            << "sub " << debugReg8Bit[_8BitReg];
+
         uint8_t result = regAValue - valueToSub;
         if (result == 0x00) {
             memory.setFlag(IMemory::FLAG::Z);
@@ -1164,6 +1338,10 @@ public:
         uint8_t regAValue = memory.get8BitRegister(IMemory::REG8BIT::A);
         uint16_t adress = memory.get16BitRegister(IMemory::REG16BIT::HL);
         uint8_t valueToSub = memory.readInMemory(adress);
+
+
+        BOOST_LOG_TRIVIAL(debug)
+            << "sub (hl)";
 
         uint8_t result = regAValue - valueToSub;
         if (result == 0x00) {
@@ -1205,6 +1383,11 @@ public:
         uint16_t cursor = memory.get16BitRegister(IMemory::REG16BIT::PC);
         uint8_t valueToSub = memory.readInMemory(cursor + 1);
 
+
+        BOOST_LOG_TRIVIAL(debug)
+            << "sub (" << std::hex
+            << static_cast<int>(valueToSub)<< ")";
+
         uint8_t result = regAValue - valueToSub;
         if (result == 0x00) {
             memory.setFlag(IMemory::FLAG::Z);
@@ -1243,6 +1426,10 @@ public:
         uint8_t regAValue = memory.get8BitRegister(IMemory::REG8BIT::A);
         uint8_t valueToSub = memory.get8BitRegister(_8BitReg);
         uint8_t carryValue = 0x00;
+
+        BOOST_LOG_TRIVIAL(debug)
+            << "sbc a," << debugReg8Bit[_8BitReg];
+
         if (memory.isSetFlag(IMemory::FLAG::C)) {
             carryValue = 0x01;
         }
@@ -1288,6 +1475,10 @@ public:
         uint16_t adress = memory.get16BitRegister(IMemory::REG16BIT::HL);
         uint8_t valueToSub = memory.readInMemory(adress);
         uint8_t carryValue = 0x00;
+
+        BOOST_LOG_TRIVIAL(debug)
+            << "sbc a,(hl)";
+
         if (memory.isSetFlag(IMemory::FLAG::C)) {
             carryValue = 0x01;
         }
@@ -1332,6 +1523,11 @@ public:
         uint16_t cursor = memory.get16BitRegister(IMemory::REG16BIT::PC);
         uint8_t valueToSub = memory.readInMemory(cursor + 1);
         uint8_t carryValue = 0x00;
+
+        BOOST_LOG_TRIVIAL(debug)
+            << "sbc a,(" << std::hex
+            << static_cast<int>(valueToSub)<< ")";
+
         if (memory.isSetFlag(IMemory::FLAG::C)) {
             carryValue = 0x01;
         }
@@ -1375,6 +1571,10 @@ public:
         uint8_t regAValue = memory.get8BitRegister(IMemory::REG8BIT::A);
         uint8_t valueToCp = memory.get8BitRegister(_8BitReg);
 
+
+        BOOST_LOG_TRIVIAL(debug)
+            << "cp " << debugReg8Bit[_8BitReg];
+
         uint8_t result = regAValue - valueToCp;
         if (result == 0x00) {
             memory.setFlag(IMemory::FLAG::Z);
@@ -1413,6 +1613,10 @@ public:
         uint8_t regAValue = memory.get8BitRegister(IMemory::REG8BIT::A);
         uint16_t adress = memory.get16BitRegister(IMemory::REG16BIT::HL);
         uint8_t valueToCp = memory.readInMemory(adress);
+
+
+        BOOST_LOG_TRIVIAL(debug)
+            << "cp (hl)";
 
         uint8_t result = regAValue - valueToCp;
         if (result == 0x00) {
@@ -1453,6 +1657,11 @@ public:
         uint16_t cursor = memory.get16BitRegister(IMemory::REG16BIT::PC);
         uint8_t valueToSub = memory.readInMemory(cursor + 1);
 
+
+        BOOST_LOG_TRIVIAL(debug)
+            << "cp (" << std::hex
+            << static_cast<int>(valueToSub)<< ")";
+
         uint8_t result = regAValue - valueToSub;
         if (result == 0x00) {
             memory.setFlag(IMemory::FLAG::Z);
@@ -1489,6 +1698,10 @@ public:
         uint8_t regAValue = memory.get8BitRegister(IMemory::REG8BIT::A);
         std::bitset<8> bitsetA(regAValue);
 
+
+        BOOST_LOG_TRIVIAL(debug)
+            << "rlca";
+
         bool isSet = bitsetA[7];
         bitsetA = bitsetA << 1;
         if(isSet) {
@@ -1523,6 +1736,10 @@ public:
         :IInstructions(cycles){};
 
     void doInstruction(IMemory& memory) override {
+
+        BOOST_LOG_TRIVIAL(debug)
+            << "rla";
+
         uint8_t regAValue = memory.get8BitRegister(IMemory::REG8BIT::A);
         std::bitset<8> bitsetA(regAValue);
         std::bitset<8> rotateBitset = bitsetA << 1;
@@ -1563,6 +1780,10 @@ public:
         :IInstructions(cycles){};
 
     void doInstruction(IMemory& memory) override {
+
+        BOOST_LOG_TRIVIAL(debug)
+            << "rrca";
+
         uint8_t regAValue = memory.get8BitRegister(IMemory::REG8BIT::A);
         std::bitset<8> bitsetA(regAValue);
 
@@ -1600,6 +1821,10 @@ public:
         :IInstructions(cycles){};
 
     void doInstruction(IMemory& memory) override {
+
+        BOOST_LOG_TRIVIAL(debug)
+            << "rra";
+
         uint8_t regAValue = memory.get8BitRegister(IMemory::REG8BIT::A);
         std::bitset<8> bitsetA(regAValue);
         std::bitset<8> rotateBitset = bitsetA >> 1;
@@ -1645,6 +1870,11 @@ public:
         uint8_t(mostSignificantBit) = memory.readInMemory(cursor + 2);
 
         uint16_t adress = (static_cast<uint16_t>(mostSignificantBit) << 8) | lessSignificantBit;
+
+        BOOST_LOG_TRIVIAL(debug)
+            << "jp $" << std::hex
+            << static_cast<int>(adress);
+
         memory.set16BitRegister(IMemory::REG16BIT::PC, adress);
     }
 };
@@ -1667,11 +1897,24 @@ public:
             uint16_t adress = (static_cast<uint16_t>(mostSignificantBit) << 8) | lessSignificantBit;
             memory.set16BitRegister(IMemory::REG16BIT::PC, adress);
             IInstructions::_cycles = 16;
+            BOOST_LOG_TRIVIAL(debug)
+                << "jp "
+                << (_isToBeSet == 0 ? "n":"")
+                << debugflag[_flag]
+                << ",$" << std::hex
+                << static_cast<int>(adress);
         }
         else {
             memory.set16BitRegister(IMemory::REG16BIT::PC, cursor + 3);
             IInstructions::_cycles = 12;
+            BOOST_LOG_TRIVIAL(debug)
+                << "jp "
+                << (_isToBeSet == 0 ? "n":"")
+                << debugflag[_flag]
+                << ",$[condition not met]";
         }
+
+
     }
 
     IMemory::FLAG _flag;
@@ -1686,6 +1929,10 @@ public:
         :IInstructions(cycles){};
 
     void doInstruction(IMemory& memory) override {
+
+        BOOST_LOG_TRIVIAL(debug)
+            << "jp (hl)";
+
         uint16_t adress = memory.get16BitRegister(IMemory::REG16BIT::HL);
         memory.set16BitRegister(IMemory::REG16BIT::PC, adress);
     }
@@ -1702,7 +1949,17 @@ public:
         uint16_t cursor = memory.get16BitRegister(IMemory::REG16BIT::PC);
         int8_t toAdd = static_cast<int8_t>(memory.readInMemory(cursor + 1));
 
-        memory.set16BitRegister(IMemory::REG16BIT::PC, cursor + toAdd);
+
+        BOOST_LOG_TRIVIAL(debug)
+            << "jr " << std::hex
+            << static_cast<int>(toAdd);
+
+        if(toAdd == 0) {
+            memory.set16BitRegister(IMemory::REG16BIT::PC, cursor + 2);
+        }
+        else {
+            memory.set16BitRegister(IMemory::REG16BIT::PC, cursor + toAdd);
+        }
     }
 };
 
@@ -1721,10 +1978,21 @@ public:
             int8_t toAdd = static_cast<int8_t>(memory.readInMemory(cursor + 1));
             memory.set16BitRegister(IMemory::REG16BIT::PC, cursor + toAdd);
             IInstructions::_cycles = 12;
+            BOOST_LOG_TRIVIAL(debug)
+                << "jr "
+                << (_isToBeSet == 0 ? "n":"")
+                << debugflag[_flag]
+                << ",$"<< std::hex
+                << static_cast<int>(toAdd);
         }
         else {
             memory.set16BitRegister(IMemory::REG16BIT::PC, cursor + 2);
             IInstructions::_cycles = 8;
+            BOOST_LOG_TRIVIAL(debug)
+                << "jr "
+                << (_isToBeSet == 0 ? "n":"")
+                << debugflag[_flag]
+                << ",$[condition not met]";
         }
     }
     IMemory::FLAG _flag;
@@ -1752,6 +2020,10 @@ public:
 
         memory.set16BitRegister(IMemory::REG16BIT::PC, newPCValue);
         memory.set16BitRegister(IMemory::REG16BIT::SP, stackPointer - 2);
+
+        BOOST_LOG_TRIVIAL(debug)
+            << "call $" << std::hex
+            << static_cast<int>(newPCValue);
     }
 };
 
@@ -1780,10 +2052,20 @@ public:
             memory.set16BitRegister(IMemory::REG16BIT::PC, newPCValue);
             memory.set16BitRegister(IMemory::REG16BIT::SP, stackPointer - 2);
             IInstructions::_cycles = 24;
+            BOOST_LOG_TRIVIAL(debug)
+                << "call "
+                << (_isToBeSet == 0 ? "n":"")
+                << debugflag[_flag]
+                << ",$"<< std::hex << static_cast<int>(newPCValue);
         }
         else {
             memory.set16BitRegister(IMemory::REG16BIT::PC, programCounter + 3);
             IInstructions::_cycles = 12;
+            BOOST_LOG_TRIVIAL(debug)
+                << "call "
+                << (_isToBeSet == 0 ? "n":"")
+                << debugflag[_flag]
+                << ",$[condition not met]";
         }
     }
     IMemory::FLAG _flag;
@@ -1798,6 +2080,7 @@ public:
         :IInstructions(cycles){};
 
     void doInstruction(IMemory& memory) override {
+        BOOST_LOG_TRIVIAL(debug) << "ret";
         uint16_t stackPointer = memory.get16BitRegister(IMemory::REG16BIT::SP);
 
         uint8_t lessSignificantBit = memory.readInMemory(stackPointer);
@@ -1819,6 +2102,9 @@ public:
          _isToBeSet(isToBeSet){};
 
     void doInstruction(IMemory& memory) override {
+        //TODO
+        BOOST_LOG_TRIVIAL(debug)
+            << "ret " << debugflag[_flag];
         if (memory.isSetFlag(_flag) == _isToBeSet) {
             uint16_t stackPointer = memory.get16BitRegister(IMemory::REG16BIT::SP);
 
@@ -1849,6 +2135,7 @@ public:
          _interruptHandler(interruptHandler){};
 
     void doInstruction(IMemory& memory) override {
+        BOOST_LOG_TRIVIAL(debug) << "reti";
         uint16_t stackPointer = memory.get16BitRegister(IMemory::REG16BIT::SP);
 
         uint8_t lessSignificantBit = memory.readInMemory(stackPointer);
@@ -1884,6 +2171,9 @@ public:
 
         memory.set16BitRegister(IMemory::REG16BIT::PC, 0x0000 + _value);
         memory.set16BitRegister(IMemory::REG16BIT::SP, stackPointer - 2);
+        BOOST_LOG_TRIVIAL(debug) 
+            << "rst" << std::hex
+            << static_cast<int>(_value) << "h";
     }
     uint8_t _value;
 };
@@ -1896,9 +2186,12 @@ public:
         :IInstructions(cycles){};
 
     void doInstruction(IMemory& memory) override {
+        BOOST_LOG_TRIVIAL(debug) << "scf";
         memory.unsetFlag(IMemory::FLAG::N);
         memory.unsetFlag(IMemory::FLAG::H);
         memory.setFlag(IMemory::FLAG::C);
+        uint16_t programCounter = memory.get16BitRegister(IMemory::REG16BIT::PC);
+        memory.set16BitRegister(IMemory::REG16BIT::PC, programCounter + 1);
     }
 };
 
@@ -1910,6 +2203,7 @@ public:
         :IInstructions(cycles){};
 
     void doInstruction(IMemory& memory) override {
+        BOOST_LOG_TRIVIAL(debug) << "ccf";
         memory.unsetFlag(IMemory::FLAG::N);
         memory.unsetFlag(IMemory::FLAG::H);
         if (memory.isSetFlag(IMemory::FLAG::C)) {
@@ -1918,6 +2212,8 @@ public:
         else {
             memory.setFlag(IMemory::FLAG::C);
         }
+        uint16_t programCounter = memory.get16BitRegister(IMemory::REG16BIT::PC);
+        memory.set16BitRegister(IMemory::REG16BIT::PC, programCounter + 1);
     }
 };
 
@@ -1929,12 +2225,15 @@ public:
         :IInstructions(cycles){};
 
     void doInstruction(IMemory& memory) override {
+        BOOST_LOG_TRIVIAL(debug) << "cpl";
         std::bitset<8> bitsetA(memory.get8BitRegister(IMemory::REG8BIT::A));
         bitsetA.flip();
         uint8_t newValue = static_cast<uint8_t>(bitsetA.to_ulong());
         memory.set8BitRegister(IMemory::REG8BIT::A, newValue);
         memory.setFlag(IMemory::FLAG::N);
         memory.setFlag(IMemory::FLAG::H);
+        uint16_t programCounter = memory.get16BitRegister(IMemory::REG16BIT::PC);
+        memory.set16BitRegister(IMemory::REG16BIT::PC, programCounter + 1);
     }
 };
 
@@ -1946,8 +2245,11 @@ public:
         :IInstructions(cycles),
          _interruptHandler(interruptHandler){};
 
-    void doInstruction(IMemory& ) override {
+    void doInstruction(IMemory& memory) override {
+        BOOST_LOG_TRIVIAL(debug) << "di";
         _interruptHandler.disableMasterSwitch();
+        uint16_t programCounter = memory.get16BitRegister(IMemory::REG16BIT::PC);
+        memory.set16BitRegister(IMemory::REG16BIT::PC, programCounter + 1);
     }
     IInterruptHandler& _interruptHandler;
 };
@@ -1960,8 +2262,11 @@ public:
         :IInstructions(cycles),
          _interruptHandler(interruptHandler){};
 
-    void doInstruction(IMemory& ) override {
+    void doInstruction(IMemory& memory) override {
+        BOOST_LOG_TRIVIAL(debug) << "ei";
         _interruptHandler.enableMasterSwitch();
+        uint16_t programCounter = memory.get16BitRegister(IMemory::REG16BIT::PC);
+        memory.set16BitRegister(IMemory::REG16BIT::PC, programCounter + 1);
     }
     IInterruptHandler& _interruptHandler;
 };
@@ -1973,8 +2278,11 @@ public:
     HALT (int cycles)
         :IInstructions(cycles){};
 
-    void doInstruction(IMemory& ) override {
+    void doInstruction(IMemory& memory) override {
+        BOOST_LOG_TRIVIAL(debug) << "halt";
         //TODO
+        uint16_t programCounter = memory.get16BitRegister(IMemory::REG16BIT::PC);
+        memory.set16BitRegister(IMemory::REG16BIT::PC, programCounter + 1);
     }
 };
 
@@ -1985,12 +2293,11 @@ public:
     STOP (int cycles)
         :IInstructions(cycles){};
 
-    void doInstruction(IMemory& ) override {
+    void doInstruction(IMemory& memory) override {
+        BOOST_LOG_TRIVIAL(debug) << "stop";
         //TODO
-        // The STOP command halts the GameBoy processor
-        // and screen until any button is pressed. The GB
-        // and GBP screen goes white with a single dark
-        // horizontal line.
+        uint16_t programCounter = memory.get16BitRegister(IMemory::REG16BIT::PC);
+        memory.set16BitRegister(IMemory::REG16BIT::PC, programCounter + 1);
     }
 };
 
@@ -2003,6 +2310,7 @@ public:
          _binaryInstructions(binaryInstructions){};
 
     void doInstruction(IMemory& memory) override {
+        BOOST_LOG_TRIVIAL(debug) << "cb";
         uint16_t cursor = memory.get16BitRegister(IMemory::REG16BIT::PC);
         uint8_t opCode = memory.readInMemory(cursor + 1);
 

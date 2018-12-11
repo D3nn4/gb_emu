@@ -5,35 +5,60 @@
 Cpu::Cpu(IRomLoader& romLoader)
     :_romLoader(romLoader),
      _interruptHandler(_memory),
-     _instructionHandler(_memory, _interruptHandler){}
+     _timer(_memory, _interruptHandler),
+     _instructionHandler(_memory, _interruptHandler)
+{
+    _memory.setTimer(&_timer);
+}
 
 int Cpu::getCurrentCycles()
 {
     return _cycles;
 }
-/*
-void Cpu::executeOneFrame()
+
+void Cpu::update()
 {
-    while (_cycles < _maxCycles) {
-        uint16_t pcValue = _memory.readInMemory(pcValue);
-        uint8_t opCode = _memory.readInMemory(pcValue);
-        try {
-        	_cycles += _instructionHandler.doInstruction(opCode);
+    while (_gameLoaded) {
+        while (_cycles < _maxCycles) {
+            //For debug
+            _gameLoaded = false;
+            //For debug
+            uint16_t pcValue = _memory.get16BitRegister(IMemory::REG16BIT::PC);
+            uint8_t opCode = _memory.readInMemory(pcValue);
+            if (opCode == 0x10 || opCode == 0x76) {
+                _gameLoaded = false;
+                break;
+            }
+            try {
+                int cycles = _instructionHandler.doInstruction(opCode);
+                _cycles += cycles;
+                _timer.update(cycles);
+                _interruptHandler.doInterrupt();
+            }
+            catch (...) {
+                std::cout << "error catch\n";
+            }
         }
-        catch (...) {
-        	std::cout << "error catch\n";
-        }
+        //TODO
+        //render
+        _cycles -= _maxCycles;
     }
-    _cycles -= _maxCycles;
-}*/
-// void Cpu::launchGame(std::string const & cartridgeName)
-// {
-//     if (_romLoader.load(cartridgeName)) {
-//         _memory.setCartridge(_romLoader.getData());
-//         _memory.set16BitRegister(IMemory::REG16BIT::PC, 0x0100);
-//     }
-//     else {
-//         std::cout << "error loading cartridge\n";
-//     }
-// }
+}
+
+void Cpu::launchGame(std::string const & cartridgeName)
+{
+    if (_romLoader.load(cartridgeName)
+        && _memory.setCartridge(_romLoader.getData())) {
+            _gameLoaded = true;
+            update();
+    }
+    else {
+        std::cout << "error loading cartridge\n";
+    }
+}
+
+void Cpu::stopGame()
+{
+    _gameLoaded = false;
+}
 

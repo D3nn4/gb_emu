@@ -58,8 +58,6 @@ void Timer::doDividerRegister(int cycles)
     _dividerRegister += cycles;
     if(_dividerRegister >= 0xff) {
         _dividerRegister = 0;
-        //TODO
-        //uint8_t div = _memory.readInMemory(_DIV);
-        //_memory.writeInMemory(div++, _DIV);
+        _memory.incrementDivderRegister();
     }
 }
