@@ -27,7 +27,7 @@ int main()
     logging::add_console_log(std::cout,
                              boost::log::keywords::format = ">> %Message%");
     BOOST_LOG_TRIVIAL(debug) << "GBU STARTING DEBUG";
-    std::string fileName = "./roms/cpu_instrs/individual/01-special.gb";
+    std::string fileName = "./cpu_instrs/individual/01-special.gb";
     FileIO fileIO;
     RomLoader romLoader(fileIO);
     Cpu cpu(romLoader);

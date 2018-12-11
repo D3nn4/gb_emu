@@ -1946,20 +1946,15 @@ public:
         :IInstructions(cycles){};
 
     void doInstruction(IMemory& memory) override {
-        uint16_t cursor = memory.get16BitRegister(IMemory::REG16BIT::PC);
-        int8_t toAdd = static_cast<int8_t>(memory.readInMemory(cursor + 1));
+        uint16_t cursor = (memory.get16BitRegister(IMemory::REG16BIT::PC)) + 1;
+        int8_t toAdd = static_cast<int8_t>(memory.readInMemory(cursor++));
 
 
         BOOST_LOG_TRIVIAL(debug)
             << "jr " << std::hex
             << static_cast<int>(toAdd);
 
-        if(toAdd == 0) {
-            memory.set16BitRegister(IMemory::REG16BIT::PC, cursor + 2);
-        }
-        else {
-            memory.set16BitRegister(IMemory::REG16BIT::PC, cursor + toAdd);
-        }
+        memory.set16BitRegister(IMemory::REG16BIT::PC, cursor + toAdd);
     }
 };
 
@@ -1973,9 +1968,9 @@ public:
          _isToBeSet(isToBeSet){};
 
     void doInstruction(IMemory& memory) override {
-        uint16_t cursor = memory.get16BitRegister(IMemory::REG16BIT::PC);
+        uint16_t cursor = memory.get16BitRegister(IMemory::REG16BIT::PC) + 1;
+        int8_t toAdd = static_cast<int8_t>(memory.readInMemory(cursor++));
         if (memory.isSetFlag(_flag) == _isToBeSet) {
-            int8_t toAdd = static_cast<int8_t>(memory.readInMemory(cursor + 1));
             memory.set16BitRegister(IMemory::REG16BIT::PC, cursor + toAdd);
             IInstructions::_cycles = 12;
             BOOST_LOG_TRIVIAL(debug)
@@ -1986,7 +1981,7 @@ public:
                 << static_cast<int>(toAdd);
         }
         else {
-            memory.set16BitRegister(IMemory::REG16BIT::PC, cursor + 2);
+            memory.set16BitRegister(IMemory::REG16BIT::PC, cursor);
             IInstructions::_cycles = 8;
             BOOST_LOG_TRIVIAL(debug)
                 << "jr "

@@ -21,10 +21,11 @@ void Cpu::update()
     while (_gameLoaded) {
         while (_cycles < _maxCycles) {
             //For debug
-            _gameLoaded = false;
+            // _gameLoaded = false;
             //For debug
             uint16_t pcValue = _memory.get16BitRegister(IMemory::REG16BIT::PC);
             uint8_t opCode = _memory.readInMemory(pcValue);
+            BOOST_LOG_TRIVIAL(debug) << "[" << std::hex << static_cast<int>(opCode) << "]";
             if (opCode == 0x10 || opCode == 0x76) {
                 _gameLoaded = false;
                 break;

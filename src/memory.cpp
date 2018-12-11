@@ -1,5 +1,6 @@
 #include <algorithm>
 #include <iostream>
+#include <bitset>
 #include "memory.hpp"
 #include "itimer.hpp"
 
@@ -54,7 +55,7 @@ void Memory::initializeMemory()
     _registers.af = 0x01b0;
     _registers.bc = 0x0013;
     _registers.de = 0x00d8;
-    _registers.hl = 0x014D;
+    _registers.hl = 0x014d;
 
     _readOnlyMemory[0xFF05] = 0x00;
     _readOnlyMemory[0xFF06] = 0x00;
@@ -189,15 +190,18 @@ uint16_t Memory::get16BitRegister(REG16BIT reg)
 void Memory::setFlag(IMemory::FLAG flag)
 {
     uint8_t regValue = *_8BitRegisters[IMemory::REG8BIT::F];
-    regValue = 1 << static_cast<int>(flag);
-    set8BitRegister(IMemory::REG8BIT::F, regValue);
+    std::bitset<8> bitsetFlag(regValue);
+    bitsetFlag.set(static_cast<int>(flag));
+    // regValue = 1 << static_cast<int>(flag);
+    set8BitRegister(IMemory::REG8BIT::F, static_cast<uint8_t>(bitsetFlag.to_ulong()));
 }
 
 void Memory::unsetFlag(IMemory::FLAG flag)
 {
     uint8_t regValue = *_8BitRegisters[IMemory::REG8BIT::F];
-    regValue = 0 << static_cast<int>(flag);
-    set8BitRegister(IMemory::REG8BIT::F, regValue);
+    std::bitset<8> bitsetFlag(regValue);
+    bitsetFlag.reset(static_cast<int>(flag));
+    set8BitRegister(IMemory::REG8BIT::F, static_cast<uint8_t>(bitsetFlag.to_ulong()));
 }
 
 void Memory::unsetBitInRegister(int bit, REG8BIT reg)
