@@ -3,6 +3,7 @@
 #include <boost/log/trivial.hpp>
 #include <QFileDialog>
 #include <QMessageBox>
+#include <QTableWidgetItem>
 
 MainWindow::MainWindow(QWidget *parent) :
   QMainWindow(parent),
@@ -23,6 +24,11 @@ MainWindow::MainWindow(QWidget *parent) :
   _currentInstrText = this->findChild<QLabel*>("currentInstructionText");
   assert(_loadedRom != nullptr);
   _currentInstrText->setText("");
+
+  _registerTable = this->findChild<QTableWidget*>("registerTable");
+  assert(_registerTable != nullptr);
+  _registerTable->setRowCount(10);
+  _registerTable->setColumnCount(2);
 }
 
 MainWindow::~MainWindow()
@@ -68,9 +74,44 @@ void MainWindow::on_actionStop_triggered()
     _currentInstrText->setText("");
 }
 
+void MainWindow::updateRegisterTable()
+{
+    auto state =_cpu->getState();
+
+    int row = 0;
+
+    BOOST_LOG_TRIVIAL(debug) << state.reg16Bit.size();
+    for (auto & pair : state.reg16Bit) {
+        BOOST_LOG_TRIVIAL(debug) << pair.first << " " << std::hex <<  static_cast<int>(pair.second);
+        {
+            QTableWidgetItem *newItem = new QTableWidgetItem(pair.first.c_str());
+            _registerTable->setItem(row, 0, newItem);
+        }
+        {
+            QString hexVal = QString("%1").arg(pair.second, 4, 16, QChar('0'));
+            QTableWidgetItem *newItem = new QTableWidgetItem(hexVal);
+            _registerTable->setItem(row, 1, newItem);
+        }
+        row++;
+    }
+    // for (auto & pair : state.) {
+    //     BOOST_LOG_TRIVIAL(debug) << pair.first << " " << pair.second;
+    //     {
+    //         QTableWidgetItem *newItem = new QTableWidgetItem(pair.first.c_str());
+    //         _registerTable->setItem(row, 0, newItem);
+    //     }
+    //     {
+    //         QTableWidgetItem *newItem = new QTableWidgetItem(pair.second);
+    //         _registerTable->setItem(row, 1, newItem);
+    //     }
+    //     row++;
+    // }
+}
+
 void MainWindow::on_nextButton_clicked()
 {
     BOOST_LOG_TRIVIAL(debug) << "Next step";
     _cpu->updateDebug();
     _currentInstrText->setText(_cpu->getReadableInstruction().c_str());
+    updateRegisterTable();
 }

@@ -74,26 +74,28 @@ public:
 };
 
 static std::map<IMemory::FLAG, std::string> debugflag = {
-    {IMemory::FLAG::Z, "z"},
-    {IMemory::FLAG::N, "n"},
-    {IMemory::FLAG::H, "h"},
-    {IMemory::FLAG::C, "c"}
+    {IMemory::FLAG::Z, "Z"},
+    {IMemory::FLAG::N, "N"},
+    {IMemory::FLAG::H, "H"},
+    {IMemory::FLAG::C, "C"}
 };
 static std::map<IMemory::REG8BIT, std::string>  debugReg8Bit = {
-    {IMemory::REG8BIT::A, "a"},
-    {IMemory::REG8BIT::F, "f"},
-    {IMemory::REG8BIT::B, "b"},
-    {IMemory::REG8BIT::C, "c"},
-    {IMemory::REG8BIT::D, "d"},
-    {IMemory::REG8BIT::E, "e"},
-    {IMemory::REG8BIT::H, "h"},
-    {IMemory::REG8BIT::L, "l"}
+    {IMemory::REG8BIT::A, "A"},
+    {IMemory::REG8BIT::F, "F"},
+    {IMemory::REG8BIT::B, "B"},
+    {IMemory::REG8BIT::C, "C"},
+    {IMemory::REG8BIT::D, "D"},
+    {IMemory::REG8BIT::E, "E"},
+    {IMemory::REG8BIT::H, "H"},
+    {IMemory::REG8BIT::L, "L"}
 };
 
 static std::map<IMemory::REG16BIT, std::string>  debugReg16Bit = {
-    {IMemory::REG16BIT::AF, "af"},
-    {IMemory::REG16BIT::BC, "bc"},
-    {IMemory::REG16BIT::DE, "de"},
-    {IMemory::REG16BIT::HL, "hl"}
+    {IMemory::REG16BIT::AF, "AF"},
+    {IMemory::REG16BIT::BC, "BC"},
+    {IMemory::REG16BIT::DE, "DE"},
+    {IMemory::REG16BIT::HL, "HL"},
+    {IMemory::REG16BIT::PC, "PC"},
+    {IMemory::REG16BIT::SP, "SP"}
 };
 #endif /*IMEMORY*/

@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>400</width>
-    <height>300</height>
+    <width>623</width>
+    <height>473</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -90,13 +90,24 @@
      <rect>
       <x>290</x>
       <y>150</y>
-      <width>101</width>
-      <height>80</height>
+      <width>241</width>
+      <height>181</height>
      </rect>
     </property>
     <layout class="QVBoxLayout" name="verticalLayout_3">
      <item>
-      <widget class="QListWidget" name="listWidget"/>
+      <widget class="QTableWidget" name="registerTable">
+       <column>
+        <property name="text">
+         <string>Reg</string>
+        </property>
+       </column>
+       <column>
+        <property name="text">
+         <string>Val</string>
+        </property>
+       </column>
+      </widget>
      </item>
     </layout>
    </widget>
@@ -115,7 +126,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>400</width>
+     <width>623</width>
      <height>22</height>
     </rect>
    </property>

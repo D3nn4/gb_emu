@@ -16,6 +16,11 @@ int Cpu::getCurrentCycles()
     return _cycles;
 }
 
+IMemory::State Cpu::getState()
+{
+    return _memory.getState();
+}
+
 void Cpu::nextStep()
 {
     //For debug

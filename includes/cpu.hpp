@@ -18,6 +18,7 @@ public:
     void nextStep();
     void updateDebug();
     bool launchGameDebug(std::string const & cartridgeName);
+    IMemory::State getState();
 
     void update();
     void launchGame(std::string const & cartridgeName);

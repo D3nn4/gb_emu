@@ -4,6 +4,7 @@
 #include <QMainWindow>
 #include <QPushButton>
 #include <QLabel>
+#include <QTableWidget>
 #include <memory>
 
 #include "fileio.hpp"
@@ -32,15 +33,18 @@ private slots:
     void on_nextButton_clicked();
 
 private:
+    void updateRegisterTable();
+
     Ui::MainWindow *ui;
 
-    std::unique_ptr<FileIO> _fileIO;
+    std::unique_ptr<FileIO>    _fileIO;
     std::unique_ptr<RomLoader> _romLoader;
-    std::unique_ptr<Cpu> _cpu;
+    std::unique_ptr<Cpu>       _cpu;
 
-    QPushButton* _nextButton;
-    QLabel* _loadedRom;
-    QLabel* _currentInstrText;
+    QPushButton*  _nextButton;
+    QLabel*       _loadedRom;
+    QLabel*       _currentInstrText;
+    QTableWidget* _registerTable;
 };
 
 #endif // MAINWINDOW_H
