@@ -48,6 +48,26 @@ bool Memory::setCartridge(IMemory::CartridgeData const & cartridge)
     return false;
 }
 
+IMemory::State Memory::getState()
+{
+    State state;
+    state.pcValue = _registers.pc;
+    state.opCode = readInMemory(state.pcValue);
+    for(auto& pair : debugflag) {
+        std::string flag = pair.second;
+        bool isSet = isSetFlag(pair.first);
+        state.flags.insert({flag, isSet});
+    }
+    for(auto& pair : debugReg16Bit) {
+        std::string reg = pair.second;
+        uint16_t value = get16BitRegister(pair.first);
+        state.reg16Bit.insert({reg, value});
+    }
+    state.IE = _readOnlyMemory[0xffff];
+    state.IF = _readOnlyMemory[0xff0f];
+    state.readOnlyMemory = _readOnlyMemory;
+    return state;
+}
 void Memory::initializeMemory()
 {
     _registers.pc = 0x0100;

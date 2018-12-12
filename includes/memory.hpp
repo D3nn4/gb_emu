@@ -34,6 +34,7 @@ public:
     CartridgeData const  getCartridge() override;
     RomData const  getReadOnlyMemory() override;
     bool setCartridge(CartridgeData const & cartridge) override;
+    State getState() override;
     bool writeInMemory(uint8_t data, uint16_t adress) override;
     uint8_t readInMemory(uint16_t adress) override;
 
@@ -63,7 +64,7 @@ private:
     RomData _readOnlyMemory;
     // unique_ptr<ITimer> _timer;
     ITimer* _timer;
-    
+
     std::map<IMemory::REG8BIT, uint8_t*> _8BitRegisters =
         {
             {IMemory::REG8BIT::A, &_registers.a},

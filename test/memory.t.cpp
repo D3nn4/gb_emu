@@ -227,7 +227,6 @@ TEST_F(MemoryTest, readInMemory)
 TEST_F(MemoryTest, setAndUnsetBitIn8BitRegister)
 {
     Memory mem;
-
     EXPECT_EQ(0x00, mem.get8BitRegister(IMemory::REG8BIT::A));
     EXPECT_EQ(0x00, mem.get8BitRegister(IMemory::REG8BIT::F));
     EXPECT_EQ(0x00, mem.get8BitRegister(IMemory::REG8BIT::B));

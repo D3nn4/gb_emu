@@ -16,6 +16,7 @@ public:
     MOCK_METHOD0(getCartridge, CartridgeData const());
     MOCK_METHOD0(getReadOnlyMemory, RomData const());
     MOCK_METHOD1(setCartridge, bool(CartridgeData const &));
+    MOCK_METHOD0(getState, IMemory::State());
     MOCK_METHOD0(initializeMemory, void());
     MOCK_METHOD2(writeInMemory, bool(uint8_t, uint16_t));
     MOCK_METHOD1(readInMemory, uint8_t(uint16_t));
