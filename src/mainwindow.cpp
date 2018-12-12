@@ -5,6 +5,7 @@
 #include <QMessageBox>
 #include <QTableWidgetItem>
 #include <QStringList>
+#include <QLineEdit>
 
 MainWindow::MainWindow(QWidget *parent) :
   QMainWindow(parent),
@@ -37,6 +38,9 @@ MainWindow::MainWindow(QWidget *parent) :
   _memoryTable->setColumnCount(16);
   _memoryTable->setSelectionBehavior( QAbstractItemView::SelectItems );
   _memoryTable->setSelectionMode( QAbstractItemView::SingleSelection );
+
+  _breakpointEntry = this->findChild<QLineEdit*>("breakpointEntry");
+  assert(_breakpointEntry != nullptr);
 }
 
 MainWindow::~MainWindow()
@@ -176,4 +180,29 @@ void MainWindow::on_nextButton_clicked()
     BOOST_LOG_TRIVIAL(debug) << "Next step";
     updateState();
     _cpu->updateDebug();
+}
+
+
+void MainWindow::continueUntilOpCodeBreakpoint(unsigned int opCode)
+{
+    int i = 0;
+    while (i < 1000) {
+        _cpu->updateDebug();
+        auto state =_cpu->getState();
+        if (opCode == state.opCode) {
+            break ;
+        }
+        i++;
+    }
+    updateState();
+}
+
+void MainWindow::on_breakpointButton_clicked()
+{
+    QString text = _breakpointEntry->text();
+    BOOST_LOG_TRIVIAL(debug) << "breakpoint entry : " << text.toStdString();
+    unsigned int opCodeBreakpoint = std::stoul(text.toStdString(), nullptr, 16);
+    BOOST_LOG_TRIVIAL(debug) << std::hex << "breakpoint op code value : " << opCodeBreakpoint;
+
+    continueUntilOpCodeBreakpoint(opCodeBreakpoint);
 }

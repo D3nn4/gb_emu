@@ -5,6 +5,7 @@
 #include <QPushButton>
 #include <QLabel>
 #include <QTableWidget>
+#include <QPlainTextEdit>
 #include <memory>
 
 #include "fileio.hpp"
@@ -32,11 +33,14 @@ private slots:
 
     void on_nextButton_clicked();
 
+    void on_breakpointButton_clicked();
+
 private:
     void updateState();
     void updateRegisterTable();
     void updateMemoryTable();
     void createMemoryTable();
+    void continueUntilOpCodeBreakpoint(unsigned int);
 
     Ui::MainWindow *ui;
 
@@ -54,6 +58,8 @@ private:
     QLabel*       _currentInstrText;
     QTableWidget* _registerTable;
     QTableWidget* _memoryTable;
+    QLineEdit* _breakpointEntry;
+
     Cell          _previousPcValueCell;
 };
 
