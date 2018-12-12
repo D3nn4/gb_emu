@@ -35,6 +35,8 @@ private slots:
 private:
     void updateState();
     void updateRegisterTable();
+    void updateMemoryTable();
+    void createMemoryTable();
 
     Ui::MainWindow *ui;
 
@@ -42,10 +44,17 @@ private:
     std::unique_ptr<RomLoader> _romLoader;
     std::unique_ptr<Cpu>       _cpu;
 
+    struct Cell {
+        int row;
+        int col;
+    };
+
     QPushButton*  _nextButton;
     QLabel*       _loadedRom;
     QLabel*       _currentInstrText;
     QTableWidget* _registerTable;
+    QTableWidget* _memoryTable;
+    Cell          _previousPcValueCell;
 };
 
 #endif // MAINWINDOW_H

@@ -4,6 +4,7 @@
 #include <QFileDialog>
 #include <QMessageBox>
 #include <QTableWidgetItem>
+#include <QStringList>
 
 MainWindow::MainWindow(QWidget *parent) :
   QMainWindow(parent),
@@ -29,6 +30,13 @@ MainWindow::MainWindow(QWidget *parent) :
   assert(_registerTable != nullptr);
   _registerTable->setRowCount(12);
   _registerTable->setColumnCount(2);
+
+
+  _memoryTable = this->findChild<QTableWidget*>("memoryTable");
+  assert(_memoryTable != nullptr);
+  _memoryTable->setColumnCount(16);
+  _memoryTable->setSelectionBehavior( QAbstractItemView::SelectItems );
+  _memoryTable->setSelectionMode( QAbstractItemView::SingleSelection );
 }
 
 MainWindow::~MainWindow()
@@ -62,6 +70,7 @@ void MainWindow::on_actionDebug_mode_triggered()
         return ;
     }
     _nextButton->setEnabled(true);
+    createMemoryTable();
 }
 
 void MainWindow::on_actionStop_triggered()
@@ -72,6 +81,46 @@ void MainWindow::on_actionStop_triggered()
     _fileIO.reset(nullptr);
     _nextButton->setDisabled(true);
     _currentInstrText->setText("");
+}
+
+
+void MainWindow::createMemoryTable()
+{
+    _previousPcValueCell = {0, 0};
+    auto rom = _cpu->getState().readOnlyMemory;
+    const int rowSize = rom.size() / 16;
+    _memoryTable->setRowCount(rowSize);
+
+    // generate headers 0 - 15
+    QStringList headers;
+    for (int i = 0; i < 16; i++) {
+        headers += QString::number(i);
+    }
+    _memoryTable->setHorizontalHeaderLabels(headers);
+
+
+    // generate row headers 0 - 4000 
+    QStringList rowsHeader;
+    for (int i = 0, currentVal; i < rowSize; i++, currentVal += 16) {
+        QString hexVal = QString("%1").arg(currentVal, 4, 16, QChar('0'));
+        rowsHeader += hexVal;
+    }
+    _memoryTable-> setVerticalHeaderLabels(rowsHeader);
+    updateMemoryTable();
+}
+
+void MainWindow::updateMemoryTable()
+{
+    auto rom = _cpu->getState().readOnlyMemory;
+    const int rowSize = rom.size() / 16;
+    for (size_t i = 0; i < rom.size(); i++) {
+        QString hexVal = QString("%1").arg(rom[i], 2, 16, QChar('0'));
+        QTableWidgetItem *newItem = new QTableWidgetItem(hexVal);
+        const int row = i / 16;
+        const int col = i % 16;
+        _memoryTable->setItem(row, col, newItem);
+    }
+    _memoryTable->setRowCount(rowSize);
 }
 
 void MainWindow::updateRegisterTable()
@@ -107,16 +156,24 @@ void MainWindow::updateRegisterTable()
         row++;
     }
 }
+
 void MainWindow::updateState()
 {
+    _memoryTable->item(_previousPcValueCell.row, _previousPcValueCell.col)->setBackground(Qt::white);
     auto state =_cpu->getState();
     _currentInstrText->setText(_cpu->getReadableInstruction().c_str());
+
+    const int row = state.pcValue / 16;
+    const int col = state.pcValue % 16;
+    _previousPcValueCell = {row, col};
+    _memoryTable->item(row, col)->setBackground(Qt::cyan);
+    _memoryTable->scrollToItem(_memoryTable->item(row, col));
     updateRegisterTable();
 }
 
 void MainWindow::on_nextButton_clicked()
 {
     BOOST_LOG_TRIVIAL(debug) << "Next step";
-    _cpu->updateDebug();
     updateState();
+    _cpu->updateDebug();
 }
