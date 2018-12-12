@@ -194,6 +194,11 @@ void MainWindow::continueUntilOpCodeBreakpoint(unsigned int opCode)
         }
         i++;
     }
+    if (i == 1000) {
+        QMessageBox msgBox;
+        msgBox.setText("Infinite loop detected in breakpoint !");
+        msgBox.exec();
+    }
     updateState();
 }
 
