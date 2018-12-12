@@ -33,6 +33,7 @@ private slots:
     void on_nextButton_clicked();
 
 private:
+    void updateState();
     void updateRegisterTable();
 
     Ui::MainWindow *ui;

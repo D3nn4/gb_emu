@@ -3,6 +3,7 @@
 
 #include <array>
 #include <map>
+#include <vector>
 #include "registers.hpp"
 
 class IMemory
@@ -20,10 +21,8 @@ public:
     {
         uint8_t opCode;
         uint16_t pcValue;
-        std::map<std::string, uint16_t> reg16Bit;
-        std::map<std::string, bool> flags;
-        uint8_t IE;
-        uint8_t IF;
+        std::vector<std::pair<std::string, uint16_t>> reg16Bit;
+        std::vector<std::pair<std::string, bool>> flags;
         RomData readOnlyMemory;
     };
     enum class REG8BIT
@@ -52,6 +51,9 @@ public:
             C = 4
         };
 
+    uint8_t getCurrentOpCode() {
+       return readInMemory(get16BitRegister(REG16BIT::PC));
+    }
     virtual void incrementDivderRegister() = 0;
 
     virtual CartridgeData const getCartridge() = 0;

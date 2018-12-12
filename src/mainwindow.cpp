@@ -27,7 +27,7 @@ MainWindow::MainWindow(QWidget *parent) :
 
   _registerTable = this->findChild<QTableWidget*>("registerTable");
   assert(_registerTable != nullptr);
-  _registerTable->setRowCount(10);
+  _registerTable->setRowCount(12);
   _registerTable->setColumnCount(2);
 }
 
@@ -94,24 +94,29 @@ void MainWindow::updateRegisterTable()
         }
         row++;
     }
-    // for (auto & pair : state.) {
-    //     BOOST_LOG_TRIVIAL(debug) << pair.first << " " << pair.second;
-    //     {
-    //         QTableWidgetItem *newItem = new QTableWidgetItem(pair.first.c_str());
-    //         _registerTable->setItem(row, 0, newItem);
-    //     }
-    //     {
-    //         QTableWidgetItem *newItem = new QTableWidgetItem(pair.second);
-    //         _registerTable->setItem(row, 1, newItem);
-    //     }
-    //     row++;
-    // }
+    for (auto & pair : state.flags) {
+        BOOST_LOG_TRIVIAL(debug) << pair.first << " " << pair.second;
+        {
+            QTableWidgetItem *newItem = new QTableWidgetItem(pair.first.c_str());
+            _registerTable->setItem(row, 0, newItem);
+        }
+        {
+            QTableWidgetItem *newItem = new QTableWidgetItem(QString::number(pair.second));
+            _registerTable->setItem(row, 1, newItem);
+        }
+        row++;
+    }
+}
+void MainWindow::updateState()
+{
+    auto state =_cpu->getState();
+    _currentInstrText->setText(_cpu->getReadableInstruction().c_str());
+    updateRegisterTable();
 }
 
 void MainWindow::on_nextButton_clicked()
 {
     BOOST_LOG_TRIVIAL(debug) << "Next step";
     _cpu->updateDebug();
-    _currentInstrText->setText(_cpu->getReadableInstruction().c_str());
-    updateRegisterTable();
+    updateState();
 }

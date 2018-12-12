@@ -25,6 +25,9 @@ public:
     void doInstruction(IMemory& memory)
     {
         _readableInstructionStream.str({}); // reset
+
+        _readableInstructionStream <<  "[" << std::hex << 
+            static_cast<int>(memory.getCurrentOpCode()) << "] ";
         doInstructionImpl(memory);
         BOOST_LOG_TRIVIAL(debug) << _readableInstructionStream.str();
     };
