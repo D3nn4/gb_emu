@@ -18,19 +18,34 @@
 #include "romloader.hpp"
 #include "cpu.hpp"
 
+#include "mainwindow.h"
+#include <QApplication>
+
 namespace logging = boost::log;
 
-int main()
+
+void init_logging()
 {
     logging::core::get()->set_filter(logging::trivial::severity >= logging::trivial::debug);
     logging::add_file_log ("sample_%N.log");
     logging::add_console_log(std::cout,
                              boost::log::keywords::format = ">> %Message%");
-    BOOST_LOG_TRIVIAL(debug) << "GBU STARTING DEBUG";
-    std::string fileName = "./cpu_instrs/individual/01-special.gb";
-    FileIO fileIO;
-    RomLoader romLoader(fileIO);
-    Cpu cpu(romLoader);
-    cpu.launchGame(fileName);
+
+}
+int main(int argc, char* argv[])
+{
+
+    QApplication a(argc, argv);
+    MainWindow w;
+    w.show();
+    
+    return a.exec();
+
+    // BOOST_LOG_TRIVIAL(debug) << "GBU STARTING DEBUG";
+    // std::string fileName = "./cpu_instrs/individual/01-special.gb";
+    // FileIO fileIO;
+    // RomLoader romLoader(fileIO);
+    // Cpu cpu(romLoader);
+    // cpu.launchGame(fileName);
     return 0;
 }

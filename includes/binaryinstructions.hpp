@@ -13,7 +13,7 @@ public:
          _bit(bit),
          _reg8Bit(reg){};
 
-    void doInstruction(IMemory& memory) override {
+    void doInstructionImpl(IMemory& memory) override {
         memory.setBitInRegister(_bit, _reg8Bit);
     }
 
@@ -29,7 +29,7 @@ public:
         :IInstructions(cycles),
          _bit(bit){};
 
-    void doInstruction(IMemory& memory) override {
+    void doInstructionImpl(IMemory& memory) override {
         uint16_t adress = memory.get16BitRegister(IMemory::REG16BIT::HL);
         uint8_t value = memory.readInMemory(adress);
         std::bitset<8> bitsetValue(value);
@@ -50,7 +50,7 @@ public:
          _bit(bit),
          _reg8Bit(reg){};
 
-    void doInstruction(IMemory& memory) override {
+    void doInstructionImpl(IMemory& memory) override {
         memory.unsetBitInRegister(_bit, _reg8Bit);
     }
 
@@ -66,7 +66,7 @@ public:
         :IInstructions(cycles),
          _bit(bit){};
 
-    void doInstruction(IMemory& memory) override {
+    void doInstructionImpl(IMemory& memory) override {
         uint16_t adress = memory.get16BitRegister(IMemory::REG16BIT::HL);
         uint8_t value = memory.readInMemory(adress);
         std::bitset<8> bitsetValue(value);
@@ -87,7 +87,7 @@ public:
          _bit(bit),
          _reg8Bit(reg){};
 
-    void doInstruction(IMemory& memory) override {
+    void doInstructionImpl(IMemory& memory) override {
         if (memory.isSet(_bit, _reg8Bit)) {
             memory.unsetFlag(IMemory::FLAG::Z);
         }
@@ -110,7 +110,7 @@ public:
         :IInstructions(cycles),
          _bit(bit){};
 
-    void doInstruction(IMemory& memory) override {
+    void doInstructionImpl(IMemory& memory) override {
         uint16_t adress = memory.get16BitRegister(IMemory::REG16BIT::HL);
         uint8_t value = memory.readInMemory(adress);
         std::bitset<8> bitsetValue(value);
@@ -135,7 +135,7 @@ public:
         :IInstructions(cycles),
          _reg8Bit(reg){};
 
-    void doInstruction(IMemory& memory) override {
+    void doInstructionImpl(IMemory& memory) override {
         uint8_t regValue = memory.get8BitRegister(_reg8Bit);
         std::bitset<8> bitsetToRotate(regValue);
 
@@ -172,7 +172,7 @@ public:
     RLC_ARR (int cycles)
         :IInstructions(cycles){};
 
-    void doInstruction(IMemory& memory) override {
+    void doInstructionImpl(IMemory& memory) override {
         uint16_t adress = memory.get16BitRegister(IMemory::REG16BIT::HL);
         uint8_t regValue = memory.readInMemory(adress);
         std::bitset<8> bitsetToRotate(regValue);
@@ -208,7 +208,7 @@ public:
         :IInstructions(cycles),
          _reg8Bit(reg){};
 
-    void doInstruction(IMemory& memory) override {
+    void doInstructionImpl(IMemory& memory) override {
         uint8_t regValue = memory.get8BitRegister(_reg8Bit);
         std::bitset<8> bitsetToRotate(regValue);
 
@@ -245,7 +245,7 @@ public:
     RRC_ARR (int cycles)
         :IInstructions(cycles){};
 
-    void doInstruction(IMemory& memory) override {
+    void doInstructionImpl(IMemory& memory) override {
         uint16_t adress = memory.get16BitRegister(IMemory::REG16BIT::HL);
         uint8_t regValue = memory.readInMemory(adress);
         std::bitset<8> bitsetToRotate(regValue);
@@ -281,7 +281,7 @@ public:
         :IInstructions(cycles),
          _reg8Bit(reg){};
 
-    void doInstruction(IMemory& memory) override {
+    void doInstructionImpl(IMemory& memory) override {
         uint8_t regValue = memory.get8BitRegister(_reg8Bit);
         std::bitset<8> bitsetToRotate(regValue);
 
@@ -319,7 +319,7 @@ public:
     RL_ARR (int cycles)
         :IInstructions(cycles){};
 
-    void doInstruction(IMemory& memory) override {
+    void doInstructionImpl(IMemory& memory) override {
         uint16_t adress = memory.get16BitRegister(IMemory::REG16BIT::HL);
         uint8_t regValue = memory.readInMemory(adress);
         std::bitset<8> bitsetToRotate(regValue);
@@ -356,7 +356,7 @@ public:
         :IInstructions(cycles),
          _reg8Bit(reg){};
 
-    void doInstruction(IMemory& memory) override {
+    void doInstructionImpl(IMemory& memory) override {
         uint8_t regValue = memory.get8BitRegister(_reg8Bit);
         std::bitset<8> bitsetToRotate(regValue);
 
@@ -394,7 +394,7 @@ public:
     RR_ARR (int cycles)
         :IInstructions(cycles){};
 
-    void doInstruction(IMemory& memory) override {
+    void doInstructionImpl(IMemory& memory) override {
         uint16_t adress = memory.get16BitRegister(IMemory::REG16BIT::HL);
         uint8_t regValue = memory.readInMemory(adress);
         std::bitset<8> bitsetToRotate(regValue);
@@ -431,7 +431,7 @@ public:
         :IInstructions(cycles),
          _reg8Bit(reg){};
 
-    void doInstruction(IMemory& memory) override {
+    void doInstructionImpl(IMemory& memory) override {
         uint8_t regValue = memory.get8BitRegister(_reg8Bit);
         std::bitset<8> bitsetToRotate(regValue);
 
@@ -468,7 +468,7 @@ public:
     SLA_ARR (int cycles)
         :IInstructions(cycles){};
 
-    void doInstruction(IMemory& memory) override {
+    void doInstructionImpl(IMemory& memory) override {
         uint16_t adress = memory.get16BitRegister(IMemory::REG16BIT::HL);
         uint8_t regValue = memory.readInMemory(adress);
         std::bitset<8> bitsetToRotate(regValue);
@@ -504,7 +504,7 @@ public:
         :IInstructions(cycles),
          _reg8Bit(reg){};
 
-    void doInstruction(IMemory& memory) override {
+    void doInstructionImpl(IMemory& memory) override {
         uint8_t regValue = memory.get8BitRegister(_reg8Bit);
         std::bitset<8> bitsetToRotate(regValue);
 
@@ -542,7 +542,7 @@ public:
     SRA_ARR (int cycles)
         :IInstructions(cycles){};
 
-    void doInstruction(IMemory& memory) override {
+    void doInstructionImpl(IMemory& memory) override {
         uint16_t adress = memory.get16BitRegister(IMemory::REG16BIT::HL);
         uint8_t regValue = memory.readInMemory(adress);
         std::bitset<8> bitsetToRotate(regValue);
@@ -579,7 +579,7 @@ public:
         :IInstructions(cycles),
          _reg8Bit(reg){};
 
-    void doInstruction(IMemory& memory) override {
+    void doInstructionImpl(IMemory& memory) override {
         uint8_t regValue = memory.get8BitRegister(_reg8Bit);
         std::bitset<8> bitsetToRotate(regValue);
 
@@ -616,7 +616,7 @@ public:
     SRL_ARR (int cycles)
         :IInstructions(cycles){};
 
-    void doInstruction(IMemory& memory) override {
+    void doInstructionImpl(IMemory& memory) override {
         uint16_t adress = memory.get16BitRegister(IMemory::REG16BIT::HL);
         uint8_t regValue = memory.readInMemory(adress);
         std::bitset<8> bitsetToRotate(regValue);
@@ -652,7 +652,7 @@ public:
         :IInstructions(cycles),
          _reg8Bit(reg){};
 
-    void doInstruction(IMemory& memory) override {
+    void doInstructionImpl(IMemory& memory) override {
         uint8_t regValue = memory.get8BitRegister(_reg8Bit);
         uint8_t newValue =(regValue << 4) | (regValue >> 4);
 
@@ -679,7 +679,7 @@ public:
     SWAP_ARR (int cycles)
         :IInstructions(cycles){};
 
-    void doInstruction(IMemory& memory) override {
+    void doInstructionImpl(IMemory& memory) override {
         uint16_t adress = memory.get16BitRegister(IMemory::REG16BIT::HL);
         uint8_t regValue = memory.readInMemory(adress);
         uint8_t newValue =(regValue << 4) | (regValue >> 4);

@@ -31,7 +31,7 @@ class MockInstructions : public IInstructions
 public:
     MockInstructions(int cycles) : IInstructions(cycles){};
     MOCK_METHOD1(doOp, int(IMemory&));
-    MOCK_METHOD1(doInstruction, void(IMemory&));
+    MOCK_METHOD1(doInstructionImpl, void(IMemory&));
 
     
 };

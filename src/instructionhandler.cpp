@@ -12,7 +12,9 @@ int InstructionHandler::doInstruction(uint8_t opCode)
         throw InstructionException(__PRETTY_FUNCTION__);
     }
     std::shared_ptr<IInstructions> instruction = instructMapIt->second;
-    return instruction->doOp(_memory);
+    int ret = instruction->doOp(_memory);
+    _latestReadableInstruction = instruction->getReadableInstruction();
+    return ret;
 }
 // bool InstructionHandler::boot()
 // {

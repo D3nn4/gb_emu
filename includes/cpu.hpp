@@ -14,10 +14,16 @@ public:
     Cpu(IRomLoader& romloader);
     int getCurrentCycles();
     // void boot();
+
+    void nextStep();
+    void updateDebug();
+    bool launchGameDebug(std::string const & cartridgeName);
+
     void update();
     void launchGame(std::string const & cartridgeName);
     void stopGame();
 
+    std::string getReadableInstruction();
 private:
 
     bool _gameLoaded = false;
