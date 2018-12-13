@@ -258,7 +258,7 @@ void MainWindow::on_focusAdressButton_clicked()
     BOOST_LOG_TRIVIAL(info) << "fetchDataEntry entry : " << text.toStdString();
     unsigned int adress = std::stoul(text.toStdString(), nullptr, 16);
     BOOST_LOG_TRIVIAL(info) << std::hex << "adress : " << adress;
-    if (0x0000 <= adress && adress <= 0xffff) {
+    if (adress <= 0xffffu) {
         int col = adress % 16;
         int row = adress / 16;
         Cell newCell = {row, col};

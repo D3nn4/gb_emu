@@ -62,7 +62,7 @@ TEST_F(MemoryTest, incrementDivderRegister)
     Memory mem;
 
     uint8_t currentValue = mem.readInMemory(0xff04);
-    mem.incrementDivderRegister();
+    mem.incrementDividerRegister();
     EXPECT_EQ(currentValue + 1, mem.readInMemory(0xff04));
 }
 

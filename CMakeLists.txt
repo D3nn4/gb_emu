@@ -29,6 +29,8 @@ add_library(gb_lib
   includes/itimer.hpp
   includes/timer.hpp
   src/timer.cpp
+  includes/graphics.hpp
+  src/graphics.cpp
   includes/bootrom.hpp
   includes/memory.hpp
   includes/imemory.hpp

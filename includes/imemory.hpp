@@ -54,7 +54,8 @@ public:
     uint8_t getCurrentOpCode() {
        return readInMemory(get16BitRegister(REG16BIT::PC));
     }
-    virtual void incrementDivderRegister() = 0;
+    virtual void incrementDividerRegister() = 0;
+    virtual void incrementScanline() = 0;
 
     virtual CartridgeData const getCartridge() = 0;
     virtual RomData const getReadOnlyMemory() = 0;

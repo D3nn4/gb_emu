@@ -40,7 +40,8 @@ class MockMemory : public IMemory
 {
 public:
 
-    MOCK_METHOD0(incrementDivderRegister, void());
+    MOCK_METHOD0(incrementDividerRegister, void());
+    MOCK_METHOD0(incrementScanline, void());
     MOCK_METHOD0(getCartridge, CartridgeData const());
     MOCK_METHOD0(getReadOnlyMemory, RomData const());
     MOCK_METHOD1(setCartridge, bool(CartridgeData const &));

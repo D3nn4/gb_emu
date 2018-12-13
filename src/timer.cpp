@@ -58,6 +58,6 @@ void Timer::doDividerRegister(int cycles)
     _dividerRegister += cycles;
     if(_dividerRegister >= 0xff) {
         _dividerRegister = 0;
-        _memory.incrementDivderRegister();
+        _memory.incrementDividerRegister();
     }
 }

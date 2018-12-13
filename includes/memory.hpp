@@ -29,7 +29,8 @@ public:
 
     Memory();
     void setTimer(ITimer* timer);
-    void incrementDivderRegister() override;
+    void incrementDividerRegister() override;
+    void incrementScanline() override;
 
     CartridgeData const  getCartridge() override;
     RomData const  getReadOnlyMemory() override;

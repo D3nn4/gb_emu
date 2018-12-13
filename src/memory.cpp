@@ -14,9 +14,14 @@ void Memory::setTimer(ITimer* timer)
     _timer = timer;
 }
 
-void Memory::incrementDivderRegister()
+void Memory::incrementDividerRegister()
 {
     _readOnlyMemory[_timer->_DIV]++;
+}
+
+void Memory::incrementScanline()
+{
+    _readOnlyMemory[0xff44]++;
 }
 IMemory::CartridgeData const Memory::getCartridge()
 {
