@@ -5,8 +5,10 @@
 #include <QPushButton>
 #include <QLabel>
 #include <QTableWidget>
+#include <QListWidget>
 #include <QPlainTextEdit>
 #include <memory>
+#include <vector>
 
 #include "fileio.hpp"
 #include "romloader.hpp"
@@ -23,6 +25,12 @@ class MainWindow : public QMainWindow
 public:
   explicit MainWindow(QWidget *parent = nullptr);
   ~MainWindow();
+
+private slots:
+    void on_focusPcButton_clicked();
+
+private slots:
+    void on_focusAdressButton_clicked();
 
 private slots:
     void on_actionLoad_rom_triggered();
@@ -55,12 +63,15 @@ private:
 
     QPushButton*  _nextButton;
     QLabel*       _loadedRom;
-    QLabel*       _currentInstrText;
+    /* QLabel*       _currentInstrText; */
     QTableWidget* _registerTable;
     QTableWidget* _memoryTable;
     QLineEdit* _breakpointEntry;
+    QLineEdit* _fetchDataEntry;
+    QListWidget* _historyList;
 
-    Cell          _previousPcValueCell;
+    Cell              _previousPcValueCell;
+    std::vector<Cell> _dataFetchFocus;
 };
 
 #endif // MAINWINDOW_H

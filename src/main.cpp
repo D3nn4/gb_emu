@@ -26,26 +26,30 @@ namespace logging = boost::log;
 
 void init_logging()
 {
-    logging::core::get()->set_filter(logging::trivial::severity >= logging::trivial::warning);
+    logging::core::get()->set_filter(logging::trivial::severity >= logging::trivial::debug);
     logging::add_file_log ("sample_%N.log");
-    // logging::add_console_log(std::cout,
-    //                          boost::log::keywords::format = ">> %Message%");
+    logging::add_console_log(std::cout,
+                             boost::log::keywords::format = ">> %Message%");
 
 }
 int main(int argc, char* argv[])
 {
     init_logging();
-    QApplication a(argc, argv);
-    MainWindow w;
-    w.show();
-    
-    return a.exec();
+    if (argc > 1) {
+        QApplication a(argc, argv);
+        MainWindow w;
+        w.show();
 
-    // BOOST_LOG_TRIVIAL(debug) << "GBU STARTING DEBUG";
-    // std::string fileName = "./cpu_instrs/individual/01-special.gb";
-    // FileIO fileIO;
-    // RomLoader romLoader(fileIO);
-    // Cpu cpu(romLoader);
-    // cpu.launchGame(fileName);
+        return a.exec();
+    }
+    else {
+        BOOST_LOG_TRIVIAL(debug) << "GBU STARTING DEBUG";
+        std::string fileName = "./cpu_instrs/individual/01-special.gb";
+        FileIO fileIO;
+        RomLoader romLoader(fileIO);
+        Cpu cpu(romLoader);
+        cpu.launchGame(fileName);
+    }
+
     return 0;
 }

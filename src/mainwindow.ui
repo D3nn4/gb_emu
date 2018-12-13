@@ -17,10 +17,10 @@
    <widget class="QWidget" name="verticalLayoutWidget">
     <property name="geometry">
      <rect>
-      <x>640</x>
-      <y>40</y>
-      <width>121</width>
-      <height>71</height>
+      <x>380</x>
+      <y>70</y>
+      <width>101</width>
+      <height>31</height>
      </rect>
     </property>
     <layout class="QVBoxLayout" name="verticalLayout">
@@ -41,11 +41,17 @@
      <rect>
       <x>10</x>
       <y>110</y>
-      <width>751</width>
+      <width>391</width>
       <height>421</height>
      </rect>
     </property>
     <layout class="QVBoxLayout" name="verticalLayout_2">
+     <property name="spacing">
+      <number>0</number>
+     </property>
+     <property name="rightMargin">
+      <number>1</number>
+     </property>
      <item>
       <widget class="QTableWidget" name="memoryTable">
        <property name="sizePolicy">
@@ -106,25 +112,6 @@
      </item>
     </layout>
    </widget>
-   <widget class="QWidget" name="verticalLayoutWidget_4">
-    <property name="geometry">
-     <rect>
-      <x>10</x>
-      <y>40</y>
-      <width>401</width>
-      <height>51</height>
-     </rect>
-    </property>
-    <layout class="QVBoxLayout" name="verticalLayout_5">
-     <item>
-      <widget class="QLabel" name="currentInstructionText">
-       <property name="text">
-        <string>TextLabel</string>
-       </property>
-      </widget>
-     </item>
-    </layout>
-   </widget>
    <widget class="QWidget" name="verticalLayoutWidget_5">
     <property name="geometry">
      <rect>
@@ -162,9 +149,9 @@
    <widget class="QPushButton" name="breakpointButton">
     <property name="geometry">
      <rect>
-      <x>530</x>
-      <y>20</y>
-      <width>89</width>
+      <x>70</x>
+      <y>40</y>
+      <width>101</width>
       <height>25</height>
      </rect>
     </property>
@@ -175,11 +162,62 @@
    <widget class="QLineEdit" name="breakpointEntry">
     <property name="geometry">
      <rect>
-      <x>442</x>
-      <y>20</y>
-      <width>81</width>
+      <x>20</x>
+      <y>40</y>
+      <width>31</width>
       <height>25</height>
      </rect>
+    </property>
+   </widget>
+   <widget class="QWidget" name="verticalLayoutWidget_6">
+    <property name="geometry">
+     <rect>
+      <x>460</x>
+      <y>110</y>
+      <width>291</width>
+      <height>421</height>
+     </rect>
+    </property>
+    <layout class="QVBoxLayout" name="verticalLayout_6">
+     <item>
+      <widget class="QListWidget" name="historyList"/>
+     </item>
+    </layout>
+   </widget>
+   <widget class="QPushButton" name="focusAdressButton">
+    <property name="geometry">
+     <rect>
+      <x>550</x>
+      <y>10</y>
+      <width>101</width>
+      <height>25</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>focus adress</string>
+    </property>
+   </widget>
+   <widget class="QLineEdit" name="fetchDataEntry">
+    <property name="geometry">
+     <rect>
+      <x>480</x>
+      <y>10</y>
+      <width>61</width>
+      <height>25</height>
+     </rect>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="focusPcButton">
+    <property name="geometry">
+     <rect>
+      <x>550</x>
+      <y>40</y>
+      <width>101</width>
+      <height>25</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>focus PC</string>
     </property>
    </widget>
   </widget>

@@ -230,7 +230,7 @@ public:
 
         _readableInstructionStream
             << "ld $" << std::hex << static_cast<int>(adress)
-            << debugReg8Bit[_8BitReg];
+            << ","<< debugReg8Bit[_8BitReg];
     }
     IMemory::REG8BIT _8BitReg;
 };

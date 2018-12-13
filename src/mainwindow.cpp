@@ -23,9 +23,9 @@ MainWindow::MainWindow(QWidget *parent) :
   assert(_loadedRom != nullptr);
   _loadedRom->setText("/home/denna/github/gb_emu/cpu_instrs/individual/01-special.gb");
 
-  _currentInstrText = this->findChild<QLabel*>("currentInstructionText");
-  assert(_loadedRom != nullptr);
-  _currentInstrText->setText("");
+  // _currentInstrText = this->findChild<QLabel*>("currentInstructionText");
+  // assert(_currentInstrText != nullptr);
+  // _currentInstrText->setText("");
 
   _registerTable = this->findChild<QTableWidget*>("registerTable");
   assert(_registerTable != nullptr);
@@ -41,6 +41,12 @@ MainWindow::MainWindow(QWidget *parent) :
 
   _breakpointEntry = this->findChild<QLineEdit*>("breakpointEntry");
   assert(_breakpointEntry != nullptr);
+
+  _historyList = this->findChild<QListWidget*>("historyList");
+  assert(_historyList != nullptr);
+  
+  _fetchDataEntry = this->findChild<QLineEdit*>("fetchDataEntry");
+  assert(_fetchDataEntry != nullptr);
 }
 
 MainWindow::~MainWindow()
@@ -84,7 +90,8 @@ void MainWindow::on_actionStop_triggered()
     _romLoader.reset(nullptr);
     _fileIO.reset(nullptr);
     _nextButton->setDisabled(true);
-    _currentInstrText->setText("");
+    // _currentInstrText->setText("");
+    _historyList->clear();
 }
 
 
@@ -110,13 +117,7 @@ void MainWindow::createMemoryTable()
         rowsHeader += hexVal;
     }
     _memoryTable-> setVerticalHeaderLabels(rowsHeader);
-    updateMemoryTable();
-}
 
-void MainWindow::updateMemoryTable()
-{
-    auto rom = _cpu->getState().readOnlyMemory;
-    const int rowSize = rom.size() / 16;
     for (size_t i = 0; i < rom.size(); i++) {
         QString hexVal = QString("%1").arg(rom[i], 2, 16, QChar('0'));
         QTableWidgetItem *newItem = new QTableWidgetItem(hexVal);
@@ -124,7 +125,18 @@ void MainWindow::updateMemoryTable()
         const int col = i % 16;
         _memoryTable->setItem(row, col, newItem);
     }
-    _memoryTable->setRowCount(rowSize);
+}
+void MainWindow::updateMemoryTable()
+{
+    auto rom = _cpu->getState().readOnlyMemory;
+    for (size_t i = 0; i < rom.size(); i++) {
+        QString hexVal = QString("%1").arg(rom[i], 2, 16, QChar('0'));
+
+        const int row = i / 16;
+        const int col = i % 16;
+        QTableWidgetItem* item = _memoryTable->item(row, col);
+        item->setText(hexVal);
+    }
 }
 
 void MainWindow::updateRegisterTable()
@@ -163,9 +175,19 @@ void MainWindow::updateRegisterTable()
 
 void MainWindow::updateState()
 {
+    updateMemoryTable();
+    for(auto& cell : _dataFetchFocus) {
+        _memoryTable->item(cell.row, cell.col)->setBackground(Qt::white);
+    }
+    _dataFetchFocus.clear();
     _memoryTable->item(_previousPcValueCell.row, _previousPcValueCell.col)->setBackground(Qt::white);
     auto state =_cpu->getState();
-    _currentInstrText->setText(_cpu->getReadableInstruction().c_str());
+
+    QListWidgetItem* newItem = new QListWidgetItem(_cpu->getReadableInstruction().c_str());
+    _historyList->addItem(newItem);
+    _historyList->scrollToItem(newItem);
+
+    // _currentInstrText->setText(_cpu->getReadableInstruction().c_str());
 
     const int row = state.pcValue / 16;
     const int col = state.pcValue % 16;
@@ -186,18 +208,34 @@ void MainWindow::on_nextButton_clicked()
 void MainWindow::continueUntilOpCodeBreakpoint(unsigned int opCode)
 {
     int i = 0;
-    while (i < 1000) {
+    std::vector<std::string> instructions;
+    while (i < 100000) {
         _cpu->updateDebug();
         auto state =_cpu->getState();
         if (opCode == state.opCode) {
             break ;
         }
+        instructions.push_back(_cpu->getReadableInstruction());
         i++;
     }
-    if (i == 1000) {
+    if (i == 100000) {
         QMessageBox msgBox;
         msgBox.setText("Infinite loop detected in breakpoint !");
         msgBox.exec();
+
+        auto it = instructions.rbegin();
+        auto end = it + 100;
+        std::vector<std::string> newVector(it.base(), end.base());
+        instructions = newVector;
+    }
+    QListWidgetItem* last = nullptr;
+    for(auto elem : instructions) {
+        QListWidgetItem* newItem = new QListWidgetItem(elem.c_str());
+        _historyList->addItem(newItem);
+        last = newItem;
+    }
+    if (last) {
+        _historyList->scrollToItem(last);
     }
     updateState();
 }
@@ -209,5 +247,37 @@ void MainWindow::on_breakpointButton_clicked()
     unsigned int opCodeBreakpoint = std::stoul(text.toStdString(), nullptr, 16);
     BOOST_LOG_TRIVIAL(debug) << std::hex << "breakpoint op code value : " << opCodeBreakpoint;
 
+    _breakpointEntry->clear();
     continueUntilOpCodeBreakpoint(opCodeBreakpoint);
+}
+
+void MainWindow::on_focusAdressButton_clicked()
+{
+
+    QString text = _fetchDataEntry->text();
+    BOOST_LOG_TRIVIAL(info) << "fetchDataEntry entry : " << text.toStdString();
+    unsigned int adress = std::stoul(text.toStdString(), nullptr, 16);
+    BOOST_LOG_TRIVIAL(info) << std::hex << "adress : " << adress;
+    if (0x0000 <= adress && adress <= 0xffff) {
+        int col = adress % 16;
+        int row = adress / 16;
+        Cell newCell = {row, col};
+        _dataFetchFocus.push_back(newCell);
+        _memoryTable->item(row, col)->setBackground(Qt::red);
+        _memoryTable->scrollToItem(_memoryTable->item(row, col));
+    }
+    else {
+        QMessageBox msgBox;
+        msgBox.setText("Adress doesn't exist");
+        msgBox.exec();
+    }
+    _fetchDataEntry->clear();
+}
+
+void MainWindow::on_focusPcButton_clicked()
+{
+    auto state =_cpu->getState();
+    const int row = state.pcValue / 16;
+    const int col = state.pcValue % 16;
+    _memoryTable->scrollToItem(_memoryTable->item(row, col));
 }

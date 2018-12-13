@@ -70,9 +70,10 @@ void Cpu::updateDebug()
 void Cpu::update()
 {
     while (_gameLoaded) {
-        while (_cycles < _maxCycles) {
+        while (_gameLoaded &&_cycles < _maxCycles) {
             nextStep();
         }
+
         //TODO
         //render
         _cycles -= _maxCycles;
