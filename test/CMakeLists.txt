@@ -13,6 +13,7 @@ include_directories(${gtest_SOURCE_DIR}/include ${gtest_SOURCE_DIR})
 ################################
 # Add test cpp file
 add_executable(gbTest
+  maintest.cpp  
   romloader.t.cpp
   instructionhandler.t.cpp
   interupthandler.t.cpp

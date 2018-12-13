@@ -1922,8 +1922,8 @@ public:
         :IInstructions(cycles){};
 
     void doInstructionImpl(IMemory& memory) override {
-        uint16_t cursor = (memory.get16BitRegister(IMemory::REG16BIT::PC)) + 1;
-        int8_t toAdd = static_cast<int8_t>(memory.readInMemory(cursor++));
+        uint16_t cursor = (memory.get16BitRegister(IMemory::REG16BIT::PC));
+        int8_t toAdd = static_cast<int8_t>(memory.readInMemory(++cursor));
 
 
         _readableInstructionStream
@@ -2264,11 +2264,9 @@ public:
     STOP (int cycles)
         :IInstructions(cycles){};
 
-    void doInstructionImpl(IMemory& memory) override {
+    void doInstructionImpl(IMemory&) override {
         _readableInstructionStream << "stop";
         //TODO
-        uint16_t programCounter = memory.get16BitRegister(IMemory::REG16BIT::PC);
-        memory.set16BitRegister(IMemory::REG16BIT::PC, programCounter + 1);
     }
 };
 

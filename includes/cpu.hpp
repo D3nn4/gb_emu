@@ -36,6 +36,7 @@ private:
     Timer _timer;
     InstructionHandler _instructionHandler;
 
+    std::stringstream _readableInstructionStream;
 
 
 };

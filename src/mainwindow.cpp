@@ -21,7 +21,7 @@ MainWindow::MainWindow(QWidget *parent) :
 
   _loadedRom = this->findChild<QLabel*>("loadedRomText");
   assert(_loadedRom != nullptr);
-  _loadedRom->setText("/home/sgregory/cpu_instrs/individual/01-special.gb");
+  _loadedRom->setText("/home/denna/github/gb_emu/cpu_instrs/individual/01-special.gb");
 
   _currentInstrText = this->findChild<QLabel*>("currentInstructionText");
   assert(_loadedRom != nullptr);

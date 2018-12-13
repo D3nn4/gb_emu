@@ -28,6 +28,9 @@ void Cpu::nextStep()
     //For debug
     uint16_t pcValue = _memory.get16BitRegister(IMemory::REG16BIT::PC);
     uint8_t opCode = _memory.readInMemory(pcValue);
+    _readableInstructionStream.str({}); // reset
+    _readableInstructionStream <<  "[" << std::hex << 
+        static_cast<int>(opCode) << "] ";
     BOOST_LOG_TRIVIAL(debug) << "[" << std::hex << static_cast<int>(opCode) << "]";
     if (opCode == 0x10 || opCode == 0x76) {
         _gameLoaded = false;
@@ -46,7 +49,10 @@ void Cpu::nextStep()
 
 std::string Cpu::getReadableInstruction()
 {
-    return _instructionHandler.getReadableInstruction();
+    // _readableInstructionStream <<  "[" << std::hex << 
+    //     static_cast<int>(memory.getCurrentOpCode()) << "] ";
+    _readableInstructionStream << _instructionHandler.getReadableInstruction();
+    return _readableInstructionStream.str();
 }
 
 void Cpu::updateDebug()
