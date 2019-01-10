@@ -30,6 +30,7 @@ add_library(gb_lib
   includes/timer.hpp
   src/timer.cpp
   includes/graphics.hpp
+  includes/irenderer.hpp
   src/graphics.cpp
   includes/bootrom.hpp
   includes/memory.hpp

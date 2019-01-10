@@ -59,6 +59,7 @@ private:
     void initializeMemory();
     template <class ARRAY>
     bool isEmpty(ARRAY const & memory);
+    void dmaTransfer(uint8_t data);
 
     Registers _registers;
     CartridgeData _cartridge;

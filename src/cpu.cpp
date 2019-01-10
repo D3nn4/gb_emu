@@ -6,7 +6,9 @@ Cpu::Cpu(IRomLoader& romLoader)
     :_romLoader(romLoader),
      _interruptHandler(_memory),
      _timer(_memory, _interruptHandler),
-     _instructionHandler(_memory, _interruptHandler)
+     _instructionHandler(_memory, _interruptHandler),
+     _graphics(_memory, _interruptHandler)
+     // _renderer(_graphics.getScreenData())
 {
     _memory.setTimer(&_timer);
 }
@@ -40,6 +42,8 @@ void Cpu::nextStep()
         int cycles = _instructionHandler.doInstruction(opCode);
         _cycles += cycles;
         _timer.update(cycles);
+        //TODO
+        // _graphics.update(cycles);
         _interruptHandler.doInterrupt();
     }
     catch (...) {
@@ -73,9 +77,8 @@ void Cpu::update()
         while (_gameLoaded &&_cycles < _maxCycles) {
             nextStep();
         }
-
         //TODO
-        //render
+        //render sfml
         _cycles -= _maxCycles;
     }
 }

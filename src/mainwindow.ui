@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>1009</width>
-    <height>603</height>
+    <height>845</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -72,7 +72,7 @@
         <enum>Qt::ScrollBarAsNeeded</enum>
        </property>
        <attribute name="horizontalHeaderDefaultSectionSize">
-        <number>21</number>
+        <number>24</number>
        </attribute>
        <attribute name="horizontalHeaderMinimumSectionSize">
         <number>21</number>
@@ -218,6 +218,19 @@
     </property>
     <property name="text">
      <string>focus PC</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="screen">
+    <property name="geometry">
+     <rect>
+      <x>70</x>
+      <y>600</y>
+      <width>261</width>
+      <height>171</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>TextLabel</string>
     </property>
    </widget>
   </widget>

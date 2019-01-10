@@ -151,11 +151,10 @@ bool Memory::writeInMemory(uint8_t data, uint16_t adress)
         }
     }
     else if (adress == 0xff44) {
-        //TODO FF44 shows which horizontal scanline is currently being draw. Writing here resets it
         _readOnlyMemory[0xff44] = 0;
     }
     else if (adress == 0xff46) {
-        //TODO DMA transfer
+        dmaTransfer(data);
     }
     else if (0xff4c <= adress && adress <= 0xff7f){}
 
@@ -270,4 +269,13 @@ bool Memory::isSet(int bit, REG8BIT reg)
     std::bitset<8> bitset(regValue);
     return bitset.test(bit);
 
+}
+
+void Memory::dmaTransfer(uint8_t data)
+{
+    uint16_t adress = data << 8;
+    for(int i = 0; i < 0xA0; i++){
+        uint8_t toCopy = _readOnlyMemory[adress + i];
+        writeInMemory(toCopy, 0xfe00 + i);
+    }
 }

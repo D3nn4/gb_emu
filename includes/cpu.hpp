@@ -7,6 +7,8 @@
 #include "instructionhandler.hpp"
 #include "interupthandler.hpp"
 #include "timer.hpp"
+#include "graphics.hpp"
+#include "irenderer.hpp"
 
 class Cpu
 {
@@ -35,6 +37,8 @@ private:
     InterruptHandler _interruptHandler;
     Timer _timer;
     InstructionHandler _instructionHandler;
+    Graphics _graphics;
+    // IRenderer _renderer;
 
     std::stringstream _readableInstructionStream;
 
