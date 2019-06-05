@@ -23,6 +23,11 @@ IMemory::State Cpu::getState()
     return _memory.getState();
 }
 
+std::vector<uint8_t> Cpu::getPalette()
+{
+  return _memory.getChunkOfMemory(0x8000, 0x8FFF);
+}
+
 void Cpu::nextStep()
 {
     //For debug
@@ -43,7 +48,7 @@ void Cpu::nextStep()
         _cycles += cycles;
         _timer.update(cycles);
         //TODO
-        // _graphics.update(cycles);
+        _graphics.update(cycles);
         _interruptHandler.doInterrupt();
     }
     catch (...) {
@@ -79,6 +84,16 @@ void Cpu::update()
         }
         //TODO
         //render sfml
+        auto screen = _graphics.getScreenData();
+        for (int y = 0; y < 144; y++) {
+            for (int x = 0; x < 160; x++) {
+                _screenBuffer[y][x][0] =  screen[y][x]._red;
+                _screenBuffer[y][x][1] =  screen[y][x]._green;
+                _screenBuffer[y][x][2] =  screen[y][x]._blue;
+                _screenBuffer[y][x][3] = 1;
+            }
+        }
+        emit screen_refresh();
         _cycles -= _maxCycles;
     }
 }
@@ -93,7 +108,7 @@ bool Cpu::launchGameDebug(std::string const & cartridgeName)
     return false;
 }
 
-void Cpu::launchGame(std::string const & cartridgeName)
+bool Cpu::launchGame(std::string const & cartridgeName)
 {
     if (_romLoader.load(cartridgeName)
         && _memory.setCartridge(_romLoader.getData())) {
@@ -102,7 +117,9 @@ void Cpu::launchGame(std::string const & cartridgeName)
     }
     else {
         std::cout << "error loading cartridge\n";
+        return false;
     }
+    return true;
 }
 
 void Cpu::stopGame()

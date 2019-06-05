@@ -10,6 +10,8 @@
 #include <memory>
 #include <vector>
 
+#include "mycanvas.hpp"
+
 #include "fileio.hpp"
 #include "romloader.hpp"
 #include "cpu.hpp"
@@ -23,7 +25,7 @@ class MainWindow : public QMainWindow
   Q_OBJECT
 
 public:
-  explicit MainWindow(QWidget *parent = nullptr);
+  explicit MainWindow(QWidget *parent , MyCanvas& canvas);
   ~MainWindow();
 
 private slots:
@@ -32,10 +34,11 @@ private slots:
 private slots:
     void on_focusAdressButton_clicked();
 
-private slots:
     void on_actionLoad_rom_triggered();
 
     void on_actionDebug_mode_triggered();
+
+    void on_actionNormal_triggered();
 
     void on_actionStop_triggered();
 
@@ -43,6 +46,11 @@ private slots:
 
     void on_breakpointButton_clicked();
 
+signals:
+    void screen_refresh();
+
+    public slots:
+        void renderScreen();
 private:
     void updateState();
     void updateRegisterTable();
@@ -66,9 +74,13 @@ private:
     /* QLabel*       _currentInstrText; */
     QTableWidget* _registerTable;
     QTableWidget* _memoryTable;
-    QLineEdit* _breakpointEntry;
-    QLineEdit* _fetchDataEntry;
-    QListWidget* _historyList;
+    QLineEdit*    _breakpointEntry;
+    QLineEdit*    _fetchDataEntry;
+    QListWidget*  _historyList;
+    QLabel*       _screen;
+    QImage* _image;
+    MyCanvas& _canvas;
+
 
     Cell              _previousPcValueCell;
     std::vector<Cell> _dataFetchFocus;

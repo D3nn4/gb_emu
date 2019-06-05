@@ -35,6 +35,7 @@ public:
     MOCK_METHOD2(setBitInRegister, void(int, IMemory::REG8BIT));
     MOCK_METHOD2(unsetBitInRegister, void(int, IMemory::REG8BIT));
     MOCK_METHOD2(isSet, bool(int, IMemory::REG8BIT));
+    MOCK_METHOD2(getChunkOfMemory, std::vector<uint8_t>(uint16_t, uint16_t));
 };
 
 class InterruptHandlerTest : public ::testing::Test

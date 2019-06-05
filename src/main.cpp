@@ -17,6 +17,7 @@
 #include "fileio.hpp"
 #include "romloader.hpp"
 #include "cpu.hpp"
+#include "mycanvas.hpp"
 
 #include "mainwindow.h"
 #include <QApplication>
@@ -26,7 +27,7 @@ namespace logging = boost::log;
 
 void init_logging()
 {
-    logging::core::get()->set_filter(logging::trivial::severity >= logging::trivial::debug);
+    logging::core::get()->set_filter(logging::trivial::severity >= logging::trivial::warning);
     logging::add_file_log ("sample_%N.log");
     logging::add_console_log(std::cout,
                              boost::log::keywords::format = ">> %Message%");
@@ -37,7 +38,12 @@ int main(int argc, char* argv[])
     init_logging();
     if (argc > 1) {
         QApplication a(argc, argv);
-        MainWindow w;
+        MyCanvas SFMLView(nullptr, QPoint(5, 150), QSize(144, 160));
+        MainWindow w(nullptr, SFMLView);
+
+        SFMLView.setParent(&w);
+        SFMLView.show();
+
         w.show();
 
         return a.exec();

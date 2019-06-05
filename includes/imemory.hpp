@@ -74,6 +74,8 @@ public:
     virtual void unsetBitInRegister(int bit, REG8BIT reg) = 0;
     virtual bool isSet(int bit, REG8BIT reg) = 0;
 
+    virtual std::vector<uint8_t> getChunkOfMemory(uint16_t adressStart, uint16_t adressEnd) = 0;
+
 };
 
 static std::map<IMemory::FLAG, std::string> debugflag = {

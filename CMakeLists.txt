@@ -1,5 +1,6 @@
 cmake_minimum_required (VERSION 3.1.0)
 project (gb_emu)
+set(CMAKE_EXPORT_COMPILE_COMMANDS 1)
 set(COMPILE_FLAGS PUBLIC -ggdb3 -fPIC -Wall -Wextra -std=c++1y -DBOOST_LOG_DYN_LINK)
 
 # Find includes in corresponding build directories
@@ -47,11 +48,18 @@ find_package(Qt5Widgets CONFIG REQUIRED)
 find_package(Qt5Core CONFIG REQUIRED)
 
 
+## TEMP 
+target_link_libraries(gb_lib
+  Qt5::Core)
+
 add_executable(gb
     src/mainwindow.ui
     src/mainwindow.cpp
     includes/mainwindow.h
     src/main.cpp
+    src/sfmlcanvas.hpp
+    includes/mycanvas.hpp
+    src/qsfmlcanvas.cpp
   )
 
 target_include_directories(gb PUBLIC includes)
@@ -60,6 +68,9 @@ target_link_libraries(gb
   gb_lib
   pthread
   boost_system boost_thread boost_log boost_log_setup
+  sfml-graphics
+  sfml-system
+  sfml-window
   Qt5::Widgets)
 
 target_compile_options(gb ${COMPILE_FLAGS})

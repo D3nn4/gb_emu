@@ -52,6 +52,7 @@ public:
     void setBitInRegister(int bit, REG8BIT reg) override;
     bool isSet(int bit, REG8BIT reg) override;
 
+    std::vector<uint8_t> getChunkOfMemory(uint16_t adressStart, uint16_t adressEnd) override;
 private:
 
     bool reset();

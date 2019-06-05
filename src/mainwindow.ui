@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1009</width>
+    <width>1144</width>
     <height>845</height>
    </rect>
   </property>
@@ -39,7 +39,7 @@
    <widget class="QWidget" name="verticalLayoutWidget_2">
     <property name="geometry">
      <rect>
-      <x>10</x>
+      <x>170</x>
       <y>110</y>
       <width>391</width>
       <height>421</height>
@@ -115,7 +115,7 @@
    <widget class="QWidget" name="verticalLayoutWidget_5">
     <property name="geometry">
      <rect>
-      <x>760</x>
+      <x>880</x>
       <y>40</y>
       <width>241</width>
       <height>491</height>
@@ -172,8 +172,8 @@
    <widget class="QWidget" name="verticalLayoutWidget_6">
     <property name="geometry">
      <rect>
-      <x>460</x>
-      <y>110</y>
+      <x>580</x>
+      <y>90</y>
       <width>291</width>
       <height>421</height>
      </rect>
@@ -223,7 +223,7 @@
    <widget class="QLabel" name="screen">
     <property name="geometry">
      <rect>
-      <x>70</x>
+      <x>800</x>
       <y>600</y>
       <width>261</width>
       <height>171</height>
@@ -248,7 +248,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1009</width>
+     <width>1144</width>
      <height>22</height>
     </rect>
    </property>

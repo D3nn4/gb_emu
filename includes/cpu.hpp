@@ -10,8 +10,13 @@
 #include "graphics.hpp"
 #include "irenderer.hpp"
 
-class Cpu
-{
+//TEMP
+#include <QObject>
+
+
+class Cpu : public QObject
+{ // TEMP
+    Q_OBJECT
 public:
     Cpu(IRomLoader& romloader);
     int getCurrentCycles();
@@ -23,10 +28,19 @@ public:
     IMemory::State getState();
 
     void update();
-    void launchGame(std::string const & cartridgeName);
+    bool launchGame(std::string const & cartridgeName);
     void stopGame();
 
     std::string getReadableInstruction();
+
+    std::vector<std::vector<RGB>> getScreen() {
+        return _graphics.getScreenData();
+    }
+
+   std::vector<uint8_t> getPalette();
+signals:
+    void screen_refresh();
+
 private:
 
     bool _gameLoaded = false;
@@ -42,6 +56,8 @@ private:
 
     std::stringstream _readableInstructionStream;
 
+    // TEMP
+    quint8 _screenBuffer[144][160][4];
 
 };
 #endif /*CPU*/

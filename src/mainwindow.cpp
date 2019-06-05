@@ -7,9 +7,10 @@
 #include <QStringList>
 #include <QLineEdit>
 
-MainWindow::MainWindow(QWidget *parent) :
+MainWindow::MainWindow(QWidget *parent, MyCanvas& canvas) :
   QMainWindow(parent),
-  ui(new Ui::MainWindow)
+  ui(new Ui::MainWindow),
+  _canvas(canvas)
 {
   ui->setupUi(this);
   _fileIO.reset(nullptr);
@@ -47,6 +48,9 @@ MainWindow::MainWindow(QWidget *parent) :
   
   _fetchDataEntry = this->findChild<QLineEdit*>("fetchDataEntry");
   assert(_fetchDataEntry != nullptr);
+
+  _screen = this->findChild<QLabel*>("screen");
+  assert(_screen != nullptr);
 }
 
 MainWindow::~MainWindow()
@@ -64,10 +68,33 @@ void MainWindow::on_actionLoad_rom_triggered()
   BOOST_LOG_TRIVIAL(debug) << "set rom " << _loadedRom->text().toStdString();
 }
 
-void MainWindow::on_actionDebug_mode_triggered()
+void MainWindow::on_actionNormal_triggered()
 {
+    std::cout <<  "BOUM"  << std::endl;
     const std::string loadedRom = _loadedRom->text().toStdString();
     BOOST_LOG_TRIVIAL(debug) << "Starting " << loadedRom;
+
+//     _fileIO.reset(new FileIO);
+//     _romLoader.reset(new RomLoader(*_fileIO));
+//     _cpu.reset(new Cpu(*_romLoader));
+//     // connect(_cpu.get(), SIGNAL(screen_refresh()), _screen, SLOT(repaint()));
+//     connect(_cpu.get(), SIGNAL(screen_refresh()), this, SLOT(renderScreen()));
+//     if (!_cpu->launchGame(loadedRom)) {
+//         BOOST_LOG_TRIVIAL(debug) << "Failed to load : " << loadedRom;
+//         QMessageBox msgBox;
+//         msgBox.setText("Failed to load rom !");
+//         msgBox.exec();
+//         return ;
+//     }
+// }
+// void MainWindow::renderScreen() {
+//     _canvas.renderScreen(_cpu->getScreen());
+//     std::cout <<   "YEA" << std::endl;
+// }
+// void MainWindow::on_actionDebug_mode_triggered()
+// {
+//     const std::string loadedRom = _loadedRom->text().toStdString();
+//     BOOST_LOG_TRIVIAL(debug) << "Starting " << loadedRom;
 
     _fileIO.reset(new FileIO);
     _romLoader.reset(new RomLoader(*_fileIO));
@@ -243,6 +270,11 @@ void MainWindow::continueUntilOpCodeBreakpoint(unsigned int opCode)
 void MainWindow::on_breakpointButton_clicked()
 {
     QString text = _breakpointEntry->text();
+    if (text.isEmpty()) {
+        BOOST_LOG_TRIVIAL(debug) << "breakpoint empty !";
+        return ;
+
+    }
     BOOST_LOG_TRIVIAL(debug) << "breakpoint entry : " << text.toStdString();
     unsigned int opCodeBreakpoint = std::stoul(text.toStdString(), nullptr, 16);
     BOOST_LOG_TRIVIAL(debug) << std::hex << "breakpoint op code value : " << opCodeBreakpoint;

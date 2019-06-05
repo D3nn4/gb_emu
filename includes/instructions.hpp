@@ -1980,8 +1980,10 @@ public:
     void doInstructionImpl(IMemory& memory) override {
         uint16_t programCounter = memory.get16BitRegister(IMemory::REG16BIT::PC);
         uint16_t stackPointer = memory.get16BitRegister(IMemory::REG16BIT::SP);
+
         uint8_t pcHightBit = static_cast<uint8_t>(((programCounter + 3) >> 8) & 0xff);
         uint8_t pcLowBit = static_cast<uint8_t>((programCounter + 3) & 0xff);
+
         memory.writeInMemory(pcHightBit, stackPointer - 1);
         memory.writeInMemory(pcLowBit, stackPointer - 2);
 

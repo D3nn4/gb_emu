@@ -1,4 +1,5 @@
 #include <cassert>
+#include <iostream>
 #include "graphics.hpp"
 
 Graphics::Graphics(IMemory& memory, IInterruptHandler& interruptHandler)
@@ -15,6 +16,8 @@ std::vector<std::vector<RGB>> const & Graphics::getScreenData()
 
 void Graphics::resetScreen()
 {
+    // TODO duplication might cause issue in the future
+    // use screenData and change the value (like _screnData.fill())
     std::vector<std::vector<RGB>> newScreenData(144, {160, {0xff,0xff,0xff}});
     _screenData = newScreenData;
 }
@@ -23,6 +26,7 @@ void Graphics::resetScreen()
 
 bool Graphics::isLCDEnabled()
 {
+    return true; // TODO
     std::bitset<8> lcdControlRegister(_memory.readInMemory(_LCDControlRegister));
     return lcdControlRegister.test(static_cast<uint8_t>(LCDCONTROLREG::LCDDISPLAY));
 }
@@ -258,8 +262,7 @@ void Graphics::renderBackground()
             // safety check to make sure what im about
             // to set is int the 160x144 bounds
             if ((finalY < 0) || (finalY > 143) || (pixel < 0) || (pixel > 159)) {
-                assert(false);
-                continue;
+                exit(1);
             }
             _screenData[finalY][pixel] = palette;
         }
