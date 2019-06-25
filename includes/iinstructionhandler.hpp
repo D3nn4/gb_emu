@@ -6,7 +6,13 @@
 class IInstructionHandler
 {
 public:
+    virtual int doInstruction(uint8_t opCode) = 0;
 
-    virtual bool boot() = 0;
+    std::string getReadableInstruction()
+    {
+        return _latestReadableInstruction;
+    }
+
+    std::string _latestReadableInstruction;
 };
 #endif /*IINSTRUCTIONHANDLER*/

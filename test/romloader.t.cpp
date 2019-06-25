@@ -47,7 +47,7 @@ TEST_F (RomLoaderTest, loadValidFile)
     bool isLoaded = romLoader.load(fileName);
 
     IMemory::CartridgeData data = romLoader.getData();
-    for (int i = 0; i < 512; i++) {
+    for (int i = 0x0000; i < 512; i++) {
         EXPECT_EQ(data[i], 7);
     }
     for (int i = 0; i < 35; i++) {
