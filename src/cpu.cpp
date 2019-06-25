@@ -23,10 +23,6 @@ IMemory::State Cpu::getState()
     return _memory.getState();
 }
 
-std::vector<uint8_t> Cpu::getPalette()
-{
-  return _memory.getChunkOfMemory(0x8000, 0x8FFF);
-}
 
 void Cpu::nextStep()
 {

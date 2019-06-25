@@ -37,7 +37,6 @@ public:
         return _graphics.getScreenData();
     }
 
-   std::vector<uint8_t> getPalette();
 signals:
     void screen_refresh();
 

@@ -53,14 +53,6 @@ bool Memory::setCartridge(IMemory::CartridgeData const & cartridge)
     return false;
 }
 
-std::vector<uint8_t> Memory::getChunkOfMemory(uint16_t adressStart, uint16_t adressEnd)
-{
-    std::vector<uint8_t> result;
-    for (int i = adressStart; i < adressEnd; i++) {
-        result.push_back(_readOnlyMemory[i]);
-    }
-    return result;
-}
 
 IMemory::State Memory::getState()
 {

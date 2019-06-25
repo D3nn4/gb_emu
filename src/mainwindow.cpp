@@ -70,31 +70,31 @@ void MainWindow::on_actionLoad_rom_triggered()
 
 void MainWindow::on_actionNormal_triggered()
 {
-    std::cout <<  "BOUM"  << std::endl;
-    const std::string loadedRom = _loadedRom->text().toStdString();
+    std::string const loadedRom = _loadedRom->text().toStdString();
     BOOST_LOG_TRIVIAL(debug) << "Starting " << loadedRom;
 
-//     _fileIO.reset(new FileIO);
-//     _romLoader.reset(new RomLoader(*_fileIO));
-//     _cpu.reset(new Cpu(*_romLoader));
-//     // connect(_cpu.get(), SIGNAL(screen_refresh()), _screen, SLOT(repaint()));
-//     connect(_cpu.get(), SIGNAL(screen_refresh()), this, SLOT(renderScreen()));
-//     if (!_cpu->launchGame(loadedRom)) {
-//         BOOST_LOG_TRIVIAL(debug) << "Failed to load : " << loadedRom;
-//         QMessageBox msgBox;
-//         msgBox.setText("Failed to load rom !");
-//         msgBox.exec();
-//         return ;
-//     }
-// }
-// void MainWindow::renderScreen() {
-//     _canvas.renderScreen(_cpu->getScreen());
-//     std::cout <<   "YEA" << std::endl;
-// }
-// void MainWindow::on_actionDebug_mode_triggered()
-// {
-//     const std::string loadedRom = _loadedRom->text().toStdString();
-//     BOOST_LOG_TRIVIAL(debug) << "Starting " << loadedRom;
+    _fileIO.reset(new FileIO);
+    _romLoader.reset(new RomLoader(*_fileIO));
+    _cpu.reset(new Cpu(*_romLoader));
+    connect(_cpu.get(), SIGNAL(screen_refresh()), this, SLOT(renderScreen()));
+
+    if (!_cpu->launchGame(loadedRom)) {
+        BOOST_LOG_TRIVIAL(debug) << "Failed to load : " << loadedRom;
+        QMessageBox msgBox;
+        msgBox.setText("Failed to load rom !");
+        msgBox.exec();
+        return ;
+    }
+}
+
+void MainWindow::renderScreen() {
+    _canvas.renderScreen(_cpu->getScreen());
+}
+
+void MainWindow::on_actionDebug_mode_triggered()
+{
+    std::string const loadedRom = _loadedRom->text().toStdString();
+    BOOST_LOG_TRIVIAL(debug) << "Starting " << loadedRom;
 
     _fileIO.reset(new FileIO);
     _romLoader.reset(new RomLoader(*_fileIO));
@@ -117,7 +117,6 @@ void MainWindow::on_actionStop_triggered()
     _romLoader.reset(nullptr);
     _fileIO.reset(nullptr);
     _nextButton->setDisabled(true);
-    // _currentInstrText->setText("");
     _historyList->clear();
 }
 
@@ -126,7 +125,7 @@ void MainWindow::createMemoryTable()
 {
     _previousPcValueCell = {0, 0};
     auto rom = _cpu->getState().readOnlyMemory;
-    const int rowSize = rom.size() / 16;
+    int const rowSize = rom.size() / 16;
     _memoryTable->setRowCount(rowSize);
 
     // generate headers 0 - 15
@@ -137,7 +136,7 @@ void MainWindow::createMemoryTable()
     _memoryTable->setHorizontalHeaderLabels(headers);
 
 
-    // generate row headers 0 - 4000 
+    // generate row headers 0 - 4000
     QStringList rowsHeader;
     for (int i = 0, currentVal; i < rowSize; i++, currentVal += 16) {
         QString hexVal = QString("%1").arg(currentVal, 4, 16, QChar('0'));
@@ -148,8 +147,8 @@ void MainWindow::createMemoryTable()
     for (size_t i = 0; i < rom.size(); i++) {
         QString hexVal = QString("%1").arg(rom[i], 2, 16, QChar('0'));
         QTableWidgetItem *newItem = new QTableWidgetItem(hexVal);
-        const int row = i / 16;
-        const int col = i % 16;
+        int const row = i / 16;
+        int const col = i % 16;
         _memoryTable->setItem(row, col, newItem);
     }
 }
@@ -159,8 +158,8 @@ void MainWindow::updateMemoryTable()
     for (size_t i = 0; i < rom.size(); i++) {
         QString hexVal = QString("%1").arg(rom[i], 2, 16, QChar('0'));
 
-        const int row = i / 16;
-        const int col = i % 16;
+        int const row = i / 16;
+        int const col = i % 16;
         QTableWidgetItem* item = _memoryTable->item(row, col);
         item->setText(hexVal);
     }
@@ -170,9 +169,9 @@ void MainWindow::updateRegisterTable()
 {
     auto state =_cpu->getState();
 
-    int row = 0;
-
     BOOST_LOG_TRIVIAL(debug) << state.reg16Bit.size();
+
+    int row = 0;
     for (auto & pair : state.reg16Bit) {
         BOOST_LOG_TRIVIAL(debug) << pair.first << " " << std::hex <<  static_cast<int>(pair.second);
         {
@@ -214,10 +213,8 @@ void MainWindow::updateState()
     _historyList->addItem(newItem);
     _historyList->scrollToItem(newItem);
 
-    // _currentInstrText->setText(_cpu->getReadableInstruction().c_str());
-
-    const int row = state.pcValue / 16;
-    const int col = state.pcValue % 16;
+    int const row = state.pcValue / 16;
+    int const col = state.pcValue % 16;
     _previousPcValueCell = {row, col};
     _memoryTable->item(row, col)->setBackground(Qt::cyan);
     _memoryTable->scrollToItem(_memoryTable->item(row, col));
@@ -276,7 +273,7 @@ void MainWindow::on_breakpointButton_clicked()
 
     }
     BOOST_LOG_TRIVIAL(debug) << "breakpoint entry : " << text.toStdString();
-    unsigned int opCodeBreakpoint = std::stoul(text.toStdString(), nullptr, 16);
+    unsigned int const opCodeBreakpoint = std::stoul(text.toStdString(), nullptr, 16);
     BOOST_LOG_TRIVIAL(debug) << std::hex << "breakpoint op code value : " << opCodeBreakpoint;
 
     _breakpointEntry->clear();
@@ -288,7 +285,7 @@ void MainWindow::on_focusAdressButton_clicked()
 
     QString text = _fetchDataEntry->text();
     BOOST_LOG_TRIVIAL(info) << "fetchDataEntry entry : " << text.toStdString();
-    unsigned int adress = std::stoul(text.toStdString(), nullptr, 16);
+    unsigned int const adress = std::stoul(text.toStdString(), nullptr, 16);
     BOOST_LOG_TRIVIAL(info) << std::hex << "adress : " << adress;
     if (adress <= 0xffffu) {
         int col = adress % 16;
@@ -309,7 +306,7 @@ void MainWindow::on_focusAdressButton_clicked()
 void MainWindow::on_focusPcButton_clicked()
 {
     auto state =_cpu->getState();
-    const int row = state.pcValue / 16;
-    const int col = state.pcValue % 16;
+    int const row = state.pcValue / 16;
+    int const col = state.pcValue % 16;
     _memoryTable->scrollToItem(_memoryTable->item(row, col));
 }
