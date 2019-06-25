@@ -4,6 +4,7 @@
 #include <map>
 #include <memory>
 #include "iinstructionhandler.hpp"
+#include "iinterupthandler.hpp"
 #include "instructions.hpp"
 #include "binaryinstructions.hpp"
 
@@ -11,7 +12,7 @@ class InstructionHandler : public IInstructionHandler
 {
 public:
 
-    InstructionHandler(IMemory& memory);
+    InstructionHandler(IMemory& memory, IInterruptHandler& interruptHandler);
     int doInstruction(uint8_t opCode) override;
 
     class InstructionException : public std::exception
@@ -31,6 +32,8 @@ public:
 
 private:
 
+    IMemory& _memory;
+    IInterruptHandler& _interruptHandler;
   //RR  == 16bitReg   NN == next16Bit
   //R   == 8bitReg     N == next8Bit
   //CC == flag
@@ -253,7 +256,7 @@ private:
             {0xD6, std::make_shared<SUB_N>(8)},
             {0xD7, std::make_shared<RST>(16, 0x10)},
             {0xD8, std::make_shared<RET_CC>(8, IMemory::FLAG::C, 1)},
-            {0xD9, std::make_shared<RETI>(16)},
+            {0xD9, std::make_shared<RETI>(16, _interruptHandler)},
             {0xDA, std::make_shared<JP_CC_NN>(12, IMemory::FLAG::C, 1)},
             {0xDC, std::make_shared<CALL_CC_NN>(12, IMemory::FLAG::C, 1)},
             {0xDE, std::make_shared<SBC_N>(8)},
@@ -272,14 +275,14 @@ private:
             {0xF0, std::make_shared<LDH_R_AN>(12, IMemory::REG8BIT::A)},
             {0xF1, std::make_shared<POP_RR>(12, IMemory::REG16BIT::AF)},
             {0xF2, std::make_shared<LDH_R_AR>(8, IMemory::REG8BIT::A, IMemory::REG8BIT::C)},
-            {0xF3, std::make_shared<DI>(4)},
+            {0xF3, std::make_shared<DI>(4, _interruptHandler)},
             {0xF5, std::make_shared<PUSH_RR>(16, IMemory::REG16BIT::AF)},
             {0xF6, std::make_shared<OR_N>(8)},
             {0xF7, std::make_shared<RST>(16, 0x30)},
             {0xF8, std::make_shared<LDHL_SP_N>(12)},
             {0xF9, std::make_shared<LD_RR_RR>(8, IMemory::REG16BIT::SP, IMemory::REG16BIT::HL)},
             {0xFA, std::make_shared<LD_R_ANN>(16, IMemory::REG8BIT::A)},
-            {0xFB, std::make_shared<EI>(4)},
+            {0xFB, std::make_shared<EI>(4, _interruptHandler)},
             {0xFE, std::make_shared<CP_N>(8)},
             {0xFF, std::make_shared<RST>(16, 0x38)}
         };
@@ -543,7 +546,5 @@ private:
       {0xFE, std::make_shared<SET_ARR>(16, 7)},
       {0xFF, std::make_shared<SET>(8, 7, IMemory::REG8BIT::A)},
     };
-
-    IMemory& _memory;
 };
 #endif /*INSTRUCTIONHANDLER*/

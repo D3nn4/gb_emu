@@ -1,0 +1,8 @@
+-I/home/sgregory/gb_emu
+-I/home/sgregory/gb_emu
+-DQT_WIDGETS_LIB
+-DQT_GUI_LIB
+-DQT_CORE_LIB
+-o
+/home/sgregory/gb_emu/includes/moc_mainwindow.cpp
+/home/sgregory/gb_emu/includes/mainwindow.h

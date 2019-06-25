@@ -5,6 +5,7 @@
 #include <bitset>
 #include <exception>
 #include "imemory.hpp"
+#include "itimer.hpp"
 
 
 class Memory : public IMemory
@@ -27,21 +28,26 @@ public:
     };
 
     Memory();
+    void setTimer(ITimer* timer);
+    void incrementDividerRegister() override;
+    void incrementScanline() override;
+
     CartridgeData const  getCartridge() override;
     RomData const  getReadOnlyMemory() override;
     bool setCartridge(CartridgeData const & cartridge) override;
+    State getState() override;
     bool writeInMemory(uint8_t data, uint16_t adress) override;
     uint8_t readInMemory(uint16_t adress) override;
-    
+
     void set8BitRegister(REG8BIT reg,uint8_t value) override;
     void set16BitRegister(REG16BIT reg,uint16_t value) override;
     uint8_t get8BitRegister(REG8BIT reg) override;
     uint16_t get16BitRegister(REG16BIT reg) override;
-    
+
     void setFlag(IMemory::FLAG flag) override;
     void unsetFlag(IMemory::FLAG flag) override;
     bool isSetFlag(IMemory::FLAG flag) override;
-    
+
     void unsetBitInRegister(int bit, REG8BIT reg) override;
     void setBitInRegister(int bit, REG8BIT reg) override;
     bool isSet(int bit, REG8BIT reg) override;
@@ -49,14 +55,17 @@ public:
 private:
 
     bool reset();
-    void resetRegisters();
     bool fillROM();
+    void initializeMemory();
     template <class ARRAY>
     bool isEmpty(ARRAY const & memory);
+    void dmaTransfer(uint8_t data);
 
     Registers _registers;
     CartridgeData _cartridge;
     RomData _readOnlyMemory;
+    // unique_ptr<ITimer> _timer;
+    ITimer* _timer;
 
     std::map<IMemory::REG8BIT, uint8_t*> _8BitRegisters =
         {

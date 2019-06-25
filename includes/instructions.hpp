@@ -3,8 +3,12 @@
 
 #include <iostream>
 #include <bitset>
+#include <map>
+#include <string>
+#include <boost/log/trivial.hpp>
 
 #include "iinstructions.hpp"
+#include "iinterupthandler.hpp"
 
 //RR  == 16bitReg   NN == next16Bit
 //R   == 8bitReg     N == next8Bit
@@ -19,7 +23,8 @@ public :
     NOP(int cycles)
         :IInstructions(cycles){};
 
-    void doInstruction(IMemory& memory) override {
+    void doInstructionImpl(IMemory& memory) override {
+        _readableInstructionStream << "nop";
         uint16_t cursor = memory.get16BitRegister(IMemory::REG16BIT::PC);
         memory.set16BitRegister(IMemory::REG16BIT::PC, cursor + 1);
     }
@@ -33,11 +38,14 @@ public:
         :IInstructions(cycles),
          _register(reg){};
 
-    void doInstruction(IMemory& memory) override {
+    void doInstructionImpl(IMemory& memory) override {
         uint16_t cursor = memory.get16BitRegister(IMemory::REG16BIT::PC);
         uint16_t valueToLoad = memory.readInMemory(cursor + 1);
         memory.set8BitRegister(_register, valueToLoad);
         memory.set16BitRegister(IMemory::REG16BIT::PC, cursor + 2);
+        _readableInstructionStream
+            << "ld " << debugReg8Bit[_register] << ","
+            << std::hex << static_cast<int>(valueToLoad);
     }
 
     IMemory::REG8BIT _register;
@@ -53,12 +61,17 @@ public:
          _8BitReg(reg8Bit),
          _addTo16BitReg(addTo16BitReg){};
 
-    void doInstruction(IMemory& memory) override {
+    void doInstructionImpl(IMemory& memory) override {
         uint16_t adress = memory.get16BitRegister(_16BitReg);
         uint8_t valueToLoad = memory.readInMemory(adress);
         memory.set8BitRegister(_8BitReg, valueToLoad);
         uint16_t cursor = memory.get16BitRegister(IMemory::REG16BIT::PC);
         memory.set16BitRegister(IMemory::REG16BIT::PC, cursor + 1);
+        _readableInstructionStream
+            << "ld " << debugReg8Bit[_8BitReg]
+            << ",(" << debugReg16Bit[_16BitReg]
+            <<  (_addTo16BitReg == 0 ? "" : _addTo16BitReg > 0 ? "+" : "-")
+            << ")";
         if (_addTo16BitReg != 0) {
             adress += _addTo16BitReg;
             memory.set16BitRegister(_16BitReg, adress);
@@ -80,12 +93,17 @@ public:
          _8BitReg(reg8Bit),
          _addTo16BitReg(addTo16BitReg){};
 
-    void doInstruction(IMemory& memory) override {
+    void doInstructionImpl(IMemory& memory) override {
         uint8_t reg8BitValue = memory.get8BitRegister(_8BitReg);
         uint16_t reg16BitValue = memory.get16BitRegister(_16BitReg);
         memory.writeInMemory(reg8BitValue, reg16BitValue);
         uint16_t cursor = memory.get16BitRegister(IMemory::REG16BIT::PC);
         memory.set16BitRegister(IMemory::REG16BIT::PC, cursor + 1);
+        _readableInstructionStream
+            << "ld (" << debugReg16Bit[_16BitReg]
+            <<  (_addTo16BitReg == 0 ? "" : _addTo16BitReg > 0 ? "+" : "-")
+            << ")," << debugReg8Bit[_8BitReg];
+
         if (_addTo16BitReg != 0) {
             reg16BitValue += _addTo16BitReg;
             memory.set16BitRegister(_16BitReg, reg16BitValue);
@@ -106,11 +124,14 @@ public:
          _toCopyTo(toCopyTo),
          _toCopyFrom(toCopyFrom){};
 
-    void doInstruction(IMemory& memory) override {
+    void doInstructionImpl(IMemory& memory) override {
         uint8_t valueToCopy = memory.get8BitRegister(_toCopyFrom);
         memory.set8BitRegister(_toCopyTo, valueToCopy);
         uint16_t cursor = memory.get16BitRegister(IMemory::REG16BIT::PC);
         memory.set16BitRegister(IMemory::REG16BIT::PC, cursor + 1);
+        _readableInstructionStream
+            << "ld " << debugReg8Bit[_toCopyTo]
+            << ", " << debugReg8Bit[_toCopyFrom];
     }
 
     IMemory::REG8BIT _toCopyTo;
@@ -125,12 +146,15 @@ public:
         :IInstructions(cycles),
          _16BitReg(reg16Bit){};
 
-    void doInstruction(IMemory& memory) override {
+    void doInstructionImpl(IMemory& memory) override {
         uint16_t cursor = memory.get16BitRegister(IMemory::REG16BIT::PC);
         uint16_t adress = memory.get16BitRegister(_16BitReg);
         uint8_t valueToLoad = memory.readInMemory(cursor + 1);
         memory.writeInMemory(valueToLoad, adress);
         memory.set16BitRegister(IMemory::REG16BIT::PC, cursor + 2);
+        _readableInstructionStream
+            << "ld (" << debugReg16Bit[_16BitReg]
+            << "), " << std::hex << static_cast<int>(valueToLoad);
     }
 
     IMemory::REG16BIT _16BitReg;
@@ -144,18 +168,21 @@ public:
         :IInstructions(cycles),
          _16BitReg(reg16Bit){};
 
-    void doInstruction(IMemory& memory) override {
+    void doInstructionImpl(IMemory& memory) override {
         uint16_t cursor = memory.get16BitRegister(IMemory::REG16BIT::PC);
         uint8_t MS = memory.readInMemory(cursor + 2);
         uint8_t LS = memory.readInMemory(cursor + 1);
-        uint16_t adress = ((uint16_t) MS << 8) | LS;
+        uint16_t adress = (static_cast<uint16_t> (MS) << 8) | LS;
         uint16_t reg16BitValue = memory.get16BitRegister(_16BitReg);
 
-        uint8_t mostSignificantBit = (uint8_t)(reg16BitValue >> 8) & 0xff;
-        uint8_t lessSignificantBit = (uint8_t)(reg16BitValue & 0xff);
+        uint8_t(mostSignificantBit) = static_cast<uint8_t>((reg16BitValue >> 8) & 0xff);
+        uint8_t lessSignificantBit = static_cast<uint8_t>(reg16BitValue & 0xff);
         memory.writeInMemory(lessSignificantBit, adress);
         memory.writeInMemory(mostSignificantBit, adress + 1);
         memory.set16BitRegister(IMemory::REG16BIT::PC, cursor + 3);
+        _readableInstructionStream
+            << "ld $" << std::hex << static_cast<int>(adress)
+            << ", " << debugReg16Bit[_16BitReg];
     }
 
     IMemory::REG16BIT _16BitReg;
@@ -170,11 +197,14 @@ public:
          _16BitReg(reg16Bit),
          _16BitRegToCopy(reg16BitToCopy){};
 
-    void doInstruction(IMemory& memory) override {
+    void doInstructionImpl(IMemory& memory) override {
         uint16_t valueToLoad = memory.get16BitRegister(IMemory::REG16BIT::HL);
         memory.set16BitRegister(_16BitReg, valueToLoad);
         uint16_t cursor = memory.get16BitRegister(IMemory::REG16BIT::PC);
         memory.set16BitRegister(IMemory::REG16BIT::PC, cursor + 1);
+        _readableInstructionStream
+            << "ld " << debugReg16Bit[_16BitReg]
+            << "," << debugReg16Bit[_16BitRegToCopy];
     }
 
     IMemory::REG16BIT _16BitReg;
@@ -189,14 +219,18 @@ public:
         :IInstructions(cycles),
          _8BitReg(reg8Bit){};
 
-    void doInstruction(IMemory& memory) override {
+    void doInstructionImpl(IMemory& memory) override {
         uint8_t reg8BitValue = memory.get8BitRegister(_8BitReg);
         uint16_t cursor = memory.get16BitRegister(IMemory::REG16BIT::PC);
         uint8_t MS = memory.readInMemory(cursor + 2);
         uint8_t LS = memory.readInMemory(cursor + 1);
-        uint16_t adress = ((uint16_t) MS << 8) | LS;
+        uint16_t adress = (static_cast<uint16_t>(MS) << 8) | LS;
         memory.writeInMemory(reg8BitValue, adress);
         memory.set16BitRegister(IMemory::REG16BIT::PC, cursor + 3);
+
+        _readableInstructionStream
+            << "ld $" << std::hex << static_cast<int>(adress)
+            << ","<< debugReg8Bit[_8BitReg];
     }
     IMemory::REG8BIT _8BitReg;
 };
@@ -209,14 +243,18 @@ public:
         :IInstructions(cycles),
          _8BitReg(reg8Bit){};
 
-    void doInstruction(IMemory& memory) override {
+    void doInstructionImpl(IMemory& memory) override {
         uint16_t cursor = memory.get16BitRegister(IMemory::REG16BIT::PC);
         uint8_t MS = memory.readInMemory(cursor + 2);
         uint8_t LS = memory.readInMemory(cursor + 1);
-        uint16_t adress = ((uint16_t) MS << 8) | LS;
+        uint16_t adress = (static_cast<uint16_t> (MS) << 8) | LS;
         uint8_t value = memory.readInMemory(adress);
         memory.set8BitRegister(_8BitReg, value);
         memory.set16BitRegister(IMemory::REG16BIT::PC, cursor + 3);
+
+        _readableInstructionStream
+            << "ld " << debugReg8Bit[_8BitReg]
+            << ",$" << std::hex << static_cast<int>(adress);
     }
     IMemory::REG8BIT _8BitReg;
 };
@@ -229,12 +267,17 @@ public:
         :IInstructions(cycles),
          _8BitReg(reg8Bit){};
 
-    void doInstruction(IMemory& memory) override {
+    void doInstructionImpl(IMemory& memory) override {
         uint16_t cursor = memory.get16BitRegister(IMemory::REG16BIT::PC);
         uint8_t valueToLoad = memory.get8BitRegister(_8BitReg);
-        uint16_t adress = 0xff00 + memory.readInMemory(cursor + 1);
+        uint8_t next8Bit = memory.readInMemory(cursor + 1);
+        uint16_t adress = 0xff00 + next8Bit;
         memory.writeInMemory(valueToLoad, adress);
         memory.set16BitRegister(IMemory::REG16BIT::PC, cursor + 2);
+
+        _readableInstructionStream
+            << "ldh (" << std::hex << static_cast<int>(next8Bit)
+            << ")," << debugReg8Bit[_8BitReg];
     }
 
     IMemory::REG8BIT _8BitReg;
@@ -248,12 +291,17 @@ public:
         :IInstructions(cycles),
          _8BitReg(reg8Bit){};
 
-    void doInstruction(IMemory& memory) override {
+    void doInstructionImpl(IMemory& memory) override {
         uint16_t cursor = memory.get16BitRegister(IMemory::REG16BIT::PC);
-        uint16_t adress = 0xff00 + memory.readInMemory(cursor + 1);
+        uint8_t next8Bit = memory.readInMemory(cursor + 1);
+        uint16_t adress = 0xff00 + next8Bit;
         uint8_t valueToLoad = memory.readInMemory(adress);
         memory.set8BitRegister(_8BitReg, valueToLoad);
         memory.set16BitRegister(IMemory::REG16BIT::PC, cursor + 2);
+        _readableInstructionStream
+            << "ldh " << debugReg8Bit[_8BitReg]
+            << ",(" << std::hex
+            << static_cast<int>(next8Bit) << ")";
     }
 
     IMemory::REG8BIT _8BitReg;
@@ -268,13 +316,16 @@ public:
          _8BitRegToLoad(reg8BitToLoad),
          _8BitReg(reg8Bit){};
 
-    void doInstruction(IMemory& memory) override {
+    void doInstructionImpl(IMemory& memory) override {
         uint8_t valueForAdress = memory.get8BitRegister(_8BitReg);
         uint8_t valueToLoad = memory.get8BitRegister(_8BitRegToLoad);
         uint16_t adress = 0xff00 + valueForAdress;
         memory.writeInMemory(valueToLoad, adress);
         uint16_t cursor = memory.get16BitRegister(IMemory::REG16BIT::PC);
         memory.set16BitRegister(IMemory::REG16BIT::PC, cursor + 1);
+        _readableInstructionStream
+            << "ldh (" << debugReg8Bit[_8BitReg]
+            << ")," << debugReg8Bit[_8BitRegToLoad];
     }
 
     IMemory::REG8BIT _8BitRegToLoad;
@@ -290,13 +341,16 @@ public:
          _8BitRegToLoad(reg8BitToLoad),
          _8BitReg(reg8Bit){};
 
-    void doInstruction(IMemory& memory) override {
+    void doInstructionImpl(IMemory& memory) override {
         uint8_t valueForAdress = memory.get8BitRegister(_8BitReg);
         uint16_t adress = 0xff00 + valueForAdress;
         uint8_t valueToLoad = memory.readInMemory(adress);
         memory.set8BitRegister(_8BitRegToLoad, valueToLoad);
         uint16_t cursor = memory.get16BitRegister(IMemory::REG16BIT::PC);
         memory.set16BitRegister(IMemory::REG16BIT::PC, cursor + 1);
+        _readableInstructionStream
+            << "ldh " << debugReg8Bit[_8BitRegToLoad]
+            << ",(" << debugReg8Bit[_8BitReg] << ")";
     }
 
     IMemory::REG8BIT _8BitRegToLoad;
@@ -311,13 +365,17 @@ public:
         :IInstructions(cycles),
          _register(reg){};
 
-    void doInstruction(IMemory& memory) override {
+    void doInstructionImpl(IMemory& memory) override {
         uint16_t cursor = memory.get16BitRegister(IMemory::REG16BIT::PC);
         uint8_t MS = memory.readInMemory(cursor + 2);
         uint8_t LS = memory.readInMemory(cursor + 1);
-        uint16_t valueToLoad = ((uint16_t) MS << 8) | LS;
+        uint16_t valueToLoad = (static_cast<uint16_t> (MS) << 8) | LS;
         memory.set16BitRegister(_register, valueToLoad);
         memory.set16BitRegister(IMemory::REG16BIT::PC, cursor + 3);
+        _readableInstructionStream 
+            << "ld " << debugReg16Bit[_register]
+            << "," << std::hex
+            << static_cast<int>(valueToLoad);
     }
 
     IMemory::REG16BIT _register;
@@ -330,7 +388,7 @@ public:
     LDHL_SP_N (int cycles)
         :IInstructions(cycles){};
 
-    void doInstruction(IMemory& memory) override {
+    void doInstructionImpl(IMemory& memory) override {
         uint16_t regValue = memory.get16BitRegister(IMemory::REG16BIT::SP);
         uint16_t cursor = memory.get16BitRegister(IMemory::REG16BIT::PC);
         int8_t valueToAdd = static_cast<int8_t>(memory.readInMemory(cursor + 1));
@@ -352,6 +410,9 @@ public:
 
         memory.set16BitRegister(IMemory::REG16BIT::HL, regValue + valueToAdd);
         memory.set16BitRegister(IMemory::REG16BIT::PC, cursor + 2);
+        _readableInstructionStream
+            << "ld hl, sp + " << std::hex
+            << static_cast<int>(valueToAdd);
     }
 };
 
@@ -364,12 +425,15 @@ public:
          _reg8Bit(reg8Bit),
          _value(value){};
 
-    void doInstruction(IMemory& memory) override {
+    void doInstructionImpl(IMemory& memory) override {
         uint8_t regValue = memory.get8BitRegister(_reg8Bit);
         uint8_t newValue = regValue + _value;
         memory.set8BitRegister(_reg8Bit, newValue);
         uint16_t cursor = memory.get16BitRegister(IMemory::REG16BIT::PC);
         memory.set16BitRegister(IMemory::REG16BIT::PC, cursor + 1);
+        _readableInstructionStream
+            << (_value == -1 ? "dec ":"inc ")
+            << debugReg8Bit[_reg8Bit];
 
         if (newValue == 0x00) {
             memory.setFlag(IMemory::FLAG::Z);
@@ -410,12 +474,15 @@ public:
          _reg16Bit(reg16Bit),
          _value(value){};
 
-    void doInstruction(IMemory& memory) override {
+    void doInstructionImpl(IMemory& memory) override {
         uint16_t regValue = memory.get16BitRegister(_reg16Bit);
         uint16_t newValue = regValue + _value;
         memory.set16BitRegister(_reg16Bit, newValue);
         uint16_t cursor = memory.get16BitRegister(IMemory::REG16BIT::PC);
         memory.set16BitRegister(IMemory::REG16BIT::PC, cursor + 1);
+        _readableInstructionStream
+            << (_value == -1 ? "dec ":"inc ")
+            << debugReg16Bit[_reg16Bit];
 
         if (newValue == 0x0000) {
             memory.setFlag(IMemory::FLAG::Z);
@@ -456,13 +523,17 @@ public:
          _reg16Bit(reg16Bit),
          _value(value){};
 
-    void doInstruction(IMemory& memory) override {
+    void doInstructionImpl(IMemory& memory) override {
         uint16_t adress = memory.get16BitRegister(_reg16Bit);
         uint8_t valueToIncrement = memory.readInMemory(adress);
         uint8_t newValue = valueToIncrement + _value;
         memory.writeInMemory(newValue, adress);
         uint16_t cursor = memory.get16BitRegister(IMemory::REG16BIT::PC);
         memory.set16BitRegister(IMemory::REG16BIT::PC, cursor + 1);
+
+        _readableInstructionStream
+            << (_value == -1 ? "dec (":"inc (")
+            << debugReg16Bit[_reg16Bit] << ")";
 
         if (newValue == 0x00) {
             memory.setFlag(IMemory::FLAG::Z);
@@ -502,13 +573,15 @@ public:
         :IInstructions(cycles),
          _8BitReg(reg8Bit){};
 
-    void doInstruction(IMemory& memory) override {
+    void doInstructionImpl(IMemory& memory) override {
         uint8_t AValue = memory.get8BitRegister(IMemory::REG8BIT::A);
         uint8_t reg8BitValue = memory.get8BitRegister(_8BitReg);
         uint8_t result = AValue ^ reg8BitValue;
         memory.set8BitRegister(IMemory::REG8BIT::A,result);
         uint16_t cursor = memory.get16BitRegister(IMemory::REG16BIT::PC);
         memory.set16BitRegister(IMemory::REG16BIT::PC, cursor + 1);
+        _readableInstructionStream
+            << "xor " << debugReg8Bit[_8BitReg];
 
         if (result == 0x00) {
             memory.setFlag(IMemory::FLAG::Z);
@@ -531,13 +604,16 @@ public:
         :IInstructions(cycles),
          _8BitReg(reg8Bit){};
 
-    void doInstruction(IMemory& memory) override {
+    void doInstructionImpl(IMemory& memory) override {
         uint8_t AValue = memory.get8BitRegister(IMemory::REG8BIT::A);
         uint8_t reg8BitValue = memory.get8BitRegister(_8BitReg);
         uint8_t result = AValue | reg8BitValue;
         memory.set8BitRegister(IMemory::REG8BIT::A,result);
         uint16_t cursor = memory.get16BitRegister(IMemory::REG16BIT::PC);
         memory.set16BitRegister(IMemory::REG16BIT::PC, cursor + 1);
+
+        _readableInstructionStream
+            << "or " << debugReg8Bit[_8BitReg];
 
         if (result == 0x00) {
             memory.setFlag(IMemory::FLAG::Z);
@@ -560,13 +636,16 @@ public:
         :IInstructions(cycles),
          _8BitReg(reg8Bit){};
 
-    void doInstruction(IMemory& memory) override {
+    void doInstructionImpl(IMemory& memory) override {
         uint8_t AValue = memory.get8BitRegister(IMemory::REG8BIT::A);
         uint8_t reg8BitValue = memory.get8BitRegister(_8BitReg);
         uint8_t result = AValue & reg8BitValue;
         memory.set8BitRegister(IMemory::REG8BIT::A,result);
         uint16_t cursor = memory.get16BitRegister(IMemory::REG16BIT::PC);
         memory.set16BitRegister(IMemory::REG16BIT::PC, cursor + 1);
+
+        _readableInstructionStream
+            << "and " << debugReg8Bit[_8BitReg];
 
         if (result == 0x00) {
             memory.setFlag(IMemory::FLAG::Z);
@@ -589,7 +668,7 @@ public:
         :IInstructions(cycles),
          _16BitReg(reg16Bit){};
 
-    void doInstruction(IMemory& memory) override {
+    void doInstructionImpl(IMemory& memory) override {
         uint8_t AValue = memory.get8BitRegister(IMemory::REG8BIT::A);
         uint16_t adress = memory.get16BitRegister(_16BitReg);
         uint8_t reg8BitValue = memory.readInMemory(adress);
@@ -597,6 +676,9 @@ public:
         memory.set8BitRegister(IMemory::REG8BIT::A,result);
         uint16_t cursor = memory.get16BitRegister(IMemory::REG16BIT::PC);
         memory.set16BitRegister(IMemory::REG16BIT::PC, cursor + 1);
+
+        _readableInstructionStream
+            << "xor (" << debugReg16Bit[_16BitReg] << ")";
 
         if (result == 0x00) {
             memory.setFlag(IMemory::FLAG::Z);
@@ -619,7 +701,7 @@ public:
         :IInstructions(cycles),
          _16BitReg(reg16Bit){};
 
-    void doInstruction(IMemory& memory) override {
+    void doInstructionImpl(IMemory& memory) override {
         uint8_t AValue = memory.get8BitRegister(IMemory::REG8BIT::A);
         uint16_t adress = memory.get16BitRegister(_16BitReg);
         uint8_t reg8BitValue = memory.readInMemory(adress);
@@ -627,6 +709,10 @@ public:
         memory.set8BitRegister(IMemory::REG8BIT::A,result);
         uint16_t cursor = memory.get16BitRegister(IMemory::REG16BIT::PC);
         memory.set16BitRegister(IMemory::REG16BIT::PC, cursor + 1);
+
+        _readableInstructionStream
+            << "or (" << debugReg16Bit[_16BitReg] << ")";
+
 
         if (result == 0x00) {
             memory.setFlag(IMemory::FLAG::Z);
@@ -649,7 +735,7 @@ public:
         :IInstructions(cycles),
          _16BitReg(reg16Bit){};
 
-    void doInstruction(IMemory& memory) override {
+    void doInstructionImpl(IMemory& memory) override {
         uint8_t AValue = memory.get8BitRegister(IMemory::REG8BIT::A);
         uint16_t adress = memory.get16BitRegister(_16BitReg);
         uint8_t reg8BitValue = memory.readInMemory(adress);
@@ -657,6 +743,10 @@ public:
         memory.set8BitRegister(IMemory::REG8BIT::A,result);
         uint16_t cursor = memory.get16BitRegister(IMemory::REG16BIT::PC);
         memory.set16BitRegister(IMemory::REG16BIT::PC, cursor + 1);
+
+
+        _readableInstructionStream
+            << "and (" << debugReg16Bit[_16BitReg] << ")";
 
         if (result == 0x00) {
             memory.setFlag(IMemory::FLAG::Z);
@@ -678,13 +768,18 @@ public:
     XOR_N (int cycles)
         :IInstructions(cycles){};
 
-    void doInstruction(IMemory& memory) override {
+    void doInstructionImpl(IMemory& memory) override {
         uint8_t AValue = memory.get8BitRegister(IMemory::REG8BIT::A);
         uint16_t cursor = memory.get16BitRegister(IMemory::REG16BIT::PC);
         uint8_t reg8BitValue = memory.readInMemory(cursor + 1);
         uint8_t result = AValue ^ reg8BitValue;
         memory.set8BitRegister(IMemory::REG8BIT::A,result);
         memory.set16BitRegister(IMemory::REG16BIT::PC, cursor + 2);
+
+
+        _readableInstructionStream
+            << "xor $" << std::hex
+            << static_cast<int>(reg8BitValue);
 
         if (result == 0x00) {
             memory.setFlag(IMemory::FLAG::Z);
@@ -706,13 +801,18 @@ public:
     OR_N (int cycles)
         :IInstructions(cycles){};
 
-    void doInstruction(IMemory& memory) override {
+    void doInstructionImpl(IMemory& memory) override {
         uint8_t AValue = memory.get8BitRegister(IMemory::REG8BIT::A);
         uint16_t cursor = memory.get16BitRegister(IMemory::REG16BIT::PC);
         uint8_t reg8BitValue = memory.readInMemory(cursor + 1);
         uint8_t result = AValue | reg8BitValue;
         memory.set8BitRegister(IMemory::REG8BIT::A,result);
         memory.set16BitRegister(IMemory::REG16BIT::PC, cursor + 2);
+
+
+        _readableInstructionStream
+            << "or $" << std::hex
+            << static_cast<int>(reg8BitValue);
 
         if (result == 0x00) {
             memory.setFlag(IMemory::FLAG::Z);
@@ -734,13 +834,18 @@ public:
     AND_N (int cycles)
         :IInstructions(cycles){};
 
-    void doInstruction(IMemory& memory) override {
+    void doInstructionImpl(IMemory& memory) override {
         uint8_t AValue = memory.get8BitRegister(IMemory::REG8BIT::A);
         uint16_t cursor = memory.get16BitRegister(IMemory::REG16BIT::PC);
         uint8_t reg8BitValue = memory.readInMemory(cursor + 1);
         uint8_t result = AValue & reg8BitValue;
         memory.set8BitRegister(IMemory::REG8BIT::A,result);
         memory.set16BitRegister(IMemory::REG16BIT::PC, cursor + 2);
+
+
+        _readableInstructionStream
+            << "and $" << std::hex
+            << static_cast<int>(reg8BitValue);
 
         if (result == 0x00) {
             memory.setFlag(IMemory::FLAG::Z);
@@ -763,15 +868,19 @@ public:
         :IInstructions(cycles),
          _16BitReg(reg16Bit){};
 
-    void doInstruction(IMemory& memory) override {
+    void doInstructionImpl(IMemory& memory) override {
         uint16_t stackPointer = memory.get16BitRegister(IMemory::REG16BIT::SP);
-        uint8_t mostSignificantBit = memory.readInMemory(stackPointer + 1);
+        uint8_t(mostSignificantBit) = memory.readInMemory(stackPointer + 1);
         uint8_t lessSignificantBit = memory.readInMemory(stackPointer);
-        uint16_t valueToLoad = ((uint16_t) mostSignificantBit << 8) | lessSignificantBit;
+        uint16_t valueToLoad = (static_cast<uint16_t> (mostSignificantBit) << 8) | lessSignificantBit;
         memory.set16BitRegister(_16BitReg, valueToLoad);
         memory.set16BitRegister(IMemory::REG16BIT::SP, stackPointer + 2);
         uint16_t cursor = memory.get16BitRegister(IMemory::REG16BIT::PC);
         memory.set16BitRegister(IMemory::REG16BIT::PC, cursor + 1);
+
+        _readableInstructionStream
+            << "pop " << debugReg16Bit[_16BitReg];
+
     }
     IMemory::REG16BIT _16BitReg;
 };
@@ -784,18 +893,21 @@ public:
         :IInstructions(cycles),
          _16BitReg(reg16Bit){};
 
-    void doInstruction(IMemory& memory) override {
+    void doInstructionImpl(IMemory& memory) override {
         uint16_t stackPointer = memory.get16BitRegister(IMemory::REG16BIT::SP);
         uint16_t valueToLoad = memory.get16BitRegister(_16BitReg);
 
-        uint8_t mostSignificantBit = (uint8_t)(valueToLoad >> 8) & 0xff;
-        uint8_t lessSignificantBit = (uint8_t)(valueToLoad & 0xff);
+        uint8_t(mostSignificantBit) = static_cast<uint8_t>(valueToLoad >> 8) & 0xff;
+        uint8_t lessSignificantBit = static_cast<uint8_t>(valueToLoad & 0xff);
         memory.writeInMemory(mostSignificantBit, stackPointer - 1);
         memory.writeInMemory(lessSignificantBit, stackPointer - 2);
 
         memory.set16BitRegister(IMemory::REG16BIT::SP, stackPointer - 2);
         uint16_t cursor = memory.get16BitRegister(IMemory::REG16BIT::PC);
         memory.set16BitRegister(IMemory::REG16BIT::PC, cursor + 1);
+
+        _readableInstructionStream << "push " << debugReg16Bit[_16BitReg];
+
     }
     IMemory::REG16BIT _16BitReg;
 };
@@ -808,9 +920,13 @@ public:
         :IInstructions(cycles),
          _8BitReg(reg8Bit){};
 
-    void doInstruction(IMemory& memory) override {
+    void doInstructionImpl(IMemory& memory) override {
         uint8_t regAValue = memory.get8BitRegister(IMemory::REG8BIT::A);
         uint8_t valueToAdd = memory.get8BitRegister(_8BitReg);
+
+
+        _readableInstructionStream
+            << "add a," << debugReg8Bit[_8BitReg];
 
         uint8_t result = regAValue + valueToAdd;
         if (result == 0x00) {
@@ -847,10 +963,14 @@ public:
     ADD_ARR (int cycles)
         :IInstructions(cycles){};
 
-    void doInstruction(IMemory& memory) override {
+    void doInstructionImpl(IMemory& memory) override {
         uint8_t regAValue = memory.get8BitRegister(IMemory::REG8BIT::A);
         uint16_t adress = memory.get16BitRegister(IMemory::REG16BIT::HL);
         uint8_t valueToAdd = memory.readInMemory(adress);
+
+
+        _readableInstructionStream
+            << "add a,(hl)";
 
         uint8_t result = regAValue + valueToAdd;
         if (result == 0x00) {
@@ -888,9 +1008,13 @@ public:
         :IInstructions(cycles),
          _16BitReg(reg16Bit){};
 
-    void doInstruction(IMemory& memory) override {
+    void doInstructionImpl(IMemory& memory) override {
         uint16_t regAValue = memory.get16BitRegister(IMemory::REG16BIT::HL);
         uint16_t valueToAdd = memory.get16BitRegister(_16BitReg);
+
+
+        _readableInstructionStream
+            << "add hl," << debugReg16Bit[_16BitReg];
 
         uint16_t result = regAValue + valueToAdd;
         if ((((regAValue & 0x0F00) + (valueToAdd & 0x0F00)) & 0x1000) == 0x1000) {
@@ -921,10 +1045,15 @@ public:
     ADD_N (int cycles)
         :IInstructions(cycles){};
 
-    void doInstruction(IMemory& memory) override {
+    void doInstructionImpl(IMemory& memory) override {
         uint8_t regAValue = memory.get8BitRegister(IMemory::REG8BIT::A);
         uint16_t cursor = memory.get16BitRegister(IMemory::REG16BIT::PC);
         uint8_t valueToAdd = memory.readInMemory(cursor + 1);
+
+
+        _readableInstructionStream
+            << "add a,$" << std::hex
+            << static_cast<int>(valueToAdd);
 
         uint8_t result = regAValue + valueToAdd;
         if (result == 0x00) {
@@ -959,10 +1088,15 @@ public:
     ADD_SP_N (int cycles)
         :IInstructions(cycles){};
 
-    void doInstruction(IMemory& memory) override {
+    void doInstructionImpl(IMemory& memory) override {
         uint16_t regValue = memory.get16BitRegister(IMemory::REG16BIT::SP);
         uint16_t cursor = memory.get16BitRegister(IMemory::REG16BIT::PC);
         uint8_t valueToAdd = memory.readInMemory(cursor + 1);
+
+
+        _readableInstructionStream
+            << "add sp,$" << std::hex
+            << static_cast<int>(valueToAdd);
 
         memory.unsetFlag(IMemory::FLAG::Z);
         memory.unsetFlag(IMemory::FLAG::N);
@@ -992,10 +1126,14 @@ public:
         :IInstructions(cycles),
          _8BitReg(reg8Bit){};
 
-    void doInstruction(IMemory& memory) override {
+    void doInstructionImpl(IMemory& memory) override {
         uint8_t regAValue = memory.get8BitRegister(IMemory::REG8BIT::A);
         uint8_t valueToAdd = memory.get8BitRegister(_8BitReg);
         uint8_t carryValue = 0x00;
+
+        _readableInstructionStream
+            << "adc a," << debugReg8Bit[_8BitReg];
+
         if (memory.isSetFlag(IMemory::FLAG::C)) {
             carryValue = 0x01;
         }
@@ -1034,10 +1172,14 @@ public:
     ADC_ARR (int cycles)
         :IInstructions(cycles){};
 
-    void doInstruction(IMemory& memory) override {
+    void doInstructionImpl(IMemory& memory) override {
         uint8_t regAValue = memory.get8BitRegister(IMemory::REG8BIT::A);
         uint16_t adress = memory.get16BitRegister(IMemory::REG16BIT::HL);
         uint8_t valueToAdd = memory.readInMemory(adress);
+
+        _readableInstructionStream
+            << "adc a,(hl)";
+
 
         uint8_t carryValue = 0x00;
         if (memory.isSetFlag(IMemory::FLAG::C)) {
@@ -1077,10 +1219,15 @@ public:
     ADC_N (int cycles)
         :IInstructions(cycles){};
 
-    void doInstruction(IMemory& memory) override {
+    void doInstructionImpl(IMemory& memory) override {
         uint8_t regAValue = memory.get8BitRegister(IMemory::REG8BIT::A);
         uint16_t cursor = memory.get16BitRegister(IMemory::REG16BIT::PC);
         uint8_t valueToAdd = memory.readInMemory(cursor + 1);
+
+
+        _readableInstructionStream
+            << "adc a,(" << std::hex
+            << static_cast<int>(valueToAdd)<< ")";
 
         uint8_t carryValue = 0x00;
         if (memory.isSetFlag(IMemory::FLAG::C)) {
@@ -1120,9 +1267,13 @@ public:
         :IInstructions(cycles),
          _8BitReg(reg8Bit){};
 
-    void doInstruction(IMemory& memory) override {
+    void doInstructionImpl(IMemory& memory) override {
         uint8_t regAValue = memory.get8BitRegister(IMemory::REG8BIT::A);
         uint8_t valueToSub = memory.get8BitRegister(_8BitReg);
+
+
+        _readableInstructionStream
+            << "sub " << debugReg8Bit[_8BitReg];
 
         uint8_t result = regAValue - valueToSub;
         if (result == 0x00) {
@@ -1159,10 +1310,14 @@ public:
     SUB_ARR (int cycles)
         :IInstructions(cycles){};
 
-    void doInstruction(IMemory& memory) override {
+    void doInstructionImpl(IMemory& memory) override {
         uint8_t regAValue = memory.get8BitRegister(IMemory::REG8BIT::A);
         uint16_t adress = memory.get16BitRegister(IMemory::REG16BIT::HL);
         uint8_t valueToSub = memory.readInMemory(adress);
+
+
+        _readableInstructionStream
+            << "sub (hl)";
 
         uint8_t result = regAValue - valueToSub;
         if (result == 0x00) {
@@ -1199,10 +1354,15 @@ public:
     SUB_N (int cycles)
         :IInstructions(cycles){};
 
-    void doInstruction(IMemory& memory) override {
+    void doInstructionImpl(IMemory& memory) override {
         uint8_t regAValue = memory.get8BitRegister(IMemory::REG8BIT::A);
         uint16_t cursor = memory.get16BitRegister(IMemory::REG16BIT::PC);
         uint8_t valueToSub = memory.readInMemory(cursor + 1);
+
+
+        _readableInstructionStream
+            << "sub (" << std::hex
+            << static_cast<int>(valueToSub)<< ")";
 
         uint8_t result = regAValue - valueToSub;
         if (result == 0x00) {
@@ -1238,10 +1398,14 @@ public:
         :IInstructions(cycles),
          _8BitReg(reg8Bit){};
 
-    void doInstruction(IMemory& memory) override {
+    void doInstructionImpl(IMemory& memory) override {
         uint8_t regAValue = memory.get8BitRegister(IMemory::REG8BIT::A);
         uint8_t valueToSub = memory.get8BitRegister(_8BitReg);
         uint8_t carryValue = 0x00;
+
+        _readableInstructionStream
+            << "sbc a," << debugReg8Bit[_8BitReg];
+
         if (memory.isSetFlag(IMemory::FLAG::C)) {
             carryValue = 0x01;
         }
@@ -1282,11 +1446,15 @@ public:
     SBC_ARR (int cycles)
         :IInstructions(cycles){};
 
-    void doInstruction(IMemory& memory) override {
+    void doInstructionImpl(IMemory& memory) override {
         uint8_t regAValue = memory.get8BitRegister(IMemory::REG8BIT::A);
         uint16_t adress = memory.get16BitRegister(IMemory::REG16BIT::HL);
         uint8_t valueToSub = memory.readInMemory(adress);
         uint8_t carryValue = 0x00;
+
+        _readableInstructionStream
+            << "sbc a,(hl)";
+
         if (memory.isSetFlag(IMemory::FLAG::C)) {
             carryValue = 0x01;
         }
@@ -1326,11 +1494,16 @@ public:
     SBC_N (int cycles)
         :IInstructions(cycles){};
 
-    void doInstruction(IMemory& memory) override {
+    void doInstructionImpl(IMemory& memory) override {
         uint8_t regAValue = memory.get8BitRegister(IMemory::REG8BIT::A);
         uint16_t cursor = memory.get16BitRegister(IMemory::REG16BIT::PC);
         uint8_t valueToSub = memory.readInMemory(cursor + 1);
         uint8_t carryValue = 0x00;
+
+        _readableInstructionStream
+            << "sbc a,(" << std::hex
+            << static_cast<int>(valueToSub)<< ")";
+
         if (memory.isSetFlag(IMemory::FLAG::C)) {
             carryValue = 0x01;
         }
@@ -1370,9 +1543,13 @@ public:
         :IInstructions(cycles),
          _8BitReg(reg8Bit){};
 
-    void doInstruction(IMemory& memory) override {
+    void doInstructionImpl(IMemory& memory) override {
         uint8_t regAValue = memory.get8BitRegister(IMemory::REG8BIT::A);
         uint8_t valueToCp = memory.get8BitRegister(_8BitReg);
+
+
+        _readableInstructionStream
+            << "cp " << debugReg8Bit[_8BitReg];
 
         uint8_t result = regAValue - valueToCp;
         if (result == 0x00) {
@@ -1408,10 +1585,14 @@ public:
     CP_ARR (int cycles)
         :IInstructions(cycles){};
 
-    void doInstruction(IMemory& memory) override {
+    void doInstructionImpl(IMemory& memory) override {
         uint8_t regAValue = memory.get8BitRegister(IMemory::REG8BIT::A);
         uint16_t adress = memory.get16BitRegister(IMemory::REG16BIT::HL);
         uint8_t valueToCp = memory.readInMemory(adress);
+
+
+        _readableInstructionStream
+            << "cp (hl)";
 
         uint8_t result = regAValue - valueToCp;
         if (result == 0x00) {
@@ -1447,10 +1628,15 @@ public:
     CP_N (int cycles)
         :IInstructions(cycles){};
 
-    void doInstruction(IMemory& memory) override {
+    void doInstructionImpl(IMemory& memory) override {
         uint8_t regAValue = memory.get8BitRegister(IMemory::REG8BIT::A);
         uint16_t cursor = memory.get16BitRegister(IMemory::REG16BIT::PC);
         uint8_t valueToSub = memory.readInMemory(cursor + 1);
+
+
+        _readableInstructionStream
+            << "cp (" << std::hex
+            << static_cast<int>(valueToSub)<< ")";
 
         uint8_t result = regAValue - valueToSub;
         if (result == 0x00) {
@@ -1484,9 +1670,13 @@ public:
     RLCA (int cycles)
         :IInstructions(cycles){};
 
-    void doInstruction(IMemory& memory) override {
+    void doInstructionImpl(IMemory& memory) override {
         uint8_t regAValue = memory.get8BitRegister(IMemory::REG8BIT::A);
         std::bitset<8> bitsetA(regAValue);
+
+
+        _readableInstructionStream
+            << "rlca";
 
         bool isSet = bitsetA[7];
         bitsetA = bitsetA << 1;
@@ -1521,7 +1711,11 @@ public:
     RLA (int cycles)
         :IInstructions(cycles){};
 
-    void doInstruction(IMemory& memory) override {
+    void doInstructionImpl(IMemory& memory) override {
+
+        _readableInstructionStream
+            << "rla";
+
         uint8_t regAValue = memory.get8BitRegister(IMemory::REG8BIT::A);
         std::bitset<8> bitsetA(regAValue);
         std::bitset<8> rotateBitset = bitsetA << 1;
@@ -1561,7 +1755,11 @@ public:
     RRCA (int cycles)
         :IInstructions(cycles){};
 
-    void doInstruction(IMemory& memory) override {
+    void doInstructionImpl(IMemory& memory) override {
+
+        _readableInstructionStream
+            << "rrca";
+
         uint8_t regAValue = memory.get8BitRegister(IMemory::REG8BIT::A);
         std::bitset<8> bitsetA(regAValue);
 
@@ -1598,7 +1796,11 @@ public:
     RRA (int cycles)
         :IInstructions(cycles){};
 
-    void doInstruction(IMemory& memory) override {
+    void doInstructionImpl(IMemory& memory) override {
+
+        _readableInstructionStream
+            << "rra";
+
         uint8_t regAValue = memory.get8BitRegister(IMemory::REG8BIT::A);
         std::bitset<8> bitsetA(regAValue);
         std::bitset<8> rotateBitset = bitsetA >> 1;
@@ -1638,12 +1840,17 @@ public:
     JP_NN (int cycles)
         :IInstructions(cycles){};
 
-    void doInstruction(IMemory& memory) override {
+    void doInstructionImpl(IMemory& memory) override {
         uint16_t cursor = memory.get16BitRegister(IMemory::REG16BIT::PC);
         uint8_t lessSignificantBit = memory.readInMemory(cursor + 1);
-        uint8_t mostSignificantBit = memory.readInMemory(cursor + 2);
+        uint8_t(mostSignificantBit) = memory.readInMemory(cursor + 2);
 
-        uint16_t adress = ((uint16_t) mostSignificantBit << 8) | lessSignificantBit;
+        uint16_t adress = (static_cast<uint16_t>(mostSignificantBit) << 8) | lessSignificantBit;
+
+        _readableInstructionStream
+            << "jp $" << std::hex
+            << static_cast<int>(adress);
+
         memory.set16BitRegister(IMemory::REG16BIT::PC, adress);
     }
 };
@@ -1657,20 +1864,33 @@ public:
          _flag(flag),
          _isToBeSet(isToBeSet){};
 
-    void doInstruction(IMemory& memory) override {
+    void doInstructionImpl(IMemory& memory) override {
         uint16_t cursor = memory.get16BitRegister(IMemory::REG16BIT::PC);
         if (memory.isSetFlag(_flag) == _isToBeSet) {
             uint8_t lessSignificantBit = memory.readInMemory(cursor + 1);
-            uint8_t mostSignificantBit = memory.readInMemory(cursor + 2);
+            uint8_t(mostSignificantBit) = memory.readInMemory(cursor + 2);
 
-            uint16_t adress = ((uint16_t) mostSignificantBit << 8) | lessSignificantBit;
+            uint16_t adress = (static_cast<uint16_t>(mostSignificantBit) << 8) | lessSignificantBit;
             memory.set16BitRegister(IMemory::REG16BIT::PC, adress);
             IInstructions::_cycles = 16;
+            _readableInstructionStream
+                << "jp "
+                << (_isToBeSet == 0 ? "n":"")
+                << debugflag[_flag]
+                << ",$" << std::hex
+                << static_cast<int>(adress);
         }
         else {
             memory.set16BitRegister(IMemory::REG16BIT::PC, cursor + 3);
             IInstructions::_cycles = 12;
+            _readableInstructionStream
+                << "jp "
+                << (_isToBeSet == 0 ? "n":"")
+                << debugflag[_flag]
+                << ",$[condition not met]";
         }
+
+
     }
 
     IMemory::FLAG _flag;
@@ -1684,7 +1904,11 @@ public:
     JP_ARR (int cycles)
         :IInstructions(cycles){};
 
-    void doInstruction(IMemory& memory) override {
+    void doInstructionImpl(IMemory& memory) override {
+
+        _readableInstructionStream
+            << "jp (hl)";
+
         uint16_t adress = memory.get16BitRegister(IMemory::REG16BIT::HL);
         memory.set16BitRegister(IMemory::REG16BIT::PC, adress);
     }
@@ -1697,9 +1921,14 @@ public:
     JR_N (int cycles)
         :IInstructions(cycles){};
 
-    void doInstruction(IMemory& memory) override {
-        uint16_t cursor = memory.get16BitRegister(IMemory::REG16BIT::PC);
-        int8_t toAdd = static_cast<int8_t>(memory.readInMemory(cursor + 1));
+    void doInstructionImpl(IMemory& memory) override {
+        uint16_t cursor = (memory.get16BitRegister(IMemory::REG16BIT::PC));
+        int8_t toAdd = static_cast<int8_t>(memory.readInMemory(++cursor));
+
+
+        _readableInstructionStream
+            << "jr " << std::hex
+            << static_cast<int>(toAdd);
 
         memory.set16BitRegister(IMemory::REG16BIT::PC, cursor + toAdd);
     }
@@ -1714,16 +1943,27 @@ public:
          _flag(flag),
          _isToBeSet(isToBeSet){};
 
-    void doInstruction(IMemory& memory) override {
-        uint16_t cursor = memory.get16BitRegister(IMemory::REG16BIT::PC);
+    void doInstructionImpl(IMemory& memory) override {
+        uint16_t cursor = memory.get16BitRegister(IMemory::REG16BIT::PC) + 1;
+        int8_t toAdd = static_cast<int8_t>(memory.readInMemory(cursor++));
         if (memory.isSetFlag(_flag) == _isToBeSet) {
-            int8_t toAdd = static_cast<int8_t>(memory.readInMemory(cursor + 1));
             memory.set16BitRegister(IMemory::REG16BIT::PC, cursor + toAdd);
             IInstructions::_cycles = 12;
+            _readableInstructionStream
+                << "jr "
+                << (_isToBeSet == 0 ? "n":"")
+                << debugflag[_flag]
+                << ",$"<< std::hex
+                << static_cast<int>(toAdd);
         }
         else {
-            memory.set16BitRegister(IMemory::REG16BIT::PC, cursor + 2);
+            memory.set16BitRegister(IMemory::REG16BIT::PC, cursor);
             IInstructions::_cycles = 8;
+            _readableInstructionStream
+                << "jr "
+                << (_isToBeSet == 0 ? "n":"")
+                << debugflag[_flag]
+                << ",$[condition not met]";
         }
     }
     IMemory::FLAG _flag;
@@ -1737,20 +1977,26 @@ public:
     CALL_NN (int cycles)
         :IInstructions(cycles){};
 
-    void doInstruction(IMemory& memory) override {
+    void doInstructionImpl(IMemory& memory) override {
         uint16_t programCounter = memory.get16BitRegister(IMemory::REG16BIT::PC);
         uint16_t stackPointer = memory.get16BitRegister(IMemory::REG16BIT::SP);
-        uint8_t pcHightBit = (uint8_t)((programCounter + 3) >> 8) & 0xff;
-        uint8_t pcLowBit = (uint8_t)((programCounter + 3) & 0xff);
+
+        uint8_t pcHightBit = static_cast<uint8_t>(((programCounter + 3) >> 8) & 0xff);
+        uint8_t pcLowBit = static_cast<uint8_t>((programCounter + 3) & 0xff);
+
         memory.writeInMemory(pcHightBit, stackPointer - 1);
         memory.writeInMemory(pcLowBit, stackPointer - 2);
 
         uint8_t lessSignificantBit = memory.readInMemory(programCounter + 1);
-        uint8_t mostSignificantBit = memory.readInMemory(programCounter + 2);
-        uint16_t newPCValue = ((uint16_t) mostSignificantBit << 8) | lessSignificantBit;
+        uint8_t(mostSignificantBit) = memory.readInMemory(programCounter + 2);
+        uint16_t newPCValue = (static_cast<uint16_t>(mostSignificantBit) << 8) | lessSignificantBit;
 
         memory.set16BitRegister(IMemory::REG16BIT::PC, newPCValue);
         memory.set16BitRegister(IMemory::REG16BIT::SP, stackPointer - 2);
+
+        _readableInstructionStream
+            << "call $" << std::hex
+            << static_cast<int>(newPCValue);
     }
 };
 
@@ -1763,26 +2009,36 @@ public:
          _flag(flag),
          _isToBeSet(isToBeSet){};
 
-    void doInstruction(IMemory& memory) override {
+    void doInstructionImpl(IMemory& memory) override {
         uint16_t programCounter = memory.get16BitRegister(IMemory::REG16BIT::PC);
         if (memory.isSetFlag(_flag) == _isToBeSet) {
             uint16_t stackPointer = memory.get16BitRegister(IMemory::REG16BIT::SP);
-            uint8_t pcHightBit = (uint8_t)((programCounter + 3) >> 8) & 0xff;
-            uint8_t pcLowBit = (uint8_t)((programCounter + 3) & 0xff);
+            uint8_t pcHightBit = static_cast<uint8_t>(((programCounter + 3) >> 8) & 0xff);
+            uint8_t pcLowBit = static_cast<uint8_t>((programCounter + 3) & 0xff);
             memory.writeInMemory(pcHightBit, stackPointer - 1);
             memory.writeInMemory(pcLowBit, stackPointer - 2);
 
             uint8_t lessSignificantBit = memory.readInMemory(programCounter + 1);
-            uint8_t mostSignificantBit = memory.readInMemory(programCounter + 2);
-            uint16_t newPCValue = ((uint16_t) mostSignificantBit << 8) | lessSignificantBit;
+            uint8_t(mostSignificantBit) = memory.readInMemory(programCounter + 2);
+            uint16_t newPCValue = (static_cast<uint16_t>(mostSignificantBit) << 8) | lessSignificantBit;
 
             memory.set16BitRegister(IMemory::REG16BIT::PC, newPCValue);
             memory.set16BitRegister(IMemory::REG16BIT::SP, stackPointer - 2);
             IInstructions::_cycles = 24;
+            _readableInstructionStream
+                << "call "
+                << (_isToBeSet == 0 ? "n":"")
+                << debugflag[_flag]
+                << ",$"<< std::hex << static_cast<int>(newPCValue);
         }
         else {
             memory.set16BitRegister(IMemory::REG16BIT::PC, programCounter + 3);
             IInstructions::_cycles = 12;
+            _readableInstructionStream
+                << "call "
+                << (_isToBeSet == 0 ? "n":"")
+                << debugflag[_flag]
+                << ",$[condition not met]";
         }
     }
     IMemory::FLAG _flag;
@@ -1796,12 +2052,13 @@ public:
     RET (int cycles)
         :IInstructions(cycles){};
 
-    void doInstruction(IMemory& memory) override {
+    void doInstructionImpl(IMemory& memory) override {
+        _readableInstructionStream << "ret";
         uint16_t stackPointer = memory.get16BitRegister(IMemory::REG16BIT::SP);
 
         uint8_t lessSignificantBit = memory.readInMemory(stackPointer);
-        uint8_t mostSignificantBit = memory.readInMemory(stackPointer + 1);
-        uint16_t newPCValue = ((uint16_t) mostSignificantBit << 8) | lessSignificantBit;
+        uint8_t(mostSignificantBit) = memory.readInMemory(stackPointer + 1);
+        uint16_t newPCValue = (static_cast<uint16_t>(mostSignificantBit) << 8) | lessSignificantBit;
 
         memory.set16BitRegister(IMemory::REG16BIT::PC, newPCValue);
         memory.set16BitRegister(IMemory::REG16BIT::SP, stackPointer +2);
@@ -1817,13 +2074,16 @@ public:
          _flag(flag),
          _isToBeSet(isToBeSet){};
 
-    void doInstruction(IMemory& memory) override {
+    void doInstructionImpl(IMemory& memory) override {
+        //TODO
+        _readableInstructionStream
+            << "ret " << debugflag[_flag];
         if (memory.isSetFlag(_flag) == _isToBeSet) {
             uint16_t stackPointer = memory.get16BitRegister(IMemory::REG16BIT::SP);
 
             uint8_t lessSignificantBit = memory.readInMemory(stackPointer);
-            uint8_t mostSignificantBit = memory.readInMemory(stackPointer + 1);
-            uint16_t newPCValue = ((uint16_t) mostSignificantBit << 8) | lessSignificantBit;
+            uint8_t(mostSignificantBit) = memory.readInMemory(stackPointer + 1);
+            uint16_t newPCValue = (static_cast<uint16_t>(mostSignificantBit) << 8) | lessSignificantBit;
 
             memory.set16BitRegister(IMemory::REG16BIT::PC, newPCValue);
             memory.set16BitRegister(IMemory::REG16BIT::SP, stackPointer +2);
@@ -1843,20 +2103,25 @@ public:
 class RETI : public IInstructions
 {
 public:
-    RETI (int cycles)
-        :IInstructions(cycles){};
+    RETI (int cycles, IInterruptHandler& interruptHandler)
+        :IInstructions(cycles),
+         _interruptHandler(interruptHandler){};
 
-    void doInstruction(IMemory& memory) override {
+    void doInstructionImpl(IMemory& memory) override {
+        _readableInstructionStream << "reti";
         uint16_t stackPointer = memory.get16BitRegister(IMemory::REG16BIT::SP);
 
         uint8_t lessSignificantBit = memory.readInMemory(stackPointer);
-        uint8_t mostSignificantBit = memory.readInMemory(stackPointer + 1);
-        uint16_t newPCValue = ((uint16_t) mostSignificantBit << 8) | lessSignificantBit;
+        uint8_t(mostSignificantBit) = memory.readInMemory(stackPointer + 1);
+        uint16_t newPCValue = (static_cast<uint16_t>(mostSignificantBit) << 8) | lessSignificantBit;
 
         memory.set16BitRegister(IMemory::REG16BIT::PC, newPCValue);
         memory.set16BitRegister(IMemory::REG16BIT::SP, stackPointer +2);
-        //TODO enable interrupts
+
+        _interruptHandler.enableMasterSwitch();
     }
+
+    IInterruptHandler& _interruptHandler;
 };
 
 //0xC7 0xD7 0xE7 0xF7 0xCF 0xDF 0xEF 0xFF
@@ -1867,18 +2132,21 @@ public:
         :IInstructions(cycles),
          _value(value){};
 
-    void doInstruction(IMemory& memory) override {
+    void doInstructionImpl(IMemory& memory) override {
         uint16_t programCounter = memory.get16BitRegister(IMemory::REG16BIT::PC);
         uint16_t stackPointer = memory.get16BitRegister(IMemory::REG16BIT::SP);
 
-        uint8_t mostSignificantBit = (uint8_t)((programCounter + 0x01) >> 8) & 0xff;
-        uint8_t lessSignificantBit = (uint8_t)((programCounter + 0x01) & 0xff);
+        uint8_t(mostSignificantBit) = static_cast<uint8_t>(((programCounter + 0x01) >> 8) & 0xff);
+        uint8_t lessSignificantBit = static_cast<uint8_t>((programCounter + 0x01) & 0xff);
 
         memory.writeInMemory(mostSignificantBit, stackPointer - 1);
         memory.writeInMemory(lessSignificantBit, stackPointer - 2);
 
         memory.set16BitRegister(IMemory::REG16BIT::PC, 0x0000 + _value);
         memory.set16BitRegister(IMemory::REG16BIT::SP, stackPointer - 2);
+        _readableInstructionStream 
+            << "rst" << std::hex
+            << static_cast<int>(_value) << "h";
     }
     uint8_t _value;
 };
@@ -1890,10 +2158,13 @@ public:
     SCF (int cycles)
         :IInstructions(cycles){};
 
-    void doInstruction(IMemory& memory) override {
+    void doInstructionImpl(IMemory& memory) override {
+        _readableInstructionStream << "scf";
         memory.unsetFlag(IMemory::FLAG::N);
         memory.unsetFlag(IMemory::FLAG::H);
         memory.setFlag(IMemory::FLAG::C);
+        uint16_t programCounter = memory.get16BitRegister(IMemory::REG16BIT::PC);
+        memory.set16BitRegister(IMemory::REG16BIT::PC, programCounter + 1);
     }
 };
 
@@ -1904,7 +2175,8 @@ public:
     CCF (int cycles)
         :IInstructions(cycles){};
 
-    void doInstruction(IMemory& memory) override {
+    void doInstructionImpl(IMemory& memory) override {
+        _readableInstructionStream << "ccf";
         memory.unsetFlag(IMemory::FLAG::N);
         memory.unsetFlag(IMemory::FLAG::H);
         if (memory.isSetFlag(IMemory::FLAG::C)) {
@@ -1913,6 +2185,8 @@ public:
         else {
             memory.setFlag(IMemory::FLAG::C);
         }
+        uint16_t programCounter = memory.get16BitRegister(IMemory::REG16BIT::PC);
+        memory.set16BitRegister(IMemory::REG16BIT::PC, programCounter + 1);
     }
 };
 
@@ -1923,13 +2197,16 @@ public:
     CPL (int cycles)
         :IInstructions(cycles){};
 
-    void doInstruction(IMemory& memory) override {
+    void doInstructionImpl(IMemory& memory) override {
+        _readableInstructionStream << "cpl";
         std::bitset<8> bitsetA(memory.get8BitRegister(IMemory::REG8BIT::A));
         bitsetA.flip();
         uint8_t newValue = static_cast<uint8_t>(bitsetA.to_ulong());
         memory.set8BitRegister(IMemory::REG8BIT::A, newValue);
         memory.setFlag(IMemory::FLAG::N);
         memory.setFlag(IMemory::FLAG::H);
+        uint16_t programCounter = memory.get16BitRegister(IMemory::REG16BIT::PC);
+        memory.set16BitRegister(IMemory::REG16BIT::PC, programCounter + 1);
     }
 };
 
@@ -1937,24 +2214,34 @@ public:
 class DI : public IInstructions
 {
 public:
-    DI (int cycles)
-        :IInstructions(cycles){};
+    DI (int cycles, IInterruptHandler& interruptHandler)
+        :IInstructions(cycles),
+         _interruptHandler(interruptHandler){};
 
-    void doInstruction(IMemory& ) override {
-        //TODO
+    void doInstructionImpl(IMemory& memory) override {
+        _readableInstructionStream << "di";
+        _interruptHandler.disableMasterSwitch();
+        uint16_t programCounter = memory.get16BitRegister(IMemory::REG16BIT::PC);
+        memory.set16BitRegister(IMemory::REG16BIT::PC, programCounter + 1);
     }
+    IInterruptHandler& _interruptHandler;
 };
 
 //0xFB
 class EI : public IInstructions
 {
 public:
-    EI (int cycles)
-        :IInstructions(cycles){};
+    EI (int cycles, IInterruptHandler& interruptHandler)
+        :IInstructions(cycles),
+         _interruptHandler(interruptHandler){};
 
-    void doInstruction(IMemory& ) override {
-        //TODO
+    void doInstructionImpl(IMemory& memory) override {
+        _readableInstructionStream << "ei";
+        _interruptHandler.enableMasterSwitch();
+        uint16_t programCounter = memory.get16BitRegister(IMemory::REG16BIT::PC);
+        memory.set16BitRegister(IMemory::REG16BIT::PC, programCounter + 1);
     }
+    IInterruptHandler& _interruptHandler;
 };
 
 //0x76
@@ -1964,8 +2251,11 @@ public:
     HALT (int cycles)
         :IInstructions(cycles){};
 
-    void doInstruction(IMemory& ) override {
+    void doInstructionImpl(IMemory& memory) override {
+        _readableInstructionStream << "halt";
         //TODO
+        uint16_t programCounter = memory.get16BitRegister(IMemory::REG16BIT::PC);
+        memory.set16BitRegister(IMemory::REG16BIT::PC, programCounter + 1);
     }
 };
 
@@ -1976,7 +2266,8 @@ public:
     STOP (int cycles)
         :IInstructions(cycles){};
 
-    void doInstruction(IMemory& ) override {
+    void doInstructionImpl(IMemory&) override {
+        _readableInstructionStream << "stop";
         //TODO
     }
 };
@@ -1989,7 +2280,8 @@ public:
         :IInstructions(cycles),
          _binaryInstructions(binaryInstructions){};
 
-    void doInstruction(IMemory& memory) override {
+    void doInstructionImpl(IMemory& memory) override {
+        _readableInstructionStream << "cb";
         uint16_t cursor = memory.get16BitRegister(IMemory::REG16BIT::PC);
         uint8_t opCode = memory.readInMemory(cursor + 1);
 

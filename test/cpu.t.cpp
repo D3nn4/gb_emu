@@ -31,7 +31,7 @@ class MockInstructions : public IInstructions
 public:
     MockInstructions(int cycles) : IInstructions(cycles){};
     MOCK_METHOD1(doOp, int(IMemory&));
-    MOCK_METHOD1(doInstruction, void(IMemory&));
+    MOCK_METHOD1(doInstructionImpl, void(IMemory&));
 
     
 };
@@ -40,9 +40,13 @@ class MockMemory : public IMemory
 {
 public:
 
+    MOCK_METHOD0(incrementDividerRegister, void());
+    MOCK_METHOD0(incrementScanline, void());
     MOCK_METHOD0(getCartridge, CartridgeData const());
     MOCK_METHOD0(getReadOnlyMemory, RomData const());
     MOCK_METHOD1(setCartridge, bool(CartridgeData const &));
+    MOCK_METHOD0(getState, IMemory::State());
+    MOCK_METHOD0(initializeMemory, void());
     MOCK_METHOD2(writeInMemory, bool(uint8_t, uint16_t));
     MOCK_METHOD1(readInMemory, uint8_t(uint16_t));
     MOCK_METHOD2(set8BitRegister, void(IMemory::REG8BIT, uint8_t));
